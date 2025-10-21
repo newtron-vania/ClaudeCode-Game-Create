@@ -7,7 +7,7 @@ using Object = UnityEngine.Object;
 
 /// <summary>
 /// Addressables 기반 리소스 관리 매니저
-/// 리소스 로드, 캐싱, 해제를 담당
+/// 리소스 로드, 캐싱, 해제 담당 (GameObject 인스턴스는 PoolManager 연동)
 /// </summary>
 public class ResourceManager : Singleton<ResourceManager>
 {
@@ -17,12 +17,9 @@ public class ResourceManager : Singleton<ResourceManager>
     // 비동기 작업 핸들 관리 (메모리 해제를 위해 보관)
     private Dictionary<string, AsyncOperationHandle> _asyncHandles = new Dictionary<string, AsyncOperationHandle>();
 
-    // 인스턴스 핸들 관리 (Addressables로 생성된 인스턴스 추적)
-    private List<AsyncOperationHandle<GameObject>> _instanceHandles = new List<AsyncOperationHandle<GameObject>>();
-
     // 프리로드 진행 상황
-    private bool _isPreloading = false;
-    private float _preloadProgress = 0f;
+    private bool _isPreloading;
+    private float _preloadProgress;
 
     /// <summary>
     /// 프리로드 진행 중 여부
@@ -302,10 +299,11 @@ public class ResourceManager : Singleton<ResourceManager>
 
     #endregion
 
-    #region 인스턴스 생성
+    #region 인스턴스 생성 (PoolManager 연동)
 
     /// <summary>
-    /// 프리팹 인스턴스 비동기 생성 (Addressables 직접 사용)
+    /// 프리팹 인스턴스 비동기 생성 (PoolManager 사용)
+    /// 풀이 없으면 자동으로 생성하고, 풀에서 오브젝트를 가져옴
     /// </summary>
     /// <param name="address">프리팹 Addressable 주소</param>
     /// <param name="parent">부모 Transform (null이면 씬 루트)</param>
@@ -319,24 +317,44 @@ public class ResourceManager : Singleton<ResourceManager>
             return;
         }
 
-        // Addressables의 InstantiateAsync 사용
-        var handle = Addressables.InstantiateAsync(address, parent);
-        handle.Completed += (asyncHandle) =>
+        // PoolManager가 없으면 경고
+        if (PoolManager.Instance == null)
         {
-            if (asyncHandle.Status == AsyncOperationStatus.Succeeded)
-            {
-                GameObject instance = asyncHandle.Result;
-                _instanceHandles.Add(asyncHandle); // 핸들 추적
+            Debug.LogError("[ERROR] ResourceManager::InstantiateAsync - PoolManager is not initialized");
+            onComplete?.Invoke(null);
+            return;
+        }
 
-                Debug.Log($"[INFO] ResourceManager::InstantiateAsync - Instantiated prefab: {address}");
-                onComplete?.Invoke(instance);
-            }
-            else
+        // 풀이 존재하는지 확인
+        if (PoolManager.Instance.HasPool(address))
+        {
+            // 이미 풀이 있으면 바로 Spawn
+            GameObject instance = PoolManager.Instance.Spawn(address, parent);
+            Debug.Log($"[INFO] ResourceManager::InstantiateAsync - Spawned from existing pool: {address}");
+            onComplete?.Invoke(instance);
+        }
+        else
+        {
+            // 풀이 없으면 프리팹 로드 후 풀 생성
+            LoadAsync<GameObject>(address, (prefab) =>
             {
-                Debug.LogError($"[ERROR] ResourceManager::InstantiateAsync - Failed to instantiate: {address}");
-                onComplete?.Invoke(null);
-            }
-        };
+                if (prefab != null)
+                {
+                    // 풀 생성
+                    PoolManager.Instance.CreatePool(address, prefab, 10, 100, true);
+
+                    // Spawn
+                    GameObject instance = PoolManager.Instance.Spawn(address, parent);
+                    Debug.Log($"[INFO] ResourceManager::InstantiateAsync - Created pool and spawned: {address}");
+                    onComplete?.Invoke(instance);
+                }
+                else
+                {
+                    Debug.LogError($"[ERROR] ResourceManager::InstantiateAsync - Failed to load prefab: {address}");
+                    onComplete?.Invoke(null);
+                }
+            });
+        }
     }
 
     /// <summary>
@@ -382,7 +400,7 @@ public class ResourceManager : Singleton<ResourceManager>
     }
 
     /// <summary>
-    /// GameObject 삭제 (Addressables로 생성된 경우 핸들도 해제)
+    /// GameObject 삭제 (PoolManager를 통해 풀로 반환)
     /// </summary>
     /// <param name="instance">삭제할 GameObject</param>
     public void ReleaseInstance(GameObject instance)
@@ -393,30 +411,17 @@ public class ResourceManager : Singleton<ResourceManager>
             return;
         }
 
-        // Addressables 핸들에서 해당 인스턴스 찾기
-        AsyncOperationHandle<GameObject>? handleToRelease = null;
-        foreach (var handle in _instanceHandles)
+        // PoolManager가 없으면 그냥 Destroy
+        if (PoolManager.Instance == null)
         {
-            if (handle.IsValid() && handle.Result == instance)
-            {
-                handleToRelease = handle;
-                break;
-            }
+            Object.Destroy(instance);
+            Debug.LogWarning("[WARNING] ResourceManager::ReleaseInstance - PoolManager not available, destroyed instance");
+            return;
         }
 
-        // Addressables로 생성된 인스턴스면 핸들 해제
-        if (handleToRelease.HasValue)
-        {
-            Addressables.ReleaseInstance(handleToRelease.Value);
-            _instanceHandles.Remove(handleToRelease.Value);
-            Debug.Log($"[INFO] ResourceManager::ReleaseInstance - Released Addressables instance: {instance.name}");
-        }
-        else
-        {
-            // 일반 인스턴스는 Destroy
-            Object.Destroy(instance);
-            Debug.Log($"[INFO] ResourceManager::ReleaseInstance - Destroyed instance: {instance.name}");
-        }
+        // PoolManager를 통해 Despawn
+        PoolManager.Instance.Despawn(instance);
+        Debug.Log($"[INFO] ResourceManager::ReleaseInstance - Returned instance to pool: {instance.name}");
     }
 
     /// <summary>
@@ -447,23 +452,88 @@ public class ResourceManager : Singleton<ResourceManager>
     }
 
     /// <summary>
-    /// 모든 Addressables 인스턴스 해제
+    /// 모든 풀 인스턴스 해제 (PoolManager 연동)
     /// </summary>
     public void ReleaseAllInstances()
     {
-        Debug.Log($"[INFO] ResourceManager::ReleaseAllInstances - Releasing {_instanceHandles.Count} instances");
-
-        // 모든 인스턴스 핸들 해제
-        foreach (var handle in _instanceHandles)
+        if (PoolManager.Instance == null)
         {
-            if (handle.IsValid())
-            {
-                Addressables.ReleaseInstance(handle);
-            }
+            Debug.LogWarning("[WARNING] ResourceManager::ReleaseAllInstances - PoolManager not available");
+            return;
         }
 
-        _instanceHandles.Clear();
-        Debug.Log("[INFO] ResourceManager::ReleaseAllInstances - All instances released");
+        Debug.Log("[INFO] ResourceManager::ReleaseAllInstances - Returning all instances to pools");
+        PoolManager.Instance.DespawnAll();
+        Debug.Log("[INFO] ResourceManager::ReleaseAllInstances - All instances returned to pools");
+    }
+
+    #endregion
+
+    #region 풀 관리 (PoolManager 연동)
+
+    /// <summary>
+    /// 특정 주소의 풀 미리 생성
+    /// </summary>
+    /// <param name="address">프리팹 Addressable 주소</param>
+    /// <param name="initialSize">초기 개수</param>
+    /// <param name="maxSize">최대 개수</param>
+    /// <param name="canExpand">확장 가능 여부</param>
+    /// <param name="onComplete">완료 콜백</param>
+    public void CreatePool(string address, int initialSize = 10, int maxSize = 100, bool canExpand = true, Action onComplete = null)
+    {
+        if (string.IsNullOrEmpty(address))
+        {
+            Debug.LogError("[ERROR] ResourceManager::CreatePool - Address is null or empty");
+            onComplete?.Invoke();
+            return;
+        }
+
+        if (PoolManager.Instance == null)
+        {
+            Debug.LogError("[ERROR] ResourceManager::CreatePool - PoolManager is not initialized");
+            onComplete?.Invoke();
+            return;
+        }
+
+        // Addressables로 풀 생성
+        PoolManager.Instance.CreatePoolAsync(address, address, initialSize, maxSize, canExpand, null, onComplete);
+        Debug.Log($"[INFO] ResourceManager::CreatePool - Creating pool for: {address}");
+    }
+
+    /// <summary>
+    /// 프리로드와 동시에 풀 생성
+    /// </summary>
+    /// <param name="addresses">프리팹 Addressable 주소 목록</param>
+    /// <param name="initialSize">각 풀의 초기 개수</param>
+    /// <param name="maxSize">각 풀의 최대 개수</param>
+    /// <param name="onComplete">완료 콜백</param>
+    public void PreloadAndCreatePools(List<string> addresses, int initialSize = 10, int maxSize = 100, Action onComplete = null)
+    {
+        if (addresses == null || addresses.Count == 0)
+        {
+            Debug.LogWarning("[WARNING] ResourceManager::PreloadAndCreatePools - Addresses list is null or empty");
+            onComplete?.Invoke();
+            return;
+        }
+
+        int totalCount = addresses.Count;
+        int completedCount = 0;
+
+        Debug.Log($"[INFO] ResourceManager::PreloadAndCreatePools - Creating {totalCount} pools");
+
+        foreach (var address in addresses)
+        {
+            CreatePool(address, initialSize, maxSize, true, () =>
+            {
+                completedCount++;
+
+                if (completedCount >= totalCount)
+                {
+                    Debug.Log("[INFO] ResourceManager::PreloadAndCreatePools - All pools created");
+                    onComplete?.Invoke();
+                }
+            });
+        }
     }
 
     #endregion
@@ -474,7 +544,7 @@ public class ResourceManager : Singleton<ResourceManager>
     {
         base.OnDestroy();
 
-        // 모든 인스턴스 해제
+        // 모든 인스턴스 풀로 반환
         ReleaseAllInstances();
 
         // 모든 리소스 해제
