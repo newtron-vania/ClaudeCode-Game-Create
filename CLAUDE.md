@@ -49,18 +49,33 @@ Unity builds are managed through the Unity Editor. No CLI build commands are con
 ## Code Architecture
 
 ### Current State
-This project is in **initial setup phase**. The codebase contains:
-- One placeholder script: `Assets/Scripts/ClaudeCoder.cs` (empty class)
-- Unity 2D URP template configuration
-- Input System configured but not implemented
+This project has implemented a complete **Manager System** for core game infrastructure:
 
-### Expected Architecture (To Be Implemented)
-Based on Unity development standards, the project should follow:
+**Implemented Managers** (See `Assets/Docs/MANAGERS_GUIDE.md` for detailed usage):
+- `Singleton<T>`: Generic singleton base class
+- `GameManager<T>`: Generic game manager with data management
+- `ResourceManager`: Addressables resource loading with PoolManager integration
+- `PoolManager`: GameObject pooling for performance optimization
+- `SoundManager`: Audio management (BGM/SFX with volume control)
+- `UIManager`: UI panel and popup management with fade effects
+- `CustomSceneManager`: Scene loading with transitions and loading screens
+
+**⚠️ IMPORTANT: Read Manager Guide First**
+At the start of each work session, you MUST read:
+```
+Assets/Docs/MANAGERS_GUIDE.md
+```
+This file contains complete API documentation and usage patterns. Always use these managers instead of implementing similar functionality manually.
+
+### Architecture Principles
+Based on Unity development standards, the project follows:
 
 1. **MonoBehaviour Pattern**: Game logic components inherit from `MonoBehaviour`
-2. **Manager Pattern**: Singleton managers for global systems (GameManager, etc.)
+2. **Manager Pattern**: Singleton managers for global systems (already implemented)
 3. **Component-Based Design**: Separate components for different gameplay systems
 4. **ScriptableObject Data**: Configuration and game data stored as ScriptableObjects
+5. **Object Pooling**: Use PoolManager for frequent GameObject instantiation
+6. **Resource Loading**: Use ResourceManager (Addressables) for all asset loading
 
 ## Coding Conventions
 
@@ -344,20 +359,27 @@ See `.claude/BRANCH_WORKFLOW.md` for detailed workflow guide.
 
 ## Documentation References
 
-- **Detailed Conventions**: See `.claude/UNITY_CONVENTIONS.md`
-- **Commit Rules**: See `.claude/COMMIT_MESSAGE_RULES.md`
-- **Branch Naming**: See `.claude/BRANCH_NAMING_RULES.md`
-- **Branch Task Management**: See `.claude/BRANCH_WORKFLOW.md`
-- **Git Workflow**: See `Assets/Github-Flow.md`
-- **Unity Standards**: See `Assets/[유니티] 개발 표준 v2.md` (Korean)
+### Assets/Docs/ (Unity Project Documentation)
+- **Manager System Guide**: `Assets/Docs/MANAGERS_GUIDE.md` ⚠️ **READ THIS FIRST EVERY SESSION**
+- **Git Workflow**: `Assets/Docs/Github-Flow.md`
+- **Unity Standards**: `Assets/Docs/[유니티] 개발 표준 v2.md` (Korean)
+- **Setup Guide**: `Assets/Docs/SETUP_GUIDE.md`
+
+### .claude/ (Claude Code Configuration)
+- **Detailed Conventions**: `.claude/UNITY_CONVENTIONS.md`
+- **Commit Rules**: `.claude/COMMIT_MESSAGE_RULES.md`
+- **Branch Naming**: `.claude/BRANCH_NAMING_RULES.md`
+- **Branch Task Management**: `.claude/BRANCH_WORKFLOW.md`
 
 ## Important Notes
 
-1. **This is a Korean-language project** - Documentation and comments may be in Korean
-2. **Strict convention compliance** - Follow naming and style rules exactly as specified
-3. **Complete implementations only** - No TODOs, no placeholders, no mock data
-4. **Unity 6 features** - Take advantage of latest Unity 6 capabilities when appropriate
-5. **2D game focus** - This is specifically a 2D game using URP's 2D renderer
+1. **Manager System First** - ALWAYS use existing managers (ResourceManager, PoolManager, SoundManager, UIManager, CustomSceneManager) instead of implementing similar functionality
+2. **Read MANAGERS_GUIDE.md** - At the start of EVERY work session, read `Assets/Docs/MANAGERS_GUIDE.md`
+3. **This is a Korean-language project** - Documentation and comments may be in Korean
+4. **Strict convention compliance** - Follow naming and style rules exactly as specified
+5. **Complete implementations only** - No TODOs, no placeholders, no mock data
+6. **Unity 6 features** - Take advantage of latest Unity 6 capabilities when appropriate
+7. **2D game focus** - This is specifically a 2D game using URP's 2D renderer
 
 ## Language Policy
 
