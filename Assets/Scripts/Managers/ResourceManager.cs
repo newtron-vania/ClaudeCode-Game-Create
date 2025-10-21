@@ -17,6 +17,9 @@ public class ResourceManager : Singleton<ResourceManager>
     // 비동기 작업 핸들 관리 (메모리 해제를 위해 보관)
     private Dictionary<string, AsyncOperationHandle> _asyncHandles = new Dictionary<string, AsyncOperationHandle>();
 
+    // 인스턴스 핸들 관리 (Addressables로 생성된 인스턴스 추적)
+    private List<AsyncOperationHandle<GameObject>> _instanceHandles = new List<AsyncOperationHandle<GameObject>>();
+
     // 프리로드 진행 상황
     private bool _isPreloading = false;
     private float _preloadProgress = 0f;
@@ -302,47 +305,165 @@ public class ResourceManager : Singleton<ResourceManager>
     #region 인스턴스 생성
 
     /// <summary>
-    /// 프리팹 인스턴스 생성
-    /// </summary>
-    /// <param name="address">프리팹 Addressable 주소</param>
-    /// <param name="parent">부모 Transform (null이면 씬 루트)</param>
-    /// <returns>생성된 게임 오브젝트</returns>
-    public GameObject Instantiate(string address, Transform parent = null)
-    {
-        GameObject prefab = Load<GameObject>(address);
-
-        if (prefab == null)
-        {
-            Debug.LogError($"[ERROR] ResourceManager::Instantiate - Failed to load prefab: {address}");
-            return null;
-        }
-
-        GameObject instance = Object.Instantiate(prefab, parent);
-        Debug.Log($"[INFO] ResourceManager::Instantiate - Instantiated prefab: {address}");
-        return instance;
-    }
-
-    /// <summary>
-    /// 프리팹 인스턴스 비동기 생성
+    /// 프리팹 인스턴스 비동기 생성 (Addressables 직접 사용)
     /// </summary>
     /// <param name="address">프리팹 Addressable 주소</param>
     /// <param name="parent">부모 Transform (null이면 씬 루트)</param>
     /// <param name="onComplete">생성 완료 콜백</param>
     public void InstantiateAsync(string address, Transform parent, Action<GameObject> onComplete)
     {
-        LoadAsync<GameObject>(address, (prefab) =>
+        if (string.IsNullOrEmpty(address))
         {
-            if (prefab == null)
-            {
-                Debug.LogError($"[ERROR] ResourceManager::InstantiateAsync - Failed to load prefab: {address}");
-                onComplete?.Invoke(null);
-                return;
-            }
+            Debug.LogError("[ERROR] ResourceManager::InstantiateAsync - Address is null or empty");
+            onComplete?.Invoke(null);
+            return;
+        }
 
-            GameObject instance = Object.Instantiate(prefab, parent);
-            Debug.Log($"[INFO] ResourceManager::InstantiateAsync - Instantiated prefab: {address}");
-            onComplete?.Invoke(instance);
-        });
+        // Addressables의 InstantiateAsync 사용
+        var handle = Addressables.InstantiateAsync(address, parent);
+        handle.Completed += (asyncHandle) =>
+        {
+            if (asyncHandle.Status == AsyncOperationStatus.Succeeded)
+            {
+                GameObject instance = asyncHandle.Result;
+                _instanceHandles.Add(asyncHandle); // 핸들 추적
+
+                Debug.Log($"[INFO] ResourceManager::InstantiateAsync - Instantiated prefab: {address}");
+                onComplete?.Invoke(instance);
+            }
+            else
+            {
+                Debug.LogError($"[ERROR] ResourceManager::InstantiateAsync - Failed to instantiate: {address}");
+                onComplete?.Invoke(null);
+            }
+        };
+    }
+
+    /// <summary>
+    /// 여러 프리팹 인스턴스 비동기 일괄 생성
+    /// </summary>
+    /// <param name="addresses">프리팹 Addressable 주소 목록</param>
+    /// <param name="parent">부모 Transform (null이면 씬 루트)</param>
+    /// <param name="onComplete">모든 생성 완료 콜백 (생성된 인스턴스 목록 전달)</param>
+    public void InstantiateMultipleAsync(List<string> addresses, Transform parent, Action<List<GameObject>> onComplete)
+    {
+        if (addresses == null || addresses.Count == 0)
+        {
+            Debug.LogWarning("[WARNING] ResourceManager::InstantiateMultipleAsync - Addresses list is null or empty");
+            onComplete?.Invoke(new List<GameObject>());
+            return;
+        }
+
+        List<GameObject> instances = new List<GameObject>();
+        int totalCount = addresses.Count;
+        int completedCount = 0;
+
+        Debug.Log($"[INFO] ResourceManager::InstantiateMultipleAsync - Instantiating {totalCount} prefabs");
+
+        foreach (var address in addresses)
+        {
+            InstantiateAsync(address, parent, (instance) =>
+            {
+                if (instance != null)
+                {
+                    instances.Add(instance);
+                }
+
+                completedCount++;
+
+                // 모든 인스턴스 생성 완료
+                if (completedCount >= totalCount)
+                {
+                    Debug.Log($"[INFO] ResourceManager::InstantiateMultipleAsync - Completed: {instances.Count}/{totalCount} instances created");
+                    onComplete?.Invoke(instances);
+                }
+            });
+        }
+    }
+
+    /// <summary>
+    /// GameObject 삭제 (Addressables로 생성된 경우 핸들도 해제)
+    /// </summary>
+    /// <param name="instance">삭제할 GameObject</param>
+    public void ReleaseInstance(GameObject instance)
+    {
+        if (instance == null)
+        {
+            Debug.LogWarning("[WARNING] ResourceManager::ReleaseInstance - Instance is null");
+            return;
+        }
+
+        // Addressables 핸들에서 해당 인스턴스 찾기
+        AsyncOperationHandle<GameObject>? handleToRelease = null;
+        foreach (var handle in _instanceHandles)
+        {
+            if (handle.IsValid() && handle.Result == instance)
+            {
+                handleToRelease = handle;
+                break;
+            }
+        }
+
+        // Addressables로 생성된 인스턴스면 핸들 해제
+        if (handleToRelease.HasValue)
+        {
+            Addressables.ReleaseInstance(handleToRelease.Value);
+            _instanceHandles.Remove(handleToRelease.Value);
+            Debug.Log($"[INFO] ResourceManager::ReleaseInstance - Released Addressables instance: {instance.name}");
+        }
+        else
+        {
+            // 일반 인스턴스는 Destroy
+            Object.Destroy(instance);
+            Debug.Log($"[INFO] ResourceManager::ReleaseInstance - Destroyed instance: {instance.name}");
+        }
+    }
+
+    /// <summary>
+    /// 여러 GameObject 비동기 일괄 삭제
+    /// </summary>
+    /// <param name="instances">삭제할 GameObject 목록</param>
+    /// <param name="onComplete">모든 삭제 완료 콜백</param>
+    public void DestroyMultipleAsync(List<GameObject> instances, Action onComplete = null)
+    {
+        if (instances == null || instances.Count == 0)
+        {
+            Debug.LogWarning("[WARNING] ResourceManager::DestroyMultipleAsync - Instances list is null or empty");
+            onComplete?.Invoke();
+            return;
+        }
+
+        Debug.Log($"[INFO] ResourceManager::DestroyMultipleAsync - Destroying {instances.Count} instances");
+
+        // 모든 인스턴스 삭제
+        foreach (var instance in instances)
+        {
+            ReleaseInstance(instance);
+        }
+
+        instances.Clear();
+        Debug.Log("[INFO] ResourceManager::DestroyMultipleAsync - All instances destroyed");
+        onComplete?.Invoke();
+    }
+
+    /// <summary>
+    /// 모든 Addressables 인스턴스 해제
+    /// </summary>
+    public void ReleaseAllInstances()
+    {
+        Debug.Log($"[INFO] ResourceManager::ReleaseAllInstances - Releasing {_instanceHandles.Count} instances");
+
+        // 모든 인스턴스 핸들 해제
+        foreach (var handle in _instanceHandles)
+        {
+            if (handle.IsValid())
+            {
+                Addressables.ReleaseInstance(handle);
+            }
+        }
+
+        _instanceHandles.Clear();
+        Debug.Log("[INFO] ResourceManager::ReleaseAllInstances - All instances released");
     }
 
     #endregion
@@ -352,6 +473,9 @@ public class ResourceManager : Singleton<ResourceManager>
     protected override void OnDestroy()
     {
         base.OnDestroy();
+
+        // 모든 인스턴스 해제
+        ReleaseAllInstances();
 
         // 모든 리소스 해제
         ReleaseAll();
