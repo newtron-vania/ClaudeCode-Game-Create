@@ -18,8 +18,8 @@ public class ResourceManager : Singleton<ResourceManager>
     private Dictionary<string, AsyncOperationHandle> _asyncHandles = new Dictionary<string, AsyncOperationHandle>();
 
     // 프리로드 진행 상황
-    private bool _isPreloading;
-    private float _preloadProgress;
+    private bool _isPreloading = false;
+    private float _preloadProgress = 0f;
 
     /// <summary>
     /// 프리로드 진행 중 여부
