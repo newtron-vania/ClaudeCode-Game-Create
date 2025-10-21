@@ -1,0 +1,41 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbb281ee3bf0b054c82ac2347e9e782c, type: 3}
+  m_Name: Default Local Group
+  m_EditorClassIdentifier: 
+  m_GroupName: Default Local Group
+  m_GUID: 55b20522f248540139abbbfb22732dc1
+  m_SerializeEntries:
+  - m_GUID: 0c23110cfa1ee4ac69f5eb574af0ee6d
+    m_Address: TestSphere
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Sphere
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 7eedd954cdb1a4cf49d233301302f468
+    m_Address: TestCapsule
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Capsule
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: c503346b27eeb4e8aab33bf030c9f0aa
+    m_Address: TestCube
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Cube
+    FlaggedDuringContentUpdateRestriction: 0
+  m_ReadOnly: 0
+  m_Settings: {fileID: 11400000, guid: ec72625323f504af1b5b550e7ee9a408, type: 2}
+  m_SchemaSet:
+    m_Schemas:
+    - {fileID: 11400000, guid: c497515219c784926965befd3804cc80, type: 2}
+    - {fileID: 11400000, guid: 61bbba346870e4f5c9dc15cf77a69ee5, type: 2}
