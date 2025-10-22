@@ -26,6 +26,11 @@ MonoBehaviour:
     m_SerializedLabels:
     - Sphere
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 5287ea88a6401440db61e14db584fc68
+    m_Address: UI/TetrisUIPanel
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 7eedd954cdb1a4cf49d233301302f468
     m_Address: TestCapsule
     m_ReadOnly: 0

@@ -93,19 +93,20 @@ public class UIManager : Singleton<UIManager>
     #region 패널 관리
 
     /// <summary>
-    /// 패널 열기 (Addressables)
+    /// 패널 찾기 또는 생성
+    /// 씬에서 먼저 찾고, 없으면 Addressables로 생성
     /// </summary>
     /// <typeparam name="T">패널 타입</typeparam>
-    /// <param name="address">패널 프리팹 Addressable 주소</param>
+    /// <param name="address">패널 프리팹 Addressable 주소 (씬에 없을 때 사용)</param>
     /// <param name="onComplete">완료 콜백</param>
-    public void OpenPanel<T>(string address, Action<T> onComplete = null) where T : UIPanel
+    public void GetOrCreatePanel<T>(string address, Action<T> onComplete = null) where T : UIPanel
     {
         Type panelType = typeof(T);
 
-        // 이미 열려있으면 무시
+        // 이미 열려있으면 반환
         if (_openPanels.ContainsKey(panelType))
         {
-            Debug.LogWarning($"[WARNING] UIManager::OpenPanel - Panel already open: {panelType.Name}");
+            Debug.Log($"[INFO] UIManager::GetOrCreatePanel - Panel already open: {panelType.Name}");
             onComplete?.Invoke(_openPanels[panelType] as T);
             return;
         }
@@ -117,7 +118,18 @@ public class UIManager : Singleton<UIManager>
             return;
         }
 
+        // 씬에서 패널 찾기
+        T existingPanel = FindObjectOfType<T>();
+        if (existingPanel != null)
+        {
+            Debug.Log($"[INFO] UIManager::GetOrCreatePanel - Found existing panel in scene: {panelType.Name}");
+            _cachedPanels[panelType] = existingPanel;
+            OpenCachedPanel(existingPanel, onComplete);
+            return;
+        }
+
         // Addressables로 패널 프리팹 로드
+        Debug.Log($"[INFO] UIManager::GetOrCreatePanel - Loading panel from Addressables: {address}");
         ResourceManager.Instance.LoadAsync<GameObject>(address, (prefab) =>
         {
             if (prefab != null)
@@ -126,10 +138,61 @@ public class UIManager : Singleton<UIManager>
             }
             else
             {
-                Debug.LogError($"[ERROR] UIManager::OpenPanel - Failed to load panel: {address}");
+                Debug.LogError($"[ERROR] UIManager::GetOrCreatePanel - Failed to load panel: {address}");
                 onComplete?.Invoke(null);
             }
         });
+    }
+
+    /// <summary>
+    /// 패널 열기 (씬에서 찾고, 없으면 Addressables로 생성)
+    /// </summary>
+    /// <typeparam name="T">패널 타입</typeparam>
+    /// <param name="onComplete">완료 콜백</param>
+    public void OpenPanel<T>(Action<T> onComplete = null) where T : UIPanel
+    {
+        Type panelType = typeof(T);
+
+        // 이미 열려있으면 반환
+        if (_openPanels.ContainsKey(panelType))
+        {
+            Debug.Log($"[INFO] UIManager::OpenPanel - Panel already open: {panelType.Name}");
+            onComplete?.Invoke(_openPanels[panelType] as T);
+            return;
+        }
+
+        // 캐시된 패널 확인
+        if (_cachedPanels.TryGetValue(panelType, out UIPanel cachedPanel))
+        {
+            OpenCachedPanel(cachedPanel as T, onComplete);
+            return;
+        }
+
+        // 씬에서 패널 찾기
+        T existingPanel = FindObjectOfType<T>();
+        if (existingPanel != null)
+        {
+            Debug.Log($"[INFO] UIManager::OpenPanel - Found existing panel in scene: {panelType.Name}");
+            _cachedPanels[panelType] = existingPanel;
+            OpenCachedPanel(existingPanel, onComplete);
+            return;
+        }
+
+        // 씬에서 찾지 못했으면 Addressables로 생성 (UI/ 경로 사용)
+        Debug.Log($"[INFO] UIManager::OpenPanel - Panel not found in scene, loading from Addressables: {panelType.Name}");
+        OpenPanel(panelType.Name, onComplete);
+    }
+
+    /// <summary>
+    /// 패널 열기 (Addressables 주소 지정)
+    /// </summary>
+    /// <typeparam name="T">패널 타입</typeparam>
+    /// <param name="address">패널 프리팹 Addressable 주소</param>
+    /// <param name="onComplete">완료 콜백</param>
+    public void OpenPanel<T>(string address, Action<T> onComplete = null) where T : UIPanel
+    {
+        string uiAddress = $"UI/{address}";
+        GetOrCreatePanel(uiAddress, onComplete);
     }
 
     /// <summary>

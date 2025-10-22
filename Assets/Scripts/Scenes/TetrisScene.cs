@@ -13,14 +13,8 @@ public class TetrisScene : BaseScene
     /// </summary>
     public override SceneID SceneID => SceneID.Tetris;
 
-    [Header("UI References")]
-    [SerializeField] private TextMeshProUGUI _scoreText;
-    [SerializeField] private TextMeshProUGUI _linesText;
-    [SerializeField] private TextMeshProUGUI _levelText;
-    [SerializeField] private TextMeshProUGUI _nextPieceText;
-    [SerializeField] private TextMeshProUGUI _gameOverText;
-
     private TetrisData _tetrisData;
+    private TetrisUIPanel _uiPanel;
 
     /// <summary>
     /// 씬 로드 완료 시 호출
@@ -30,6 +24,23 @@ public class TetrisScene : BaseScene
         base.OnSceneLoaded();
 
         Debug.Log("[INFO] TetrisScene::OnSceneLoaded - Initializing Tetris scene");
+
+        // UI 패널 열기
+        UIManager.Instance.OpenPanel<TetrisUIPanel>((panel) =>
+        {
+            if (panel != null)
+            {
+                _uiPanel = panel;
+                Debug.Log("[INFO] TetrisScene::OnSceneLoaded - UI Panel opened");
+            }
+            else
+            {
+                Debug.LogError("[ERROR] TetrisScene::OnSceneLoaded - Failed to open UI Panel");
+            }
+        });
+
+        // 게임 리셋 이벤트 구독
+        MiniGameManager.Instance.OnGameReset += OnGameReset;
 
         // 테트리스 게임 등록 (아직 등록되지 않았다면)
         if (!GameRegistry.Instance.IsGameRegistered("Tetris"))
@@ -42,15 +53,7 @@ public class TetrisScene : BaseScene
 
         if (success)
         {
-            // 데이터 참조 가져오기 (게임 로직은 MiniGameManager의 Update에서 실행됨)
-            // TetrisScene은 UI 업데이트만 담당
             Debug.Log("[INFO] TetrisScene::OnSceneLoaded - Tetris game started successfully");
-
-            // 게임 오버 UI 숨기기
-            if (_gameOverText != null)
-            {
-                _gameOverText.gameObject.SetActive(false);
-            }
         }
         else
         {
@@ -84,34 +87,12 @@ public class TetrisScene : BaseScene
     /// </summary>
     private void UpdateUI()
     {
-        if (_tetrisData == null)
+        if (_tetrisData == null || _uiPanel == null)
         {
             return;
         }
 
-        // 점수 업데이트
-        if (_scoreText != null)
-        {
-            _scoreText.text = $"Score: {_tetrisData.CurrentScore}";
-        }
-
-        // 라인 업데이트
-        if (_linesText != null)
-        {
-            _linesText.text = $"Lines: {_tetrisData.LinesCleared}";
-        }
-
-        // 레벨 업데이트
-        if (_levelText != null)
-        {
-            _levelText.text = $"Level: {_tetrisData.Level}";
-        }
-
-        // 다음 블록 업데이트
-        if (_nextPieceText != null)
-        {
-            _nextPieceText.text = $"Next";
-        }
+        _uiPanel.UpdateAll(_tetrisData);
     }
 
     /// <summary>
@@ -119,15 +100,22 @@ public class TetrisScene : BaseScene
     /// </summary>
     private void CheckGameOver()
     {
-        if (_tetrisData != null && _tetrisData.IsGameOver)
+        if (_tetrisData != null && _tetrisData.IsGameOver && _uiPanel != null)
         {
-            if (_gameOverText != null && !_gameOverText.gameObject.activeSelf)
-            {
-                _gameOverText.gameObject.SetActive(true);
-                _gameOverText.text = $"Game Over!\nScore: {_tetrisData.CurrentScore}\nPress R to Restart";
+            _uiPanel.ShowGameOver(_tetrisData.CurrentScore);
+            Debug.Log($"[INFO] TetrisScene::CheckGameOver - Game Over! Final Score: {_tetrisData.CurrentScore}");
+        }
+    }
 
-                Debug.Log($"[INFO] TetrisScene::CheckGameOver - Game Over! Final Score: {_tetrisData.CurrentScore}");
-            }
+    /// <summary>
+    /// 게임 리셋 이벤트 핸들러
+    /// </summary>
+    private void OnGameReset()
+    {
+        if (_uiPanel != null)
+        {
+            _uiPanel.ResetUI();
+            Debug.Log("[INFO] TetrisScene::OnGameReset - UI reset via event");
         }
     }
 
@@ -137,6 +125,12 @@ public class TetrisScene : BaseScene
     protected override void OnSceneUnloaded()
     {
         base.OnSceneUnloaded();
+
+        // 이벤트 구독 해제
+        if (MiniGameManager.Instance != null)
+        {
+            MiniGameManager.Instance.OnGameReset -= OnGameReset;
+        }
 
         // 현재 게임 언로드
         if (MiniGameManager.Instance != null && MiniGameManager.Instance.CurrentGameID == "Tetris")
@@ -153,9 +147,10 @@ public class TetrisScene : BaseScene
     {
         MiniGameManager.Instance.SwitchGame("Tetris");
 
-        if (_gameOverText != null)
+        // UI 리셋
+        if (_uiPanel != null)
         {
-            _gameOverText.gameObject.SetActive(false);
+            _uiPanel.ResetUI();
         }
 
         Debug.Log("[INFO] TetrisScene::RestartGame - Game restarted");

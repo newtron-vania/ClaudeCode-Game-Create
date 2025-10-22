@@ -416,6 +416,9 @@ public class TetrisGame : IMiniGame
         SpawnNewPiece();
         _data.LastMoveTime = Time.time;
 
+        // UI 리셋 이벤트 발생
+        MiniGameManager.Instance.NotifyGameReset();
+
         Debug.Log("[INFO] TetrisGame::RestartGame - Game restarted");
     }
 }

@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 /// <summary>
@@ -7,6 +8,11 @@ using UnityEngine;
 /// </summary>
 public class MiniGameManager : Singleton<MiniGameManager>
 {
+    /// <summary>
+    /// 게임 리셋 이벤트 (게임 재시작 시 발생)
+    /// </summary>
+    public event Action OnGameReset;
+
     /// <summary>
     /// 현재 실행 중인 미니게임 인스턴스
     /// </summary>
@@ -301,6 +307,16 @@ public class MiniGameManager : Singleton<MiniGameManager>
     {
         IGameData data = GetCurrentGameData();
         return data as T;
+    }
+
+    /// <summary>
+    /// 게임 리셋 알림
+    /// 게임이 재시작될 때 호출하여 UI 등에 리셋을 알립니다.
+    /// </summary>
+    public void NotifyGameReset()
+    {
+        OnGameReset?.Invoke();
+        Debug.Log("[INFO] MiniGameManager::NotifyGameReset - Game reset event triggered");
     }
 
     /// <summary>
