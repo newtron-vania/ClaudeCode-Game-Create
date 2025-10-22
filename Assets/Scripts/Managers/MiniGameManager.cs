@@ -279,6 +279,31 @@ public class MiniGameManager : Singleton<MiniGameManager>
     }
 
     /// <summary>
+    /// 현재 게임 데이터 가져오기 (시각화용)
+    /// </summary>
+    /// <returns>현재 게임의 IGameData (게임이 없으면 null)</returns>
+    public IGameData GetCurrentGameData()
+    {
+        if (_currentGame == null)
+        {
+            return null;
+        }
+
+        return _currentGame.GetData();
+    }
+
+    /// <summary>
+    /// 현재 게임 데이터를 특정 타입으로 가져오기
+    /// </summary>
+    /// <typeparam name="T">IGameData를 구현한 타입</typeparam>
+    /// <returns>캐스팅된 게임 데이터 (실패 시 null)</returns>
+    public T GetCurrentGameData<T>() where T : class, IGameData
+    {
+        IGameData data = GetCurrentGameData();
+        return data as T;
+    }
+
+    /// <summary>
     /// 애플리케이션 종료 시 정리
     /// </summary>
     private void OnApplicationQuit()
