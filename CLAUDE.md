@@ -4,33 +4,45 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**Claude-Undead-Survivor** is a Unity 2D game project using Universal Render Pipeline (URP). This is an early-stage project with minimal code scaffolding currently in place.
+**ClaudeCode-Game-Create** is a Unity 2D game project using Universal Render Pipeline (URP), designed as a multi-minigame platform with a complete manager infrastructure.
 
 - **Unity Version**: 6000.0.58f2 (Unity 6)
 - **Render Pipeline**: Universal Render Pipeline (URP) 17.0.4
 - **2D Framework**: Unity Feature 2D 2.0.1
 - **Input System**: Unity Input System 1.14.2
+- **Resource System**: Unity Addressables 1.22.3
+- **Current Minigame**: Tetris (in development)
 
 ## Project Structure
 
 ```
 Assets/
 ├── Scripts/              # Game scripts (C#)
+│   ├── Core/            # Core systems (Singleton, GameManager, IGameData)
+│   ├── Managers/        # Manager systems (Resource, Pool, Sound, UI, Scene)
+│   ├── GameData/        # Game-specific data classes
+│   ├── UI/              # UI components (UIPanel, FadePanel)
+│   └── Tests/           # Test scripts
 ├── Scenes/               # Unity scene files
-│   └── SampleScene.unity
+│   ├── SampleScene.unity
+│   └── TetrisScene.unity
+├── Docs/                 # Documentation
+│   ├── MANAGERS_GUIDE.md ⚠️ **READ THIS FIRST EVERY SESSION**
+│   ├── Github-Flow.md
+│   ├── SETUP_GUIDE.md
+│   └── [유니티] 개발 표준 v2.md
 ├── Settings/             # URP and rendering settings
 │   ├── Renderer2D.asset
 │   ├── UniversalRP.asset
 │   └── Scenes/
 ├── InputSystem_Actions.inputactions  # Input System configuration
-├── DefaultVolumeProfile.asset
-├── UniversalRenderPipelineGlobalSettings.asset
-├── Github-Flow.md        # Git workflow documentation
-└── [유니티] 개발 표준 v2.md  # Unity development standards (Korean)
+└── DefaultVolumeProfile.asset
 
 .claude/
 ├── UNITY_CONVENTIONS.md      # Unity coding conventions
-└── COMMIT_MESSAGE_RULES.md   # Git commit message rules
+├── COMMIT_MESSAGE_RULES.md   # Git commit message rules
+├── BRANCH_NAMING_RULES.md    # Branch naming conventions
+└── BRANCH_WORKFLOW.md        # Branch task tracking guide
 ```
 
 ## Development Commands
@@ -38,9 +50,19 @@ Assets/
 ### Unity Editor
 ```bash
 # Open project in Unity Editor
-# Use Unity Hub to open: /Users/kimkyeongsoo/Desktop/Unity/Claude-Undead-Survivor
+# Use Unity Hub to open: /Users/kimkyeongsoo/Desktop/Unity/ClaudeCode-Game-Create
 
 # Unity 6 (6000.0.58f2) is required
+```
+
+### Testing
+```bash
+# Run tests via Unity Test Runner (Window → General → Test Runner)
+# Test scripts are located in Assets/Scripts/Tests/
+
+# Example test files:
+# - ManagersTest.cs      # Manager system integration tests
+# - ResourceManagerTest.cs   # Resource loading tests
 ```
 
 ### Build Commands
@@ -273,40 +295,39 @@ private IEnumerator MovePlayerCoroutine(Vector3 destination)
 }
 ```
 
-### Singleton Pattern (When Needed)
+### Addressables Resource Loading
 ```csharp
-public class GameManager : MonoBehaviour
-{
-    private static GameManager _instance;
-
-    public static GameManager Instance
-    {
-        get
-        {
-            if (_instance == null)
-            {
-                _instance = FindObjectOfType<GameManager>();
-                if (_instance == null)
-                {
-                    GameObject obj = new GameObject(nameof(GameManager));
-                    _instance = obj.AddComponent<GameManager>();
-                }
-            }
-            return _instance;
-        }
+// ALWAYS use ResourceManager for resource loading
+ResourceManager.Instance.LoadAsync<GameObject>("Prefabs/Enemy", (prefab) => {
+    if (prefab != null) {
+        // Use prefab
     }
+});
 
-    private void Awake()
+// For instantiation with pooling (RECOMMENDED)
+ResourceManager.Instance.InstantiateAsync("Prefabs/Enemy", transform, (instance) => {
+    instance.transform.position = spawnPoint;
+});
+
+// Release when done
+ResourceManager.Instance.ReleaseInstance(instance);
+```
+
+### Manager Usage Pattern
+```csharp
+// Use existing managers instead of creating custom implementations
+public class MyGameController : MonoBehaviour
+{
+    private void Start()
     {
-        if (_instance == null)
-        {
-            _instance = this;
-            DontDestroyOnLoad(gameObject);
-        }
-        else
-        {
-            Destroy(gameObject);
-        }
+        // Load resources
+        ResourceManager.Instance.LoadAsync<AudioClip>("Audio/BGM/Theme", (clip) => {
+            // Play BGM
+            SoundManager.Instance.PlayBGM("Audio/BGM/Theme");
+        });
+
+        // Get game data
+        var gameData = GameManager<TetrisGameData>.Instance.CurrentGameData;
     }
 }
 ```

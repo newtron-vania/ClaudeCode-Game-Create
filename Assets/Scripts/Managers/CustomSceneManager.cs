@@ -47,6 +47,16 @@ public class CustomSceneManager : Singleton<CustomSceneManager>
     #region 씬 로드 (동기)
 
     /// <summary>
+    /// 씬 로드 (SceneID 기반)
+    /// </summary>
+    /// <param name="sceneID">씬 ID</param>
+    public void LoadScene(SceneID sceneID)
+    {
+        string sceneName = sceneID.ToString();
+        LoadScene(sceneName);
+    }
+
+    /// <summary>
     /// 씬 로드 (동기)
     /// </summary>
     /// <param name="sceneName">씬 이름</param>
@@ -187,6 +197,17 @@ public class CustomSceneManager : Singleton<CustomSceneManager>
     #region 로딩 화면과 함께 씬 전환
 
     /// <summary>
+    /// 로딩 화면과 함께 씬 로드 (SceneID 기반)
+    /// </summary>
+    /// <param name="sceneID">씬 ID</param>
+    /// <param name="minimumLoadTime">최소 로딩 시간 (초)</param>
+    public void LoadSceneWithLoadingScreen(SceneID sceneID, float minimumLoadTime = -1f)
+    {
+        string sceneName = sceneID.ToString();
+        LoadSceneWithLoading(sceneName, minimumLoadTime);
+    }
+
+    /// <summary>
     /// 로딩 화면과 함께 씬 로드
     /// </summary>
     /// <param name="sceneName">씬 이름</param>
@@ -258,6 +279,33 @@ public class CustomSceneManager : Singleton<CustomSceneManager>
 
         _isLoading = false;
         Debug.Log($"[INFO] CustomSceneManager::LoadSceneWithLoadingCoroutine - Scene loaded: {sceneName}");
+    }
+
+    /// <summary>
+    /// 페이드 효과와 함께 씬 로드 (SceneID 기반)
+    /// </summary>
+    /// <param name="sceneID">씬 ID</param>
+    /// <param name="fadeDuration">페이드 지속 시간</param>
+    public void LoadSceneWithFade(SceneID sceneID, float fadeDuration = 0.5f)
+    {
+        StartCoroutine(LoadSceneWithFadeCoroutine(sceneID.ToString(), fadeDuration));
+    }
+
+    /// <summary>
+    /// 페이드 효과와 함께 씬 로드 코루틴
+    /// </summary>
+    private IEnumerator LoadSceneWithFadeCoroutine(string sceneName, float fadeDuration)
+    {
+        // 페이드 인
+        UIManager.Instance.FadeIn(fadeDuration);
+        yield return new WaitForSeconds(fadeDuration);
+
+        // 씬 로드
+        LoadScene(sceneName);
+
+        // 페이드 아웃
+        UIManager.Instance.FadeOut(fadeDuration);
+        yield return new WaitForSeconds(fadeDuration);
     }
 
     #endregion
