@@ -1,3 +1,4 @@
+using TMPro;
 using UnityEngine;
 
 /// <summary>
@@ -13,11 +14,11 @@ public class TetrisScene : BaseScene
     public override SceneID SceneID => SceneID.Tetris;
 
     [Header("UI References")]
-    [SerializeField] private UnityEngine.UI.Text _scoreText;
-    [SerializeField] private UnityEngine.UI.Text _linesText;
-    [SerializeField] private UnityEngine.UI.Text _levelText;
-    [SerializeField] private UnityEngine.UI.Text _nextPieceText;
-    [SerializeField] private UnityEngine.UI.Text _gameOverText;
+    [SerializeField] private TextMeshProUGUI _scoreText;
+    [SerializeField] private TextMeshProUGUI _linesText;
+    [SerializeField] private TextMeshProUGUI _levelText;
+    [SerializeField] private TextMeshProUGUI _nextPieceText;
+    [SerializeField] private TextMeshProUGUI _gameOverText;
 
     private TetrisData _tetrisData;
 
@@ -65,15 +66,10 @@ public class TetrisScene : BaseScene
     {
         base.Update();
 
-        // 데이터 참조 갱신 (매 프레임 체크)
+        // 데이터 참조 갱신
         if (_tetrisData == null && MiniGameManager.Instance.IsGameRunning)
         {
-            IGameData gameData = MiniGameManager.Instance.CurrentGameID == "Tetris"
-                ? MiniGameManager.Instance.CommonData.GetType().GetProperty("CurrentGameData")?.GetValue(MiniGameManager.Instance.CommonData) as IGameData
-                : null;
-
-            // 간단한 방법: MiniGameManager에서 직접 데이터 가져오기
-            // 실제로는 MiniGameManager에 GetCurrentGameData() 메서드 추가 권장
+            _tetrisData = MiniGameManager.Instance.GetCurrentGameData<TetrisData>();
         }
 
         // UI 업데이트
@@ -88,8 +84,6 @@ public class TetrisScene : BaseScene
     /// </summary>
     private void UpdateUI()
     {
-        // TODO: MiniGameManager에서 현재 게임 데이터를 가져올 수 있는 메서드 필요
-        // 현재는 임시로 null 체크만 수행
         if (_tetrisData == null)
         {
             return;
@@ -116,7 +110,7 @@ public class TetrisScene : BaseScene
         // 다음 블록 업데이트
         if (_nextPieceText != null)
         {
-            _nextPieceText.text = $"Next: {_tetrisData.NextPiece.Type}";
+            _nextPieceText.text = $"Next";
         }
     }
 

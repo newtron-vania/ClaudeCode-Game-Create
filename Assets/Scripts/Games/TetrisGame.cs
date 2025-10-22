@@ -39,9 +39,15 @@ public class TetrisGame : IMiniGame
         // InputManager 이벤트 구독
         InputManager.Instance.OnInputEvent += HandleInput;
 
-        // 첫 블록 생성
+        // NextPieces 큐 초기화 (3개)
+        _data.NextPieces.Clear();
+        for (int i = 0; i < 3; i++)
+        {
+            _data.NextPieces.Add(TetrisPiece.CreateRandom(0, 0));
+        }
+
+        // 첫 블록 생성 - NextPieces의 첫 번째를 CurrentPiece로
         SpawnNewPiece();
-        SpawnNextPiece();
 
         _data.LastMoveTime = Time.time;
         _data.PlayTime = 0f;
@@ -105,7 +111,7 @@ public class TetrisGame : IMiniGame
     /// <param name="inputData">입력 이벤트 데이터</param>
     private void HandleInput(InputEventData inputData)
     {
-        if (!_isInitialized || _data.IsGameOver)
+        if (!_isInitialized)
         {
             return;
         }
@@ -113,6 +119,19 @@ public class TetrisGame : IMiniGame
         // 키보드 입력만 처리
         if (inputData.Type == InputType.KeyDown)
         {
+            // R키는 게임 오버 상태에서도 처리
+            if (inputData.KeyCode == KeyCode.R)
+            {
+                RestartGame();
+                return;
+            }
+
+            // 게임 오버 상태에서는 R키 외 다른 입력 무시
+            if (_data.IsGameOver)
+            {
+                return;
+            }
+
             switch (inputData.KeyCode)
             {
                 case KeyCode.LeftArrow:
@@ -127,21 +146,22 @@ public class TetrisGame : IMiniGame
 
                 case KeyCode.DownArrow:
                 case KeyCode.S:
-                    MovePieceDown();
+                    if (!MovePieceDown())
+                    {
+                        // 바닥에 도달했으면 즉시 고정
+                        LockPiece();
+                        ClearLines();
+                        SpawnNewPiece();
+                    }
                     break;
 
                 case KeyCode.UpArrow:
                 case KeyCode.W:
-                case KeyCode.Space:
                     RotatePiece();
                     break;
 
-                case KeyCode.Return:
+                case KeyCode.Space:
                     HardDrop();
-                    break;
-
-                case KeyCode.R:
-                    RestartGame();
                     break;
             }
         }
@@ -152,13 +172,19 @@ public class TetrisGame : IMiniGame
     /// </summary>
     private void SpawnNewPiece()
     {
-        // 다음 블록을 현재 블록으로 이동
-        _data.CurrentPiece = _data.NextPiece;
-        _data.CurrentPiece.X = TetrisData.BOARD_WIDTH / 2;
-        _data.CurrentPiece.Y = 0;
+        // NextPieces 큐에서 첫 번째를 CurrentPiece로 이동
+        if (_data.NextPieces.Count > 0)
+        {
+            _data.CurrentPiece = _data.NextPieces[0];
+            _data.CurrentPiece.X = TetrisData.BOARD_WIDTH / 2;
+            _data.CurrentPiece.Y = 0;
 
-        // 새 다음 블록 생성
-        SpawnNextPiece();
+            // 큐에서 제거
+            _data.NextPieces.RemoveAt(0);
+
+            // 새 블록을 큐 끝에 추가
+            _data.NextPieces.Add(TetrisPiece.CreateRandom(0, 0));
+        }
 
         // 게임 오버 체크 (생성 위치에 이미 블록이 있으면)
         if (IsCollision(_data.CurrentPiece))
@@ -173,14 +199,6 @@ public class TetrisGame : IMiniGame
             int goldReward = _data.CurrentScore / 100;
             _commonData.AddGold(goldReward);
         }
-    }
-
-    /// <summary>
-    /// 다음 블록 미리 생성
-    /// </summary>
-    private void SpawnNextPiece()
-    {
-        _data.NextPiece = TetrisPiece.CreateRandom(0, 0);
     }
 
     /// <summary>
@@ -387,8 +405,15 @@ public class TetrisGame : IMiniGame
     private void RestartGame()
     {
         _data.Reset();
+
+        // NextPieces 큐 재초기화 (3개)
+        _data.NextPieces.Clear();
+        for (int i = 0; i < 3; i++)
+        {
+            _data.NextPieces.Add(TetrisPiece.CreateRandom(0, 0));
+        }
+
         SpawnNewPiece();
-        SpawnNextPiece();
         _data.LastMoveTime = Time.time;
 
         Debug.Log("[INFO] TetrisGame::RestartGame - Game restarted");
