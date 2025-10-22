@@ -133,6 +133,16 @@ public class TetrisGameData : IGameData
         return isValid;
     }
 
+    public void SaveState()
+    {
+        throw new System.NotImplementedException();
+    }
+
+    public void LoadState()
+    {
+        throw new System.NotImplementedException();
+    }
+
     /// <summary>
     /// 블록 배치 시 호출
     /// </summary>
