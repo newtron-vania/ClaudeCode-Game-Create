@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
@@ -26,9 +27,24 @@ public class TetrisData : IGameData
     public TetrisPiece CurrentPiece;
 
     /// <summary>
-    /// 다음 블록 (미리보기)
+    /// 다음 블록 큐 (3개 미리보기)
     /// </summary>
-    public TetrisPiece NextPiece;
+    public List<TetrisPiece> NextPieces;
+
+    /// <summary>
+    /// 다음 블록 (미리보기) - NextPieces[0]을 반환하는 프로퍼티
+    /// </summary>
+    public TetrisPiece NextPiece
+    {
+        get
+        {
+            if (NextPieces != null && NextPieces.Count > 0)
+            {
+                return NextPieces[0];
+            }
+            return new TetrisPiece(); // 빈 블록 반환
+        }
+    }
 
     /// <summary>
     /// 현재 점수
@@ -72,7 +88,7 @@ public class TetrisData : IGameData
     {
         BoardState = new int[BOARD_HEIGHT, BOARD_WIDTH];
         CurrentPiece = new TetrisPiece();
-        NextPiece = new TetrisPiece();
+        NextPieces = new List<TetrisPiece>();
         CurrentScore = 0;
         LinesCleared = 0;
         Level = 1;
