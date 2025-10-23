@@ -4,39 +4,61 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**ClaudeCode-Game-Create** is a Unity 2D game project using Universal Render Pipeline (URP), designed as a multi-minigame platform with a complete manager infrastructure.
+**ClaudeCode-Game-Create** is a Unity 2D multi-minigame platform with pluggable game architecture using Universal Render Pipeline (URP).
 
 - **Unity Version**: 6000.0.58f2 (Unity 6)
 - **Render Pipeline**: Universal Render Pipeline (URP) 17.0.4
 - **2D Framework**: Unity Feature 2D 2.0.1
 - **Input System**: Unity Input System 1.14.2
 - **Resource System**: Unity Addressables 1.22.3
-- **Current Minigame**: Tetris (in development)
+- **Architecture**: IMiniGame interface + GameRegistry pattern
+- **Implemented Games**: Tetris
+- **Game Select Scene**: GameSelectScene (main menu)
 
 ## Project Structure
 
 ```
 Assets/
-├── Scripts/              # Game scripts (C#)
-│   ├── Core/            # Core systems (Singleton, GameManager, IGameData)
-│   ├── Managers/        # Manager systems (Resource, Pool, Sound, UI, Scene)
-│   ├── GameData/        # Game-specific data classes
-│   ├── UI/              # UI components (UIPanel, FadePanel)
-│   └── Tests/           # Test scripts
-├── Scenes/               # Unity scene files
-│   ├── SampleScene.unity
-│   └── TetrisScene.unity
-├── Docs/                 # Documentation
-│   ├── MANAGERS_GUIDE.md ⚠️ **READ THIS FIRST EVERY SESSION**
+├── Scripts/
+│   ├── Core/                # Platform architecture
+│   │   ├── IMiniGame.cs    # All games implement this interface
+│   │   ├── IGameData.cs    # Game-specific data interface
+│   │   ├── GameRegistry.cs # Game factory registration
+│   │   ├── Singleton.cs    # Generic singleton base class
+│   │   └── BaseScene.cs    # Scene base class
+│   ├── Managers/           # Infrastructure managers
+│   │   ├── MiniGameManager.cs     # Game lifecycle & switching
+│   │   ├── ResourceManager.cs     # Addressables loading
+│   │   ├── PoolManager.cs         # GameObject pooling
+│   │   ├── SoundManager.cs        # BGM/SFX audio
+│   │   ├── UIManager.cs           # UI panel management
+│   │   ├── CustomSceneManager.cs  # Scene transitions
+│   │   └── InputManager.cs        # Input event distribution
+│   ├── GameData/           # Per-game data implementations
+│   │   └── TetrisGameData.cs
+│   ├── UI/                 # UI components
+│   │   ├── UIPanel.cs      # Base class for all UI panels
+│   │   ├── FadePanel.cs    # Screen fade effects
+│   │   └── TetrisUIPanel.cs
+│   ├── Scenes/             # Scene controllers
+│   │   └── TetrisScene.cs
+│   └── Tests/              # Test scripts
+├── Scenes/
+│   ├── GameSelectScene.unity   # Game selection menu (entry point)
+│   └── Tetris.unity            # Tetris game scene
+├── Resources/              # Addressables resources
+│   ├── Prefabs/
+│   │   └── UI/             # UI prefabs for dynamic loading
+│   └── Sprite/
+├── Docs/                   # Documentation
+│   ├── MANAGERS_GUIDE.md   ⚠️ **READ THIS FIRST EVERY SESSION**
 │   ├── Github-Flow.md
 │   ├── SETUP_GUIDE.md
 │   └── [유니티] 개발 표준 v2.md
-├── Settings/             # URP and rendering settings
+├── Settings/               # URP and rendering settings
 │   ├── Renderer2D.asset
-│   ├── UniversalRP.asset
-│   └── Scenes/
-├── InputSystem_Actions.inputactions  # Input System configuration
-└── DefaultVolumeProfile.asset
+│   └── UniversalRP.asset
+└── InputSystem_Actions.inputactions
 
 .claude/
 ├── UNITY_CONVENTIONS.md      # Unity coding conventions
@@ -70,34 +92,60 @@ Unity builds are managed through the Unity Editor. No CLI build commands are con
 
 ## Code Architecture
 
-### Current State
-This project has implemented a complete **Manager System** for core game infrastructure:
+### Multi-Minigame Platform Architecture
 
-**Implemented Managers** (See `Assets/Docs/MANAGERS_GUIDE.md` for detailed usage):
-- `Singleton<T>`: Generic singleton base class
-- `GameManager<T>`: Generic game manager with data management
-- `ResourceManager`: Addressables resource loading with PoolManager integration
-- `PoolManager`: GameObject pooling for performance optimization
-- `SoundManager`: Audio management (BGM/SFX with volume control)
-- `UIManager`: UI panel and popup management with fade effects
-- `CustomSceneManager`: Scene loading with transitions and loading screens
+This project uses a **pluggable game architecture** that allows adding new games without modifying core platform code:
+
+**Core Pattern (OCP - Open/Closed Principle)**:
+```
+1. GameRegistry: Factory pattern for game registration
+2. MiniGameManager: Manages game lifecycle (load/unload/switch)
+3. IMiniGame Interface: All games implement this contract
+4. IGameData Interface: Game-specific data structure
+```
+
+**How Games Work Together**:
+```
+SampleScene (GameSelect)
+    ↓ User selects game
+MiniGameManager.LoadGame("Tetris")
+    ↓ Creates via GameRegistry
+TetrisGame (IMiniGame implementation)
+    ↓ Runs in Tetris.unity scene
+User returns → Unload → Back to SampleScene
+```
+
+**Adding a New Game** (3 steps):
+1. Create `MyGameData : IGameData` class
+2. Create `MyGame : IMiniGame` implementation
+3. Register in GameRegistry: `GameRegistry.Instance.RegisterGame("MyGame", () => new MyGame())`
+
+### Infrastructure Managers
 
 **⚠️ IMPORTANT: Read Manager Guide First**
 At the start of each work session, you MUST read:
 ```
 Assets/Docs/MANAGERS_GUIDE.md
 ```
-This file contains complete API documentation and usage patterns. Always use these managers instead of implementing similar functionality manually.
+
+**Implemented Managers** (See guide for complete API):
+- `MiniGameManager`: Game lifecycle, switching, common player data
+- `ResourceManager`: Addressables resource loading with PoolManager integration
+- `PoolManager`: GameObject pooling for performance optimization
+- `SoundManager`: Audio management (BGM/SFX with volume control)
+- `UIManager`: UI panel and popup management with fade effects
+- `CustomSceneManager`: Scene loading with transitions and loading screens
+- `InputManager`: Event-based input distribution to active game
 
 ### Architecture Principles
-Based on Unity development standards, the project follows:
 
-1. **MonoBehaviour Pattern**: Game logic components inherit from `MonoBehaviour`
-2. **Manager Pattern**: Singleton managers for global systems (already implemented)
-3. **Component-Based Design**: Separate components for different gameplay systems
-4. **ScriptableObject Data**: Configuration and game data stored as ScriptableObjects
-5. **Object Pooling**: Use PoolManager for frequent GameObject instantiation
-6. **Resource Loading**: Use ResourceManager (Addressables) for all asset loading
+1. **IMiniGame Contract**: All games implement Initialize/StartGame/Update/Cleanup/GetData
+2. **Manager Pattern**: Singleton managers for global infrastructure
+3. **Factory Pattern**: GameRegistry creates game instances on demand
+4. **Event-Driven Input**: InputManager broadcasts events, games subscribe
+5. **Addressables**: All runtime resource loading uses ResourceManager
+6. **Object Pooling**: PoolManager for frequent GameObject instantiation
+7. **Scene Separation**: GameSelect scene + per-game scenes
 
 ## Coding Conventions
 
@@ -314,8 +362,9 @@ ResourceManager.Instance.ReleaseInstance(instance);
 ```
 
 ### Manager Usage Pattern
+
+**Basic Manager Usage**:
 ```csharp
-// Use existing managers instead of creating custom implementations
 public class MyGameController : MonoBehaviour
 {
     private void Start()
@@ -326,10 +375,68 @@ public class MyGameController : MonoBehaviour
             SoundManager.Instance.PlayBGM("Audio/BGM/Theme");
         });
 
-        // Get game data
-        var gameData = GameManager<TetrisGameData>.Instance.CurrentGameData;
+        // Get current game data
+        var gameData = MiniGameManager.Instance.GetCurrentGameData<TetrisGameData>();
     }
 }
+```
+
+**Implementing a New Minigame**:
+```csharp
+// 1. Create game data
+public class MyGameData : IGameData
+{
+    public int Score;
+    public void Initialize() { Score = 0; }
+    public void Reset() { Initialize(); }
+    public bool Validate() { return Score >= 0; }
+    public void SaveState() { /* PlayerPrefs or file save */ }
+    public void LoadState() { /* PlayerPrefs or file load */ }
+}
+
+// 2. Implement IMiniGame
+public class MyGame : IMiniGame
+{
+    private MyGameData _data;
+    private CommonPlayerData _commonData;
+
+    public void Initialize(CommonPlayerData commonData)
+    {
+        _commonData = commonData;
+        _data = new MyGameData();
+        _data.Initialize();
+    }
+
+    public void StartGame()
+    {
+        // Subscribe to input
+        InputManager.Instance.OnInputEvent += HandleInput;
+    }
+
+    public void Update(float deltaTime)
+    {
+        // Game loop logic
+    }
+
+    public void Cleanup()
+    {
+        // MUST unsubscribe
+        InputManager.Instance.OnInputEvent -= HandleInput;
+    }
+
+    public IGameData GetData() => _data;
+
+    private void HandleInput(InputEventData inputData)
+    {
+        // Handle input events
+    }
+}
+
+// 3. Register in GameRegistry (typically in scene Awake or static constructor)
+GameRegistry.Instance.RegisterGame("MyGame", () => new MyGame());
+
+// 4. Load the game
+MiniGameManager.Instance.LoadGame("MyGame");
 ```
 
 ## Branch Workflow Management

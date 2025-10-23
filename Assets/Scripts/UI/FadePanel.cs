@@ -82,6 +82,7 @@ public class FadePanel : UIPanel
         _fadeCoroutine = StartCoroutine(FadeCoroutine(1f, 0f, duration, () =>
         {
             Close();
+            gameObject.SetActive(false); // 페이드 아웃 완료 후 비활성화
             onComplete?.Invoke();
         }));
     }

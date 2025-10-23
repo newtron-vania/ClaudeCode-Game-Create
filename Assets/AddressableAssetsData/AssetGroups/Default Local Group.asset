@@ -26,8 +26,23 @@ MonoBehaviour:
     m_SerializedLabels:
     - Sphere
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 0c8f3b873f50347a0acbe0f7963c1cd0
+    m_Address: Sprite/Tetris_icon
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 44866435d3d6c45949d72ca1c273c4c4
+    m_Address: UI/SubItem/GameSelectButton
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 5287ea88a6401440db61e14db584fc68
     m_Address: UI/TetrisUIPanel
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 62ddcf2aae02e43179a17a2137e10f6a
+    m_Address: UI/GameSelectUIPanel
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0

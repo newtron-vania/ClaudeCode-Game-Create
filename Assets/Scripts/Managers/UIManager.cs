@@ -363,6 +363,12 @@ public class UIManager : Singleton<UIManager>
     {
         if (_fadePanel != null)
         {
+            // FadePanel이 활성화되어 있지 않으면 활성화
+            if (!_fadePanel.gameObject.activeSelf)
+            {
+                _fadePanel.gameObject.SetActive(true);
+            }
+
             _fadePanel.FadeIn(duration, onComplete);
         }
         else
@@ -380,6 +386,12 @@ public class UIManager : Singleton<UIManager>
     {
         if (_fadePanel != null)
         {
+            // FadePanel이 활성화되어 있지 않으면 활성화
+            if (!_fadePanel.gameObject.activeSelf)
+            {
+                _fadePanel.gameObject.SetActive(true);
+            }
+
             _fadePanel.FadeIn(onComplete);
         }
         else
@@ -398,6 +410,12 @@ public class UIManager : Singleton<UIManager>
     {
         if (_fadePanel != null)
         {
+            // FadePanel이 활성화되어 있지 않으면 활성화
+            if (!_fadePanel.gameObject.activeSelf)
+            {
+                _fadePanel.gameObject.SetActive(true);
+            }
+
             _fadePanel.FadeOut(duration, onComplete);
         }
         else
@@ -415,6 +433,12 @@ public class UIManager : Singleton<UIManager>
     {
         if (_fadePanel != null)
         {
+            // FadePanel이 활성화되어 있지 않으면 활성화
+            if (!_fadePanel.gameObject.activeSelf)
+            {
+                _fadePanel.gameObject.SetActive(true);
+            }
+
             _fadePanel.FadeOut(onComplete);
         }
         else
