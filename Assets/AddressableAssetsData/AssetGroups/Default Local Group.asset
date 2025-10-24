@@ -16,18 +16,12 @@ MonoBehaviour:
   m_GUID: 55b20522f248540139abbbfb22732dc1
   m_SerializeEntries:
   - m_GUID: 018366fd6dc8e485b992546c0c293811
-    m_Address: Sprite/Tile
+    m_Address: Sprites/Tile
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 0c23110cfa1ee4ac69f5eb574af0ee6d
-    m_Address: TestSphere
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - Sphere
-    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 0c8f3b873f50347a0acbe0f7963c1cd0
-    m_Address: Sprite/Tetris_icon
+    m_Address: Sprites/Tetris_icon
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
@@ -45,18 +39,6 @@ MonoBehaviour:
     m_Address: UI/GameSelectUIPanel
     m_ReadOnly: 0
     m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 7eedd954cdb1a4cf49d233301302f468
-    m_Address: TestCapsule
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - Capsule
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: c503346b27eeb4e8aab33bf030c9f0aa
-    m_Address: TestCube
-    m_ReadOnly: 0
-    m_SerializedLabels:
-    - Cube
     FlaggedDuringContentUpdateRestriction: 0
   m_ReadOnly: 0
   m_Settings: {fileID: 11400000, guid: ec72625323f504af1b5b550e7ee9a408, type: 2}

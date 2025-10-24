@@ -87,7 +87,7 @@ public class GameSelectButton : MonoBehaviour
 
     /// <summary>
     /// Addressables를 통해 게임 아이콘 스프라이트 로드
-    /// 스프라이트 주소: "Sprite/{GameID}_icon"
+    /// 스프라이트 주소: "Sprites/{GameID}_icon"
     /// </summary>
     private void LoadIcon()
     {
@@ -97,7 +97,7 @@ public class GameSelectButton : MonoBehaviour
             return;
         }
 
-        string iconAddress = $"Sprite/{_gameID}_icon";
+        string iconAddress = $"Sprites/{_gameID}_icon";
 
         ResourceManager.Instance.LoadAsync<Sprite>(iconAddress, (sprite) =>
         {
@@ -141,7 +141,7 @@ public class GameSelectButton : MonoBehaviour
         // 스프라이트 리소스 해제
         if (!string.IsNullOrEmpty(_gameID))
         {
-            string iconAddress = $"Sprite/{_gameID}_icon";
+            string iconAddress = $"Sprites/{_gameID}_icon";
             ResourceManager.Instance.Release(iconAddress);
         }
     }

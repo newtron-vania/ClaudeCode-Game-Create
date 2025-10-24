@@ -92,6 +92,68 @@ Unity builds are managed through the Unity Editor. No CLI build commands are con
 
 ## Code Architecture
 
+### ⚠️ CRITICAL: Manager System Documentation
+
+**MUST READ AT START OF EVERY SESSION**: Before any code changes, read `Assets/Docs/MANAGERS_GUIDE.md`
+
+This guide contains:
+- Complete API reference for all 6 managers
+- Usage patterns and best practices
+- Integration examples
+- Memory management guidelines
+- Performance optimization tips
+
+**Why this is critical**:
+- Prevents reimplementing existing functionality
+- Ensures proper manager usage patterns
+- Avoids common integration mistakes
+- Maintains code consistency across the project
+
+### Game Selection UI System
+
+**Entry Point**: MainMenuScene (GameSelectScene.unity)
+
+The game selection system dynamically generates UI buttons based on available games:
+
+**Components**:
+- `MainMenuScene`: Scene controller that loads GameSelectUIPanel
+- `GameSelectUIPanel`: Dynamically creates game buttons from GamePlayList
+- `GameSelectButton`: Individual game button with icon loading
+- `GamePlayList`: Maintains list of available games
+
+**How it works**:
+```
+1. MainMenuScene loads GameSelectUIPanel via UIManager
+2. GameSelectUIPanel reads playable games from GamePlayList
+3. For each game, creates GameSelectButton from "SubItem/GameSelectButton"
+4. GameSelectButton loads icon sprite from "Sprite/{GameID}_icon"
+5. On click, transitions to game scene via CustomSceneManager
+```
+
+**Adding a new game to selection menu**:
+1. Register game in GameRegistry
+2. Add GameInfo to GamePlayList with gameID matching scene name
+3. Place icon sprite at Addressables path: `Sprite/{GameID}_icon`
+4. Game will automatically appear in selection menu
+
+**Addressables Path Conventions**:
+```csharp
+// UI Prefabs
+"UI/{PanelName}"              // Main UI panels
+"SubItem/{ComponentName}"     // UI sub-components
+
+// Sprites
+"Sprite/{GameID}_icon"        // Game selection icons
+"Sprite/{SpriteName}"         // General sprites
+
+// Prefabs
+"Prefabs/{ObjectName}"        // Game objects
+
+// Audio
+"Audio/BGM/{TrackName}"       // Background music
+"Audio/SFX/{EffectName}"      // Sound effects
+```
+
 ### Multi-Minigame Platform Architecture
 
 This project uses a **pluggable game architecture** that allows adding new games without modifying core platform code:
@@ -106,13 +168,13 @@ This project uses a **pluggable game architecture** that allows adding new games
 
 **How Games Work Together**:
 ```
-SampleScene (GameSelect)
-    ↓ User selects game
-MiniGameManager.LoadGame("Tetris")
-    ↓ Creates via GameRegistry
-TetrisGame (IMiniGame implementation)
+GameSelectScene (MainMenu)
+    ↓ User selects game via UI button
+CustomSceneManager.LoadScene("Tetris")
+    ↓ Scene loads
+TetrisScene initializes TetrisGame
     ↓ Runs in Tetris.unity scene
-User returns → Unload → Back to SampleScene
+User returns → Back to GameSelectScene
 ```
 
 **Adding a New Game** (3 steps):
@@ -122,13 +184,7 @@ User returns → Unload → Back to SampleScene
 
 ### Infrastructure Managers
 
-**⚠️ IMPORTANT: Read Manager Guide First**
-At the start of each work session, you MUST read:
-```
-Assets/Docs/MANAGERS_GUIDE.md
-```
-
-**Implemented Managers** (See guide for complete API):
+**Implemented Managers** (See `Assets/Docs/MANAGERS_GUIDE.md` for complete API):
 - `MiniGameManager`: Game lifecycle, switching, common player data
 - `ResourceManager`: Addressables resource loading with PoolManager integration
 - `PoolManager`: GameObject pooling for performance optimization
@@ -501,13 +557,14 @@ See `.claude/BRANCH_WORKFLOW.md` for detailed workflow guide.
 
 ## Important Notes
 
-1. **Manager System First** - ALWAYS use existing managers (ResourceManager, PoolManager, SoundManager, UIManager, CustomSceneManager) instead of implementing similar functionality
-2. **Read MANAGERS_GUIDE.md** - At the start of EVERY work session, read `Assets/Docs/MANAGERS_GUIDE.md`
+1. **⚠️ READ MANAGERS_GUIDE.md FIRST** - At the start of EVERY work session, read `Assets/Docs/MANAGERS_GUIDE.md` before making ANY code changes
+2. **Manager System First** - ALWAYS use existing managers (ResourceManager, PoolManager, SoundManager, UIManager, CustomSceneManager, MiniGameManager) instead of implementing similar functionality
 3. **This is a Korean-language project** - Documentation and comments may be in Korean
 4. **Strict convention compliance** - Follow naming and style rules exactly as specified
 5. **Complete implementations only** - No TODOs, no placeholders, no mock data
 6. **Unity 6 features** - Take advantage of latest Unity 6 capabilities when appropriate
 7. **2D game focus** - This is specifically a 2D game using URP's 2D renderer
+8. **Addressables paths** - Follow the path conventions documented in Game Selection UI System section
 
 ## Language Policy
 
