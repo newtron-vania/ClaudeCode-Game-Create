@@ -9,6 +9,7 @@
 4. [UIManager](#uimanager) - UI 패널 관리
 5. [CustomSceneManager](#customscenemanager) - 씬 전환
 6. [GameManager](#gamemanager) - 게임 상태 관리
+7. [DataManager](#datamanager) - 게임 데이터 제공자 관리
 
 ---
 
@@ -518,6 +519,239 @@ public class MyGameData : IGameData
     }
 }
 ```
+
+---
+
+## DataManager
+
+**역할**: 게임별 데이터 제공자를 중앙에서 관리하며, 게임 데이터의 라이프사이클을 제어
+
+### 🎯 주요 기능
+
+#### 1. 데이터 제공자 등록 및 초기화
+
+```csharp
+// 데이터 제공자 등록 (게임 시작 시 한 번만 실행)
+public class GameInitializer : MonoBehaviour
+{
+    private void Awake()
+    {
+        // UndeadSurvivor 데이터 제공자 등록
+        var undeadProvider = new UndeadSurvivorDataProvider();
+        DataManager.Instance.RegisterProvider(undeadProvider);
+
+        // 다른 게임 데이터 제공자 등록
+        // DataManager.Instance.RegisterProvider(new TetrisDataProvider());
+    }
+}
+
+// 제공자 존재 여부 확인
+if (DataManager.Instance.HasProvider("UndeadSurvivor"))
+{
+    Debug.Log("UndeadSurvivor 데이터 제공자가 등록됨");
+}
+```
+
+#### 2. 게임 데이터 로드 및 언로드
+
+```csharp
+// 게임 시작 시 데이터 로드
+DataManager.Instance.LoadGameData("UndeadSurvivor");
+
+// 데이터 로드 상태 확인
+if (DataManager.Instance.IsGameDataLoaded("UndeadSurvivor"))
+{
+    Debug.Log("UndeadSurvivor 데이터가 로드됨");
+}
+
+// 게임 종료 시 데이터 언로드 (메모리 정리)
+DataManager.Instance.UnloadGameData("UndeadSurvivor");
+
+// 모든 게임 데이터 언로드
+DataManager.Instance.UnloadAllGameData();
+```
+
+#### 3. 데이터 제공자 조회 및 사용
+
+```csharp
+// 제공자 인스턴스 가져오기
+var provider = DataManager.Instance.GetProvider<UndeadSurvivorDataProvider>("UndeadSurvivor");
+
+if (provider != null && provider.IsLoaded)
+{
+    // 몬스터 데이터 조회
+    MonsterData monster = provider.GetMonsterData(1001);
+    Debug.Log($"몬스터: {monster.Name}, HP: {monster.MaxHp}");
+
+    // 레벨에 따라 스케일링된 몬스터 스탯 조회
+    CharacterStat scaledStat = provider.GetScaledMonsterStat(1001, 5, isBoss: false);
+    Debug.Log($"레벨 5 몬스터 HP: {scaledStat.MaxHp}");
+
+    // 무기 데이터 조회
+    WeaponData weapon = provider.GetWeaponData(2001);
+    Debug.Log($"무기: {weapon.Name}, 타입: {weapon.Type}");
+
+    // 무기 레벨별 스탯 조회
+    WeaponLevelStat levelStat = provider.GetWeaponLevelStat(2001, 3);
+    Debug.Log($"레벨 3 데미지: {levelStat.Damage}, 쿨다운: {levelStat.Cooldown}");
+
+    // 아이템 데이터 조회
+    ItemData item = provider.GetItemData(3001);
+    Debug.Log($"아이템: {item.Name}, 타입: {item.Type}, 효과: {item.Value}");
+
+    // 캐릭터 데이터 조회
+    CharacterData character = provider.GetCharacterData(4001);
+    Debug.Log($"캐릭터: {character.Name}, HP: {character.MaxHp}");
+}
+```
+
+#### 4. 데이터 존재 여부 확인
+
+```csharp
+var provider = DataManager.Instance.GetProvider<UndeadSurvivorDataProvider>("UndeadSurvivor");
+
+if (provider != null)
+{
+    // 특정 몬스터 존재 확인
+    if (provider.HasMonsterData(1001))
+    {
+        MonsterData monster = provider.GetMonsterData(1001);
+    }
+
+    // 특정 무기 존재 확인
+    if (provider.HasWeaponData(2001))
+    {
+        WeaponData weapon = provider.GetWeaponData(2001);
+    }
+
+    // 특정 아이템 존재 확인
+    if (provider.HasItemData(3001))
+    {
+        ItemData item = provider.GetItemData(3001);
+    }
+
+    // 특정 캐릭터 존재 확인
+    if (provider.HasCharacterData(4001))
+    {
+        CharacterData character = provider.GetCharacterData(4001);
+    }
+}
+```
+
+### 💡 UndeadSurvivor 데이터 구조
+
+#### MonsterData (몬스터 데이터)
+```csharp
+public class MonsterData
+{
+    public int Id { get; }              // 몬스터 ID
+    public string Name { get; }         // 몬스터 이름
+    public float MaxHp { get; }         // 기본 최대 HP
+    public float MoveSpeed { get; }     // 기본 이동 속도
+    public float Damage { get; }        // 기본 공격력
+    public float Defense { get; }       // 기본 방어력
+    public float ExpMultiplier { get; } // 경험치 배율
+}
+
+// 레벨 스케일링 공식
+// HP: baseHp × ((100 + 10 × level) / 100) × bossMultiplier × Random(0.9-1.1)
+// Speed: baseSpeed × ((100 + level) / 100)
+// Damage: baseDamage × ((100 + level) / 100) × Random(0.9-1.1)
+// Boss Multiplier: 일반 몬스터 = 1, 보스 = 50
+```
+
+#### WeaponData (무기 데이터)
+```csharp
+public enum WeaponType { Melee, Ranged, Area }
+
+public class WeaponData
+{
+    public int Id { get; }                        // 무기 ID
+    public string Name { get; }                   // 무기 이름
+    public WeaponType Type { get; }               // 무기 타입
+    public WeaponLevelStat[] LevelStats { get; }  // 레벨별 스탯 (0-4)
+}
+
+public class WeaponLevelStat
+{
+    public float Damage { get; }         // 레벨별 데미지
+    public float Cooldown { get; }       // 레벨별 쿨다운
+    public int CountPerCreate { get; }   // 레벨별 생성 개수
+}
+```
+
+#### ItemData (아이템 데이터)
+```csharp
+public enum ItemType { Exp, Health, Magnet, Box }
+
+public class ItemData
+{
+    public int Id { get; }          // 아이템 ID
+    public string Name { get; }     // 아이템 이름
+    public ItemType Type { get; }   // 아이템 타입
+    public float Value { get; }     // 효과 값
+}
+```
+
+#### CharacterData (캐릭터 데이터)
+```csharp
+public class CharacterData
+{
+    public int Id { get; }              // 캐릭터 ID
+    public string Name { get; }         // 캐릭터 이름
+    public float MaxHp { get; }         // 최대 HP
+    public float MoveSpeed { get; }     // 이동 속도
+    public float Damage { get; }        // 공격력 증가 (%)
+    public float Defense { get; }       // 방어력
+    public float Cooldown { get; }      // 쿨다운 감소 (%)
+    public int Amount { get; }          // 발사체 개수 증가
+    public int StartWeaponId { get; }   // 시작 무기 ID
+}
+```
+
+#### CharacterStat (캐릭터 스탯)
+```csharp
+public enum StatType
+{
+    MaxHp,        // 최대 HP
+    MoveSpeed,    // 이동 속도
+    Damage,       // 공격력
+    Defense,      // 방어력
+    Cooldown,     // 쿨다운
+    Amount,       // 발사체 개수
+    ExpMultiplier // 경험치 배율
+}
+
+public class CharacterStat
+{
+    public float MaxHp { get; }
+    public float MoveSpeed { get; }
+    public float Damage { get; }
+    public float Defense { get; }
+    public float Cooldown { get; }
+    public int Amount { get; }
+    public float ExpMultiplier { get; }
+
+    // 스탯 업그레이드 적용
+    public void ApplyUpgrade(StatType statType, float value);
+}
+```
+
+### 💡 사용 팁
+
+- **등록 시점**: 게임 시작 시 모든 데이터 제공자를 등록
+- **로드 시점**: MiniGameManager가 게임을 로드할 때 자동으로 데이터 로드
+- **언로드 시점**: 게임 종료 시 자동으로 데이터 언로드 (메모리 정리)
+- **레벨 스케일링**: GetScaledMonsterStat()으로 레벨별 몬스터 스탯 계산
+- **무기 레벨**: 무기는 0-4 레벨까지 총 5단계 업그레이드 가능
+- **ScriptableObject**: Unity 에디터에서 ScriptableObject로 데이터 관리
+
+### ⚠️ 주의사항
+
+- DataManager는 자동으로 MiniGameManager와 연동됨
+- 수동으로 LoadGameData/UnloadGameData 호출 불필요 (MiniGameManager가 자동 처리)
+- ScriptableObject 파일은 `Resources/Data/{GameID}/ScriptableObjects/` 경로에 배치
+- 데이터 제공자는 반드시 IGameDataProvider 인터페이스 구현 필요
 
 ---
 
