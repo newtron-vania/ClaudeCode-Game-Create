@@ -6,1189 +6,223 @@
 >
 > **목적**: 현재 프로젝트에 Undead Survivor 게임 구현 시 참조
 
----
 
-## 📋 목차
+## 1. 프로젝트 개요
 
-1. [프로젝트 개요](#프로젝트-개요)
-2. [아키텍처 구조](#아키텍처-구조)
-3. [주요 시스템](#주요-시스템)
-4. [게임 메커니즘](#게임-메커니즘)
-5. [데이터 구조](#데이터-구조)
-6. [UI 시스템](#ui-시스템)
-7. [코드 참조 가이드](#코드-참조-가이드)
+* **프로젝트 명 (가제):** 5-Minute Swarm
+* **장르:** 로그라이크 서바이벌 액션 (Vampire Survivors-like / Bullet Heaven)
+* **플랫폼:** PC (Steam) 및 모바일 (MVP는 PC 기준)
+* **개발 목표:** 일주일 내 **5분 플레이의 핵심 루프(Core Loop)**가 완성된 MVP 빌드 구현.
+* **핵심 경험 (Core Experience):** "5분간 기하급수적으로 강해지며, 화면을 뒤덮는 적을 쓸어버리고, 마지막 보스를 격파하는 압축된 성장 쾌감"
 
 ---
 
-## 프로젝트 개요
+## 2. 핵심 게임 시스템 (Core Mechanics)
 
-### 게임 장르
-- **로그라이크 서바이벌 액션** (Vampire Survivors 클론)
-- 플레이어가 무기를 업그레이드하며 무한히 스폰되는 적을 처치하는 게임
-- 시간 기반 레벨링 및 보스 스폰 시스템
+### 2.1. 자동 공격 및 수동 회피
+* 플레이어는 '이동'만 조작합니다. (PC: WASD 또는 방향키 / Mobile: 가상 조이스틱)
+* 모든 무기는 획득 시 고유의 쿨타임과 로직에 따라 자동으로 발사됩니다.
+* 플레이어의 핵심 스킬은 적의 물량과 탄막을 '회피'하며 '포지셔닝'하는 것입니다.
 
-### 주요 특징
-- **자동 공격 무기 시스템**: 6종류 무기 (Knife, Fireball, Spin, Poison, Lightning, Shotgun)
-- **레벨업 강화 시스템**: 랜덤 강화 옵션 3개 제시
-- **아이템 드롭 시스템**: 경험치, 체력, 마그넷, 아이템 박스
-- **시간 기반 난이도**: 1분마다 중간 보스 스폰 (5분까지)
-- **캐릭터 선택**: 2종류 캐릭터, 각기 다른 초기 무기
+### 2.2. 시간 기반 난이도 (5분 생존)
+* 게임의 승리 조건은 **5분간 생존**하여 **'최종 보스'를 격파**하는 것입니다.
+* 난이도는 플레이어 레벨이 아닌, 오직 '시간'에 따라 상승합니다. (상세 내용은 5항)
+* **매 1분마다 중간 보스**가 스폰됩니다. (총 4회)
 
-### 기술 스택
-- Unity 2021.3.x
-- TextMesh Pro
-- Resources 폴더 기반 리소스 관리
-- JSON 데이터 기반 밸런싱
+### 2.3. 레벨업 강화 시스템 (4지선다)
+* 게이지가 가득 차 레벨업 시, 게임이 일시 정지(Pause)됩니다.
+* 플레이어에게 **무작위 강화 옵션 4개**가 제시되며, 이 중 1개를 선택합니다.
+* (상세 내용은 3항 참조)
 
----
+### 2.4. 아이템 드롭 시스템
+* 적 처치 시 기본 '경험치 보석'을 드랍합니다.
+* 낮은 확률로 다음 아이템을 드랍합니다.
+    * **체력 회복 (Food):** 체력 30% 즉시 회복.
+    * **마그넷 (Magnet):** 화면 내 모든 경험치 보석을 즉시 흡수.
+* **중간 보스** 처치 시 **'보물 상자(Item Box)'**를 100% 드랍합니다.
+    * **보물 상자 효과:** 무기 또는 패시브 아이템 1종 즉시 획득. (획득 시 화려한 연출)
 
-## 아키텍처 구조
-
-### 📁 프로젝트 구조
-
-```
-Assets/
-├── Scripts/
-│   ├── Managers/           # 핵심 매니저 시스템
-│   │   ├── Managers.cs           # 통합 매니저 (싱글톤 패턴)
-│   │   ├── GameManagerEx.cs      # 게임 로직 (스폰, 플레이어 관리)
-│   │   ├── DataManager.cs        # JSON 데이터 로드/관리
-│   │   ├── ResourceManager.cs    # Resources 폴더 리소스 관리
-│   │   ├── PoolManager.cs        # 오브젝트 풀링
-│   │   ├── UIManager.cs          # UI 생성/관리
-│   │   ├── SoundManager.cs       # BGM/SFX 관리
-│   │   ├── SceneManagerEx.cs     # 씬 전환
-│   │   └── EventManager.cs       # 게임 이벤트
-│   │
-│   ├── Controller/         # 게임 오브젝트 컨트롤러
-│   │   ├── BaseController.cs     # 컨트롤러 베이스 클래스
-│   │   ├── PlayerController.cs   # 플레이어 움직임/전투
-│   │   ├── EnemyController.cs    # 적 AI 및 전투
-│   │   ├── BossController.cs     # 보스 전용 로직
-│   │   ├── CameraController.cs   # 카메라 추적
-│   │   └── ItemGetter.cs         # 아이템 획득 범위
-│   │
-│   ├── Weapons/            # 무기 시스템
-│   │   ├── WeaponController.cs   # 무기 베이스 클래스
-│   │   ├── KnifeController.cs    # 근접 회전 무기
-│   │   ├── FireballController.cs # 원거리 투사체
-│   │   ├── SpinController.cs     # 회전 무기
-│   │   ├── PoisonController.cs   # 독 장판 무기
-│   │   ├── LightningController.cs # 번개 관통 무기
-│   │   ├── ShotgunController.cs  # 산탄총 무기
-│   │   └── Projectile/           # 투사체 스크립트
-│   │
-│   ├── Contents/           # 게임 콘텐츠
-│   │   ├── Spawner.cs            # 적 스폰 시스템
-│   │   ├── RePosition.cs         # 무한 맵 타일 재배치
-│   │   ├── WorldScrolling.cs     # 배경 스크롤
-│   │   └── Items/                # 아이템 (Exp, Health, Magnet, Box)
-│   │
-│   ├── UI/                 # UI 시스템
-│   │   ├── UI_Base.cs            # UI 베이스 클래스
-│   │   ├── Popup/                # 팝업 UI
-│   │   │   ├── UI_LevelUp.cs     # 레벨업 강화 선택
-│   │   │   ├── UI_GameOver.cs    # 게임 오버
-│   │   │   ├── UI_GameVictory.cs # 게임 승리
-│   │   │   └── UI_CharacterSelect.cs # 캐릭터 선택
-│   │   ├── Scene/                # 씬 UI
-│   │   │   ├── UI_Player.cs      # 플레이어 HUD
-│   │   │   └── UI_MainMenu.cs    # 메인 메뉴
-│   │   └── SubItem/              # UI 서브 아이템
-│   │       ├── UpgdPanel.cs      # 강화 옵션 패널
-│   │       ├── WeaponInven.cs    # 무기 인벤토리 슬롯
-│   │       └── PlayerInven.cs    # 플레이어 정보 슬롯
-│   │
-│   ├── Stat/               # 스탯 시스템
-│   │   ├── Stat.cs               # 스탯 베이스 클래스
-│   │   ├── PlayerStat.cs         # 플레이어 스탯 관리
-│   │   └── EnemyStat.cs          # 적 스탯 관리
-│   │
-│   ├── Data/               # 데이터 구조
-│   │   └── Data.Contents.cs      # Player, Monster, Weapon 데이터
-│   │
-│   ├── Scene/              # 씬 컨트롤러
-│   │   ├── BaseScene.cs          # 씬 베이스 클래스
-│   │   ├── GameScene.cs          # 게임 씬
-│   │   ├── MainMenuScene.cs      # 메인 메뉴 씬
-│   │   └── SplashScene.cs        # 스플래시 씬
-│   │
-│   └── Utils/              # 유틸리티
-│       ├── Define.cs             # Enum 정의
-│       ├── Extension.cs          # 확장 메서드
-│       └── Util.cs               # 헬퍼 함수
-│
-└── Resources/              # 리소스 폴더
-    ├── Data/               # JSON 데이터 파일
-    │   ├── PlayerData.json
-    │   ├── MonsterData.json
-    │   └── WeaponData.json
-    ├── Prefabs/            # 프리팹
-    ├── Sprites/            # 스프라이트
-    ├── Audio/              # 오디오
-    └── Animations/         # 애니메이션
-```
+### 2.5. 캐릭터 선택 (MVP 2종)
+* 플레이어는 각기 다른 초기 무기와 스탯을 가진 캐릭터 2종 중 하나를 선택합니다.
+* (상세 내용은 4항 참조)
 
 ---
 
-## 주요 시스템
+## 3. 레벨업 강화 시스템 (4지선다) 상세
 
-### 1. 매니저 시스템 (`Managers.cs`)
+플레이어가 레벨업할 때 호출되는 핵심 성장 시스템입니다.
 
-**통합 싱글톤 매니저 패턴**
+### 3.1. 시스템 개요
+1.  **UI 활성화:** 플레이어가 레벨업하는 즉시, `Time.timeScale = 0` (게임 일시 정지) 상태가 되며 '레벨업 강화 UI'가 활성화됩니다.
+2.  **강화 선택 (4지선다):** UI는 플레이어에게 **무작위로 생성된 4개의 강화 선택지**를 제공합니다.
+3.  **선택 및 재개:** 플레이어가 1개를 선택하면 즉시 능력치가 적용되고, UI가 닫히며 `Time.timeScale = 1` (게임 재개) 상태가 됩니다.
 
-```csharp
-public class Managers : MonoBehaviour
-{
-    static Managers _instance;
-    public static Managers Instance { get { Init(); return _instance; } }
+### 3.2. 강화 선택지의 종류
+* **(종류 1) 신규 무기 획득:** UI에 제시된 '신규 무기' 1종을 획득합니다. (예: `[New] 샷건`)
+* **(종류 2) 보유 무기 강화:** UI에 제시된 '현재 보유 중인 무기' 1종의 레벨을 1 올립니다. (예: `[Lv.2] 낫`)
+* **(종류 3) 캐릭터 능력치 강화:** UI에 제시된 '캐릭터 기본 능력치' 1종을 영구적으로(해당 플레이 한정) 강화합니다. (예: `[Stat] 공격력 +5%`)
 
-    // 게임 로직 매니저
-    GameManagerEx _game = new GameManagerEx();
-    public static GameManagerEx Game { get { return _instance._game; } }
+### 3.3. 선택지 생성 로직
+* **무기 슬롯 제한:** 플레이어가 동시에 보유할 수 있는 무기의 최대 개수는 **N = 6개**로 제한됩니다.
 
-    // 핵심 매니저들
-    DataManager _data = new DataManager();
-    PoolManager _pool = new PoolManager();
-    ResourceManager _resource = new ResourceManager();
-    UIManager _ui = new UIManager();
-    SoundManager _sound = new SoundManager();
-    EventManager _event = new EventManager();
-    SceneManagerEx _scene = new SceneManagerEx();
+* **A. 특수 규칙 1: 초기 무기 보장 (플레이어 레벨 2~5)**
+    * **조건:** 플레이어 레벨 2~5 구간이며, 무기 슬롯이 6개 미만일 때.
+    * **로직:** 4개의 선택지 중 **1개는 반드시 (종류 1: 신규 무기 획득)으로 고정**됩니다. 나머지 3개는 전체 풀에서 무작위로 선택됩니다.
 
-    // 전역 게임 시간
-    public static float GameTime { get; set; } = 0;
-    public static bool gameStop = false;
+* **B. 특수 규칙 2: 무기 슬롯 포화 (N=6)**
+    * **조건:** 플레이어의 무기 슬롯 6개가 모두 가득 찼을 때.
+    * **로직:** (종류 1: 신규 무기 획득) 선택지는 더 이상 절대 등장하지 않습니다. 4개의 선택지는 모두 (종류 2)와 (종류 3)에서 무작위로 생성됩니다.
 
-    static void Init()
-    {
-        if (_instance == null)
-        {
-            GameObject go = GameObject.Find("@Managers");
-            if (go == null)
-            {
-                go = new GameObject { name = "@Managers" };
-                go.AddComponent<Managers>();
-            }
-            DontDestroyOnLoad(go);
-            _instance = go.GetComponent<Managers>();
-            _instance._sound.Init();
-            _instance._pool.Init();
-            _instance._data.Init();
-        }
-    }
+* **C. 일반적인 생성 로직 (그 외)**
+    * `Pool` = [(종류 2: 보유 무기 강화 목록), (종류 3: 능력치 강화 목록)]
+    * **If (무기 슬롯 < 6개):** `Pool`에 (종류 1: 신규 무기 획득 목록)을 추가합니다.
+    * 4개의 선택지는 `Pool`에서 무작위로 4개를 중복 없이 추출하여 생성합니다.
 
-    public static void GamePause() { Time.timeScale = 0; gameStop = true; }
-    public static void GamePlay() { Time.timeScale = 1; gameStop = false; }
-}
-```
+### 3.4. 캐릭터 능력치 강화 목록
+(종류 3)에 해당하는 스탯 목록입니다. (신규 항목 2개 추가)
 
-**핵심 개념**:
-- **DontDestroyOnLoad**: 씬 전환 시에도 매니저 유지
-- **지연 초기화**: 첫 접근 시 자동 생성
-- **전역 시간 관리**: `GameTime`으로 게임 진행 시간 추적
-- **일시정지 시스템**: `GamePause()`/`GamePlay()`로 timeScale 제어
+| 강화 항목 (UI 표시) | 상세 효과 (1회 선택 시) | 비고 |
+| :--- | :--- | :--- |
+| **공격력 (Might)** | 모든 무기의 피해량 +5% 증가 | (곱연산) |
+| **최대 체력 (Max HP)** | 최대 체력 +10% 증가 | (곱연산) |
+| **방어력 (Armor)** | 받는 모든 피해량 -1 감소 | (합연산) |
+| **이동 속도 (Speed)** | 캐릭터 이동 속도 +10% 증가 | (곱연산) |
+| **범위 (Area)** | 모든 무기의 공격 범위/크기 +10% 증가 | (곱연산) |
+| **쿨타임 (Cooldown)** | 모든 무기의 재사용 대기시간 -5% 감소 | (곱연산) |
+| **투사체 개수 (Amount)** | **(적용 가능 무기) 투사체 +1** | (합연산) 샷건, 파이어볼 등 |
+| **관통력 (Pierce)** | **모든 투사체의 관통 횟수 +1** | (합연산) |
+| **경험치 획득 (Growth)** | 경험치 보석 획득량 +10% 증가 | (곱연산) |
+| **아이템 획득 범위 (Pickup)** | 아이템/경험치 획득 반경 +15% 증가 | (합연산) |
+| **행운 (Luck)** | 드랍률, 레벨업 선택지 희귀도 등 +10% | (곱연산) |
 
 ---
 
-### 2. 게임 매니저 (`GameManagerEx.cs`)
+## 4. 캐릭터 기획 (MVP 2종)
 
-**플레이어/적 스폰 및 관리**
-
-```csharp
-public class GameManagerEx
-{
-    GameObject _player;
-    HashSet<GameObject> _monster = new HashSet<GameObject>();
-    public Action<int> _OnSpawnEvent;
-
-    public Data.Player StartPlayer { get; set; } = new Data.Player();
-    public Vector3 MousePos { get; set; }
-    public Vector3 WorldMousePos { get; set; }
-
-    public GameObject Spawn(Define.WorldObject type, string path, Transform parent = null)
-    {
-        GameObject go = Managers.Resource.Instantiate(path, parent);
-
-        switch (type)
-        {
-            case Define.WorldObject.Enemy:
-                _monster.Add(go);
-                _OnSpawnEvent.Invoke(1);  // 적 카운트 증가
-                break;
-            case Define.WorldObject.Player:
-                _player = go;
-                break;
-        }
-        return go;
-    }
-
-    public void Despawn(GameObject go, float time = 0)
-    {
-        Define.WorldObject type = GetWorldObjectType(go);
-
-        switch (type)
-        {
-            case Define.WorldObject.Enemy:
-                if (_monster.Contains(go))
-                {
-                    _monster.Remove(go);
-                    _OnSpawnEvent.Invoke(-1);  // 적 카운트 감소
-                }
-                break;
-        }
-        Managers.Resource.Destroy(go, time);
-    }
-}
-```
-
-**핵심 기능**:
-- **오브젝트 생명주기 관리**: Spawn/Despawn으로 생성/제거
-- **적 카운트 추적**: HashSet으로 적 관리, 이벤트로 UI 업데이트
-- **마우스 위치 추적**: 월드 좌표로 변환하여 제공
+| 구분 | 캐릭터 1: 나이트 | 캐릭터 2: 메이지 |
+| :--- | :--- | :--- |
+| **컨셉** | 근접전 위주의 튼튼한 생존자 | 원거리 마법 중심의 공격수 |
+| **시작 무기** | **낫 (Scythe)** | **파이어볼 (Fireball)** |
+| **고유 스탯** | 최대 체력 +20, 방어력 +1 | 공격력 +10%, 쿨타임 -5% |
 
 ---
 
-### 3. 데이터 매니저 (`DataManager.cs`)
+## 5. 몬스터 및 웨이브 기획 (5분)
 
-**JSON 기반 데이터 로딩**
+### 5.1. 게임 흐름 (00:00 ~ 05:00)
 
-```csharp
-public class DataManager
-{
-    public Dictionary<int, Data.WeaponData> WeaponData { get; private set; }
-    public Dictionary<int, Data.Player> PlayerData { get; private set; }
-    public Dictionary<int, Data.Monster> MonsterData { get; private set; }
+| 시간 | 이벤트 | 상세 내용 |
+| :--- | :--- | :--- |
+| **00:00 ~ 00:59** | [난이도 1] | 일반 적 (Bat) 위주로 스폰. (약한 물량) |
+| **01:00 (이벤트)** | **중간 보스 1** | (Elite Zombie) 1마리 스폰. 처치 시 **보물 상자** 드랍. |
+| **01:01 ~ 01:59** | [난이도 2] | 일반 적 (Zombie) 추가, 엘리트(Elite Bat) 스폰 확률 증가. |
+| **02:00 (이벤트)** | **중간 보스 2** | 중간 보스 1과 동일 (혹은 다른 패턴의 보스). 처치 시 **보물 상자** 드랍. |
+| **02:01 ~ 02:59** | [난이도 3] | 스폰 속도 및 물량 1.5배 증가. (본격적인 압박 시작) |
+| **03:00 (이벤트)** | **중간 보스 3** | 처치 시 **보물 상자** 드랍. |
+| **03:01 ~ 03:59** | [난이도 4] | 엘리트 적(Elite Zombie) 비율 대폭 증가. |
+| **04:00 (이벤트)** | **중간 보스 4** | 처치 시 **보물 상자** 드랍. |
+| **04:01 ~ 04:59** | [난이도 5] | **원거리 공격 적 (Ghost)** 스폰 시작. 모든 적 스폰 물량 2배 증가. (최대 위기) |
+| **05:00 (승리 조건)** | **최종 보스** | (Final Boss) 스폰. 보스 처치 시 게임 클리어 및 승리 연출. |
 
-    public void Init()
-    {
-        PlayerData = LoadJson<Data.PlayerData, int, Data.Player>("PlayerData").MakeDict();
-        WeaponData = LoadJson<Data.WeaponDataLoader, int, Data.WeaponData>("WeaponData").MakeDict();
-        MonsterData = LoadJson<Data.MonsterData, int, Data.Monster>("MonsterData").MakeDict();
-    }
-
-    Loader LoadJson<Loader, Key, Value>(string path) where Loader : ILoader<Key, Value>
-    {
-        TextAsset textAsset = Managers.Resource.Load<TextAsset>($"Data/{path}");
-        return JsonUtility.FromJson<Loader>(textAsset.text);
-    }
-}
-```
-
-**데이터 구조** (`Data.Contents.cs`):
-
-```csharp
-namespace Data
-{
-    [Serializable]
-    public class Player
-    {
-        public int id;
-        public string name;
-        public int weaponID;       // 시작 무기
-        public int maxHp;
-        public int damage;
-        public int defense;
-        public float moveSpeed;
-        public int coolDown;       // 쿨타임 감소 %
-        public int amount;         // 발사체 개수 증가
-    }
-
-    [Serializable]
-    public class Monster
-    {
-        public int id;
-        public string name;
-        public int maxHp;
-        public int damage;
-        public int defense;
-        public float moveSpeed;
-        public int expMul;         // 경험치 배율 (1~3배)
-    }
-
-    [Serializable]
-    public class WeaponData
-    {
-        public int weaponID;
-        public string weaponName;
-        public List<WeaponLevelData> weaponLevelData;  // 레벨별 데이터
-    }
-
-    [Serializable]
-    public class WeaponLevelData
-    {
-        public int level;          // 1~5 레벨
-        public int damage;
-        public float movSpeed;     // 투사체 속도
-        public float force;        // 넉백 힘
-        public float cooldown;
-        public float size;         // 크기 배율
-        public int penetrate;      // 관통 횟수
-        public int countPerCreate; // 생성 개수
-    }
-}
-```
-
-**핵심 개념**:
-- **JSON 직렬화**: Unity JsonUtility 사용
-- **ILoader 인터페이스**: 데이터를 Dictionary로 변환
-- **Resources 폴더**: `Resources/Data/` 경로에서 로드
+### 5.2. 몬스터 스케일링 공식
+* 난이도(시간)에 따라 적 스탯이 자동 스케일링됩니다. `t = 경과 시간(분)`
+* `몬스터 체력 = 기본 체력 * (1 + 0.1 * t)`
+* `몬스터 공격력 = 기본 공격력 * (1 + 0.01 * t)`
+* `중간 보스 스탯 배율 = 일반 엘리트 몬스터 스탯의 50배`
 
 ---
 
-## 게임 메커니즘
+## 6. 무기 시스템 상세 기획 (MVP 6종)
 
-### 1. 플레이어 시스템 (`PlayerController.cs`)
+* 모든 무기는 MVP 기준 **최대 5레벨**로 제한합니다.
+* **참고:** '투사체 개수'와 '관통력' 스탯은 이 기본 레벨업 외에 **추가로 적용**됩니다.
 
-**입력 및 이동**
+### 6.1. 파이어볼 (Fireball)
+* **컨셉:** 궤도형 자동 포탑. 캐릭터 주위를 타원형으로 공전하는 '마법서'가 투사체를 발사. 투사체는 적과 충돌 시 폭발.
+* **레벨업 상세 (Lv. 1-5):**
+| 레벨 | 상세 효과 | 스탯 (예시) |
+| :--- | :--- | :--- |
+| **Lv. 1** | 마법서 1개 소환. 파이어볼 1발 발사. | 피해량 30 / 쿨타임 5.0초 / 폭발 범위 1.5 |
+| **Lv. 2** | 피해량 +15 | 피해량 45 |
+| **Lv. 3** | 폭발 범위 +25% | 범위 1.88 |
+| **Lv. 4** | 쿨타임 -1.0초 | 쿨타임 4.0초 |
+| **Lv. 5 (Max)** | **발사체 +1 (총 2발 동시 발사)** | 피해량 45 (x2) |
 
-```csharp
-public class PlayerController : BaseController
-{
-    protected PlayerStat _stat;
-    Vector2 _inputVec;
-    public Vector2 _lastDirVec = new Vector2(1, 0);  // 마지막 이동 방향 (무기용)
+### 6.2. 낫 (Scythe)
+* **컨셉:** 방어형 근접 궤도. 캐릭터 주위를 원형으로 공전하며 관통 피해. (피격 대상은 0.8초간 동일 무기 피해 면역)
+* **레벨업 상세 (Lv. 1-5):**
+| 레벨 | 상세 효과 | 스탯 (예시) |
+| :--- | :--- | :--- |
+| **Lv. 1** | 낫 1개 소환. | 피해량 10 / 관통 +1 / 0.8초당 1히트 |
+| **Lv. 2** | **낫 +1 (총 2개)** | - |
+| **Lv. 3** | 피해량 +5 | 피해량 15 |
+| **Lv. 4** | **낫 +1 (총 3개)** | - |
+| **Lv. 5 (Max)** | 피해량 +10, 공전 속도 +20% | 피해량 25 |
 
-    bool _isDamaged = false;
-    float _invincibility_time = 0.2f;  // 무적 시간
+### 6.3. 샷건 (Shotgun)
+* **컨셉:** 방향성 원거리 광역 딜. (타겟: '가장 가까운 적' 자동 조준, 적 없으면 '마지막 발사 방향' 유지)
+* **레벨업 상세 (Lv. 1-5):**
+| 레벨 | 상세 효과 | 스탯 (예시) |
+| :--- | :--- | :--- |
+| **Lv. 1** | 투사체 3발 발사. | 피해량 10 (발당) / 쿨타임 1.5초 / 각도 30도 |
+| **Lv. 2** | 투사체 +1 (총 4발) | - |
+| **Lv. 3** | 쿨타임 -0.2초 | 쿨타임 1.3초 |
+| **Lv. 4** | 투사체 +1 (총 5발) / **발사 각도 +30도** | 각도 60도 |
+| **Lv. 5 (Max)** | 쿨타임 -0.3초 / **발사 각도 +40도** | 쿨타임 1.0초 / 각도 100도 |
 
-    void Update()
-    {
-        _inputVec.x = Input.GetAxisRaw("Horizontal");
-        _inputVec.y = Input.GetAxisRaw("Vertical");
-    }
+### 6.4. 화염 부츠 (Flame Boots)
+* **컨셉:** 이동 기반 지역 장악. 이동 궤적에 화염 장판 생성. (장판 중복 시 중복 피해 없음)
+* **레벨업 상세 (Lv. 1-5):**
+| 레벨 | 상세 효과 | 스탯 (예시) |
+| :--- | :--- | :--- |
+| **Lv. 1** | 이동 시 화염 장판 생성. | 피해량 5 (0.5초당) / 지속시간 2.0초 |
+| **Lv. 2** | 피해량 +3 | 피해량 8 |
+| **Lv. 3** | **지속시간 +1.0초** | 지속시간 3.0초 |
+| **Lv. 4** | 피해량 +4 | 피해량 12 |
+| **Lv. 5 (Max)** | **지속시간 +1.0초**, 장판 크기 +25% | 지속시간 4.0초 |
 
-    private void FixedUpdate()
-    {
-        Vector2 nextVec = _inputVec.normalized * (_stat.MoveSpeed * Time.fixedDeltaTime);
-        _rigid.MovePosition(_rigid.position + nextVec);
+### 6.5. 독 장판 (Poison Field)
+* **컨셉:** 근접 지속 피해 오라. 캐릭터를 중심으로 한 원형 장판이 플레이어를 따라다님.
+* **레벨업 상세 (Lv. 1-5):**
+| 레벨 | 상세 효과 | 스탯 (예시) |
+| :--- | :--- | :--- |
+| **Lv. 1** | 작은 독 장판 생성. (약한 넉백) | 피해량 3 (1초당) / 범위 2.0 |
+| **Lv. 2** | 피해량 +2 | 피해량 5 |
+| **Lv. 3** | **범위 +25%** | 범위 2.5 |
+| **Lv. 4** | 피해량 +3 | 피해량 8 |
+| **Lv. 5 (Max)** | **범위 +25%**, 피해 주기 -0.2초 | 범위 3.125 / 0.8초당 피해 |
 
-        if (_inputVec.normalized.magnitude != 0)
-        {
-            _lastDirVec = _inputVec.normalized;  // 무기 발사 방향 저장
-        }
-    }
-
-    public void Init(Data.Player playerData)
-    {
-        _anime.runtimeAnimatorController = animeCon[playerData.id - 1];
-        _stat.MaxHP = playerData.maxHp;
-        _stat.HP = playerData.maxHp;
-        _stat.Damage = playerData.damage;
-        _stat.Defense = playerData.defense;
-        _stat.MoveSpeed = playerData.moveSpeed;
-        _stat.Cooldown = playerData.coolDown;
-        _stat.Amount = playerData.amount;
-        _stat.AddOrSetWeaponDict((Define.Weapons)playerData.weaponID, 1);  // 시작 무기
-    }
-
-    public void OnDamaged(Collision2D collision)
-    {
-        EnemyStat enemyStat = collision.transform.GetComponent<EnemyStat>();
-        _stat.HP -= Mathf.Max(enemyStat.Damage - _stat.Defense, 1);  // 최소 1 데미지
-
-        if (_stat.HP <= 0)
-            OnDead();
-    }
-
-    IEnumerator OnDamagedColor()
-    {
-        _sprite.color = Color.red;
-        yield return new WaitForSeconds(_invincibility_time);
-        _isDamaged = false;
-        _sprite.color = Color.white;
-    }
-}
-```
-
-**핵심 메커니즘**:
-- **정규화된 이동**: 대각선 이동 시 속도 균등화
-- **마지막 방향 저장**: 정지 시에도 무기 발사 방향 유지
-- **무적 시간**: 0.2초 무적 + 색상 변경으로 피드백
-- **최소 데미지**: 방어력이 높아도 최소 1 데미지 보장
-
----
-
-### 2. 적 시스템 (`EnemyController.cs`)
-
-**AI 및 전투**
-
-```csharp
-public class EnemyController : BaseController
-{
-    protected EnemyStat _stat;
-    public Rigidbody2D _target;  // 플레이어 추적
-    bool _isLive = true;
-    bool _isRange = false;       // 원거리 공격 여부
-    bool _isAttack = false;
-
-    private void FixedUpdate()
-    {
-        if (!_isLive) return;
-
-        OnMove();
-
-        if (_isRange && !_isAttack)
-        {
-            StartCoroutine(RangeAttack());
-        }
-    }
-
-    void OnMove()
-    {
-        Vector2 dirVec = _target.position - _rigid.position;
-        Vector2 nextVec = dirVec.normalized * (_stat.MoveSpeed * Time.fixedDeltaTime);
-        _rigid.MovePosition(_rigid.position + nextVec);
-        _rigid.velocity = Vector2.zero;  // 관성 제거
-    }
-
-    IEnumerator RangeAttack()
-    {
-        _isAttack = true;
-        SpawnBullet();
-        yield return new WaitForSeconds(2f);
-        _isAttack = false;
-    }
-
-    void SpawnBullet()
-    {
-        EnemyBullet bullet = Managers.Resource.Instantiate("Weapon/EnemyBullet", _rigid.position)
-            .GetOrAddComponent<EnemyBullet>();
-        bullet._damage = _stat.Damage;
-        bullet._speed = 5f;
-        bullet._dir = (_target.position - _rigid.position).normalized;
-    }
-
-    public void Init(Data.Monster monsterStat, int level, Define.MonsterType type)
-    {
-        int mul = 1;
-        switch (type)
-        {
-            case Define.MonsterType.Enemy:
-                mul = 1;
-                break;
-            case Define.MonsterType.middleBoss:
-                mul = 50;  // 중간 보스는 50배 강함
-                transform.localScale = Vector3.one * 2;  // 크기 2배
-                break;
-        }
-
-        _anime.runtimeAnimatorController = _animeCon[monsterStat.id-1];
-        _isRange = (monsterStat.id == 5);  // 5번 몬스터는 원거리
-
-        _stat.MonsterStyle = (Define.MonsterStyle)Enum.Parse(typeof(Define.MonsterStyle), monsterStat.name);
-        _stat.MonsterType = type;
-        _stat.MoveSpeed = monsterStat.moveSpeed * ((100f + level) / 100f);
-        _stat.MaxHP = SetRandomStat((int)(monsterStat.maxHp * ((100f + 10f * level) / 100f))) * mul;
-        _stat.HP = _stat.MaxHP;
-        _stat.Damage = SetRandomStat((int)(monsterStat.damage * ((100f + level) / 100f)));
-        _stat.Defense = SetRandomStat((int)(monsterStat.defense * ((100f + level) / 100f)));
-        _stat.ExpPoint = 10 * level;
-        _stat.ExpMul = monsterStat.expMul;
-    }
-
-    int SetRandomStat(int value)
-    {
-        value = (int)(value * Random.Range(0.9f, 1.1f));  // ±10% 랜덤
-        return value;
-    }
-
-    public override void OnDamaged(int damage, float force = 0)
-    {
-        _anime.SetTrigger("Hit");
-        int calculateDamage = Mathf.Max(damage - _stat.Defense, 1);
-        _stat.HP -= calculateDamage;
-        _rigid.AddForce((_rigid.position - _target.position).normalized * (force * 200f));  // 넉백
-        FloatDamageText(calculateDamage);  // 데미지 텍스트 표시
-
-        OnDead();
-    }
-
-    public override void OnDead()
-    {
-        if(_stat.HP <= 0)
-        {
-            _isLive = false;
-            SpawnExp();  // 경험치 드롭
-            Managers.Event.DropItem(_stat, transform);  // 아이템 드롭
-            Managers.Game.Despawn(gameObject);
-        }
-    }
-
-    void SpawnExp()
-    {
-        GameObject expGo = Managers.Game.Spawn(Define.WorldObject.Unknown, "Content/Exp");
-        expGo.transform.position = transform.position;
-        Exp_Item expPoint = expGo.GetComponent<Exp_Item>();
-        expPoint.SetExp(_stat.ExpPoint, _stat.ExpMul);
-
-        // ExpMul에 따라 스프라이트 변경 (1배: 작음, 2배: 중간, 3배: 큼)
-        if (expPoint._expMul == 1)
-            expGo.GetComponent<SpriteRenderer>().sprite = expPoint._sprite[0];
-        else if(expPoint._expMul == 2)
-            expGo.GetComponent<SpriteRenderer>().sprite = expPoint._sprite[1];
-        else
-            expGo.GetComponent<SpriteRenderer>().sprite = expPoint._sprite[2];
-    }
-}
-```
-
-**핵심 메커니즘**:
-- **플레이어 추적 AI**: 항상 플레이어를 향해 이동
-- **레벨 스케일링**: 플레이어 레벨에 따라 스탯 증가
-- **랜덤 스탯**: ±10% 변동으로 다양성 부여
-- **중간 보스**: 일반 적의 50배 스탯, 크기 2배
-- **원거리 공격**: 특정 몬스터는 2초마다 투사체 발사
-- **넉백 시스템**: 데미지 시 뒤로 밀림
-- **경험치 드롭**: ExpMul에 따라 다른 크기의 경험치
+### 6.6. 폭탄 (Bomb)
+* **컨셉:** 고위험 패닉 버튼. 화면 내 일반 적 즉사 (보스/중간 보스 제외).
+* **레벨업 상세 (Lv. 1-5):**
+| 레벨 | 상세 효과 | 스탯 (예시) |
+| :--- | :--- | :--- |
+| **Lv. 1** | 화면 내 일반 적 즉사. (경험치/아이템 드랍 0%) | 쿨타임 120초 |
+| **Lv. 2** | 쿨타임 -20초 | 쿨타임 100초 |
+| **Lv. 3** | **획득 경험치 25%로 증가** | - |
+| **Lv. 4** | 쿨타임 -20초 | 쿨타임 80초 |
+| **Lv. 5 (Max)** | **획득 경험치 50%로 증가** | (패널티 유지) |
 
 ---
 
-### 3. 적 스폰 시스템 (`Spawner.cs`)
-
-**시간 기반 난이도 증가**
-
-```csharp
-public class Spawner : MonoBehaviour
-{
-    Dictionary<int, Data.Monster> _monsterStat;
-    public Transform[] _spawnPoint;
-    float _spawnTime = 0.5f;
-    int _maxSpawnUnit = 50;  // 최대 동시 스폰 수
-    public int enemyCount = 0;
-    int timeLevel = 0;
-
-    private void Update()
-    {
-        // 1분마다 timeLevel 증가
-        if ((timeLevel + 1) * 60 < Managers.GameTime)
-        {
-            timeLevel = (int)Managers.GameTime / 60;
-            if (timeLevel <= 5)
-            {
-                SpawnBoss(timeLevel);  // 1~5분에 중간 보스 스폰
-            }
-        }
-
-        if (!_isSpawning)
-            StartCoroutine(SpawnMonster());
-    }
-
-    void SpawnBoss(int timeLevel)
-    {
-        GameObject Boss = null;
-        if (timeLevel < 5)
-        {
-            int level = Managers.Game.getPlayer().GetComponent<PlayerStat>().Level;
-            Boss = Managers.Game.Spawn(Define.WorldObject.Enemy, "Monster/Enemy");
-            Boss.GetComponent<EnemyController>().Init(_monsterStat[timeLevel], level, Define.MonsterType.middleBoss);
-        }
-        else
-        {
-            Boss = Managers.Game.Spawn(Define.WorldObject.Enemy, "Monster/Boss");  // 5분에 최종 보스
-        }
-        Boss.transform.position = _spawnPoint[Random.Range(1, _spawnPoint.Length)].position;
-    }
-
-    IEnumerator SpawnMonster()
-    {
-        _isSpawning = true;
-        if (enemyCount < _maxSpawnUnit)
-        {
-            int monsterType = SetRandomMonster(timeLevel);
-            int level = Managers.Game.getPlayer().GetComponent<PlayerStat>().Level;
-            GameObject enemy = Managers.Game.Spawn(Define.WorldObject.Enemy, "Monster/Enemy");
-            enemy.transform.position = _spawnPoint[Random.Range(1, _spawnPoint.Length)].position;
-            enemy.GetComponent<EnemyController>().Init(_monsterStat[monsterType], level, Define.MonsterType.Enemy);
-        }
-        yield return new WaitForSeconds(_spawnTime);
-        _isSpawning = false;
-    }
-
-    int SetRandomMonster(int timeLevel)
-    {
-        float rand1 = Random.Range(0, 100);
-        float rand2 = Random.Range(0, 100);
-        int rd = 1;
-
-        if (rand1 < 50)
-        {
-            rd = (rand2 < 90 - (20 * timeLevel)) ? 1 : 2;  // 시간이 지날수록 엘리트 확률 증가
-        }
-        else if (rand1 < 90)
-        {
-            rd = (rand2 < 90 - (20 * timeLevel)) ? 3 : 4;
-        }
-        else
-        {
-            rd = 5;  // 원거리 공격 몬스터
-        }
-
-        return rd;
-    }
-}
-```
-
-**핵심 메커니즘**:
-- **시간 기반 난이도**: 1분마다 중간 보스 스폰
-- **동적 스폰 간격**: 3분 이후 0.1초로 단축
-- **최대 스폰 제한**: 동시에 50마리까지만 존재
-- **엘리트 확률 증가**: 시간이 지날수록 강한 적 확률 증가
-- **5분 최종 보스**: 게임 클리어 조건
-
----
-
-### 4. 무기 시스템 (`WeaponController.cs`)
-
-**추상 무기 베이스 클래스**
-
-```csharp
-public abstract class WeaponController : MonoBehaviour
-{
-    protected GameObject _player = null;
-    private PlayerStat _playerStat;
-    private Dictionary<int, Data.WeaponData> _weaponData;
-    private Dictionary<int, Data.WeaponLevelData> _weaponStat;
-
-    public abstract int _weaponType { get; }  // 무기 ID (Define.Weapons enum)
-
-    private int _level = 1;
-    public int Level
-    {
-        get { return _level; }
-        set
-        {
-            _level = value;
-            SetWeaponStat();  // 레벨 변경 시 스탯 갱신
-        }
-    }
-
-    // 무기 스탯
-    public int _damage = 1;
-    public float _movSpeed = 1;
-    public float _force = 1;
-    public float _cooldown = 1;
-    public float _size = 1;
-    public int _penetrate = 1;
-    public int _countPerCreate = 1;
-
-    void Awake()
-    {
-        _player = Managers.Game.getPlayer();
-        _playerStat = _player.GetComponent<PlayerStat>();
-        _weaponData = Managers.Data.WeaponData;
-        _weaponStat = MakeLevelDataDict(_weaponType);
-    }
-
-    protected virtual void SetWeaponStat()
-    {
-        if (_level > 5) _level = 5;  // 최대 레벨 5
-
-        // 플레이어 스탯과 무기 레벨 데이터 결합
-        _damage = (int)(_weaponStat[_level].damage * ((100 + _playerStat.Damage) / 100f));
-        _movSpeed = _weaponStat[_level].movSpeed;
-        _force = _weaponStat[_level].force;
-        _cooldown = _weaponStat[_level].cooldown * (100f / (100f + _playerStat.Cooldown));
-        _size = _weaponStat[_level].size;
-        _penetrate = _weaponStat[_level].penetrate;
-        _countPerCreate = _weaponStat[_level].countPerCreate + _playerStat.Amount;
-    }
-
-    protected Dictionary<int, Data.WeaponLevelData> MakeLevelDataDict(int weaponID)
-    {
-        Dictionary<int, Data.WeaponLevelData> _weaponLevelData = new Dictionary<int, Data.WeaponLevelData>();
-        foreach (Data.WeaponLevelData weaponLevelData in _weaponData[weaponID].weaponLevelData)
-            _weaponLevelData.Add(weaponLevelData.level, weaponLevelData);
-        return _weaponLevelData;
-    }
-}
-```
-
-**무기 종류 및 특징**:
-
-| 무기 ID | 이름 | 타입 | 특징 |
-|--------|------|------|------|
-| 1 | Knife | 근접 회전 | 플레이어 주변 회전, 관통 공격 |
-| 2 | Fireball | 투사체 | 직선 발사, 폭발 효과 |
-| 3 | Spin | 근접 회전 | 플레이어 주위 원형 배치 |
-| 4 | Poison | 투사체 | 독 장판 생성, 지속 데미지 |
-| 101 | Lightning | 관통 투사체 | 가장 가까운 적 관통, 빠른 속도 |
-| 102 | Shotgun | 산탄 투사체 | 여러 발 동시 발사 |
-
-**핵심 메커니즘**:
-- **레벨별 스탯**: JSON 데이터에서 레벨 1~5 스탯 로드
-- **플레이어 스탯 연동**: 데미지%, 쿨타임%, 개수 보너스 적용
-- **추상 클래스 패턴**: 각 무기는 상속받아 고유 로직 구현
-
----
-
-### 5. 레벨업 시스템 (`UI_LevelUp.cs`)
-
-**랜덤 강화 옵션 제시**
-
-```csharp
-public class UI_LevelUp : UI_Popup
-{
-    private int _maxUpgradeNum = 3;  // 3개 옵션 제시
-
-    public override void Init()
-    {
-        base.Init();
-        Managers.Sound.Play("LevelUp", Define.Sound.Effect);
-        Bind<GameObject>(typeof(Panels));
-
-        GameObject gridPanel = Get<GameObject>((int)Panels.GridPanel);
-
-        // 기존 패널 제거
-        foreach(Transform child in gridPanel.transform)
-        {
-            Managers.Resource.Destroy(child.gameObject);
-        }
-
-        PlayerStat player = Managers.Game.getPlayer().GetComponent<PlayerStat>();
-        List<string[]> itemList = Managers.Event.SetRandomItem(player, 3);  // 랜덤 강화 옵션
-
-        // 3개 강화 패널 생성
-        for(int i = 0; i< _maxUpgradeNum; i++)
-        {
-            GameObject upgradePanel = Managers.UI.MakeSubItem<UpgdPanel>(parent: gridPanel.transform).gameObject;
-            UpgdPanel upgradeDesc = upgradePanel.GetComponent<UpgdPanel>();
-            upgradeDesc.SetData(itemList[i]);
-            upgradeDesc.SetInfo(itemList[i][1], itemList[i][1]);
-        }
-    }
-}
-```
-
-**강화 옵션 종류**:
-- **새 무기 획득**: 보유하지 않은 무기 중 랜덤 선택
-- **무기 레벨업**: 보유 중인 무기 레벨 +1 (최대 5)
-- **스탯 강화**: HP, 공격력, 방어력, 이동속도, 쿨타임, 발사체 개수
-
-**핵심 메커니즘**:
-- **게임 일시정지**: 레벨업 UI 표시 시 `Managers.GamePause()`
-- **동적 UI 생성**: 매번 새로운 옵션으로 패널 재생성
-- **선택 시 즉시 적용**: 버튼 클릭 시 스탯/무기 즉시 반영
-
----
-
-## 데이터 구조
-
-### JSON 데이터 예시
-
-**PlayerData.json**:
-```json
-{
-  "_players": [
-    {
-      "id": 1,
-      "name": "Farmer",
-      "weaponID": 101,
-      "maxHp": 100,
-      "damage": 10,
-      "defense": 0,
-      "moveSpeed": 3.0,
-      "coolDown": 0,
-      "amount": 0
-    },
-    {
-      "id": 2,
-      "name": "Knight",
-      "weaponID": 102,
-      "maxHp": 120,
-      "damage": 5,
-      "defense": 5,
-      "moveSpeed": 2.5,
-      "coolDown": 10,
-      "amount": 0
-    }
-  ]
-}
-```
-
-**MonsterData.json**:
-```json
-{
-  "_monsters": [
-    {
-      "id": 1,
-      "name": "zombie",
-      "maxHp": 50,
-      "damage": 10,
-      "defense": 0,
-      "moveSpeed": 1.5,
-      "expMul": 1
-    },
-    {
-      "id": 2,
-      "name": "zombieElite",
-      "maxHp": 100,
-      "damage": 20,
-      "defense": 5,
-      "moveSpeed": 2.0,
-      "expMul": 2
-    }
-  ]
-}
-```
-
-**WeaponData.json**:
-```json
-{
-  "_weapons": [
-    {
-      "weaponID": 1,
-      "weaponName": "Knife",
-      "weaponLevelData": [
-        {
-          "level": 1,
-          "damage": 10,
-          "movSpeed": 5.0,
-          "force": 1.0,
-          "cooldown": 1.0,
-          "size": 1.0,
-          "penetrate": 1,
-          "countPerCreate": 1
-        },
-        {
-          "level": 2,
-          "damage": 15,
-          "movSpeed": 5.0,
-          "force": 1.5,
-          "cooldown": 0.9,
-          "size": 1.1,
-          "penetrate": 2,
-          "countPerCreate": 2
-        }
-      ]
-    }
-  ]
-}
-```
-
----
-
-## UI 시스템
-
-### UI 계층 구조
-
-```
-UI_Base (추상 베이스)
-├── UI_Scene (씬 UI)
-│   ├── UI_Player (HUD - 체력, 경험치, 시간, 킬수)
-│   └── UI_MainMenu (메인 메뉴)
-│
-└── UI_Popup (팝업 UI)
-    ├── UI_LevelUp (레벨업 강화 선택)
-    ├── UI_GameOver (게임 오버)
-    ├── UI_GameVictory (게임 승리)
-    ├── UI_CharacterSelect (캐릭터 선택)
-    ├── UI_ItemBoxOpen (아이템 박스 열기)
-    ├── UI_GameMenu (일시정지 메뉴)
-    └── UI_TimeStop (시간 정지 아이템)
-```
-
-**서브 아이템**:
-- `UpgdPanel`: 레벨업 강화 옵션 패널
-- `WeaponInven`: 무기 인벤토리 슬롯 (아이콘 + 레벨)
-- `PlayerInven`: 플레이어 정보 슬롯
-- `StatInven`: 스탯 정보 슬롯
-
-**월드 스페이스 UI**:
-- `UI_HPBar`: 적 체력바
-- `UI_DamageText`: 데미지 텍스트 (떠오르는 효과)
-
----
-
-## 코드 참조 가이드
-
-### 현재 프로젝트에 적용 시 고려사항
-
-#### 1. 아키텍처 차이점
-
-| 항목 | Undead Survivor | 현재 프로젝트 |
-|------|----------------|--------------|
-| 리소스 로딩 | Resources 폴더 | **Addressables** |
-| 매니저 패턴 | 통합 싱글톤 (`Managers.cs`) | **개별 싱글톤** (`Singleton<T>`) |
-| UI 시스템 | UIManager 동적 생성 | **UIManager + UIPanel** |
-| 데이터 관리 | JSON + DataManager | **ScriptableObject 권장** |
-| 씬 관리 | SceneManagerEx | **CustomSceneManager** |
-| 오브젝트 풀링 | PoolManager | **PoolManager + ResourceManager 통합** |
-
-#### 2. 통합 방법
-
-**Step 1: 리소스 경로 변환**
-```csharp
-// Undead Survivor
-Managers.Resource.Instantiate("Monster/Enemy");
-
-// 현재 프로젝트 (Addressables)
-ResourceManager.Instance.InstantiateAsync("Prefabs/Monster/UndeadSurvivor/Enemy", (instance) => {
-    // 초기화
-});
-```
-
-**Step 2: 매니저 접근 방식 변환**
-```csharp
-// Undead Survivor
-Managers.Game.Spawn(...);
-Managers.UI.ShowPopupUI<UI_LevelUp>();
-Managers.Sound.Play("LevelUp", Define.Sound.Effect);
-
-// 현재 프로젝트
-MiniGameManager.Instance.LoadGame("UndeadSurvivor");
-UIManager.Instance.ShowPanel<UndeadSurvivorUIPanel>();
-SoundManager.Instance.PlaySFX("Audio/SFX/UndeadSurvivor/LevelUp");
-```
-
-**Step 3: 데이터 구조 통합**
-```csharp
-// Undead Survivor (JSON)
-public class DataManager
-{
-    public Dictionary<int, Data.Monster> MonsterData { get; private set; }
-
-    public void Init()
-    {
-        MonsterData = LoadJson<Data.MonsterData, int, Data.Monster>("MonsterData").MakeDict();
-    }
-}
-
-// 현재 프로젝트 (ScriptableObject 권장)
-[CreateAssetMenu(fileName = "MonsterData", menuName = "UndeadSurvivor/MonsterData")]
-public class MonsterDataSO : ScriptableObject
-{
-    public List<MonsterData> monsters;
-
-    private Dictionary<int, MonsterData> _monsterDict;
-
-    public void Initialize()
-    {
-        _monsterDict = new Dictionary<int, MonsterData>();
-        foreach (var monster in monsters)
-            _monsterDict.Add(monster.id, monster);
-    }
-
-    public MonsterData GetMonster(int id) => _monsterDict[id];
-}
-```
-
-**Step 4: IMiniGame 인터페이스 구현**
-```csharp
-public class UndeadSurvivorGameData : IGameData
-{
-    public int HighScore { get; set; }
-    public int CurrentScore { get; set; }
-    public float SurviveTime { get; set; }
-    public int KillCount { get; set; }
-
-    public void Initialize()
-    {
-        HighScore = PlayerPrefs.GetInt("UndeadSurvivor_HighScore", 0);
-        CurrentScore = 0;
-        SurviveTime = 0f;
-        KillCount = 0;
-    }
-
-    public void Reset()
-    {
-        CurrentScore = 0;
-        SurviveTime = 0f;
-        KillCount = 0;
-    }
-
-    public bool Validate() => true;
-
-    public void SaveState()
-    {
-        if (CurrentScore > HighScore)
-        {
-            HighScore = CurrentScore;
-            PlayerPrefs.SetInt("UndeadSurvivor_HighScore", HighScore);
-        }
-        PlayerPrefs.Save();
-    }
-
-    public void LoadState() { Initialize(); }
-}
-
-public class UndeadSurvivorGame : IMiniGame
-{
-    private UndeadSurvivorGameData _gameData;
-    private CommonPlayerData _commonData;
-
-    private GameObject _player;
-    private UndeadSurvivorSpawner _spawner;
-
-    public void Initialize(CommonPlayerData commonData)
-    {
-        _commonData = commonData;
-        _gameData = new UndeadSurvivorGameData();
-        _gameData.Initialize();
-
-        // 플레이어 스폰
-        ResourceManager.Instance.InstantiateAsync("Prefabs/Player/UndeadSurvivor/Player", (player) => {
-            _player = player;
-            _player.GetComponent<UndeadSurvivorPlayer>().Init(_commonData);
-        });
-
-        // 스포너 초기화
-        _spawner = new GameObject("Spawner").AddComponent<UndeadSurvivorSpawner>();
-        _spawner.Initialize();
-    }
-
-    public void StartGame()
-    {
-        // UI 로드
-        UIManager.Instance.ShowPanel<UndeadSurvivorHUD>();
-
-        // BGM 재생
-        SoundManager.Instance.PlayBGM("Audio/BGM/UndeadSurvivor/BGM_01");
-
-        // 입력 이벤트 구독
-        InputManager.Instance.OnInputEvent += HandleInput;
-    }
-
-    public void Update(float deltaTime)
-    {
-        _gameData.SurviveTime += deltaTime;
-
-        // 시간 기반 보스 스폰 체크
-        _spawner.CheckBossSpawn(_gameData.SurviveTime);
-    }
-
-    public void Cleanup()
-    {
-        // 입력 이벤트 해제
-        InputManager.Instance.OnInputEvent -= HandleInput;
-
-        // 리소스 정리
-        if (_player != null)
-            ResourceManager.Instance.ReleaseInstance(_player);
-
-        // 데이터 저장
-        _gameData.SaveState();
-    }
-
-    public IGameData GetData() => _gameData;
-
-    private void HandleInput(InputEventData inputData)
-    {
-        if (_player == null) return;
-
-        _player.GetComponent<UndeadSurvivorPlayer>().HandleInput(inputData);
-    }
-}
-```
-
-**Step 5: 게임 등록**
-```csharp
-// GameRegistry에 등록
-public class GameRegistry : Singleton<GameRegistry>
-{
-    protected override void Awake()
-    {
-        base.Awake();
-        RegisterGames();
-    }
-
-    private void RegisterGames()
-    {
-        RegisterGame("Tetris", () => new TetrisGame());
-        RegisterGame("UndeadSurvivor", () => new UndeadSurvivorGame());  // 추가
-    }
-}
-
-// GamePlayList에 추가
-[CreateAssetMenu(fileName = "GamePlayList", menuName = "Game/PlayList")]
-public class GamePlayList : ScriptableObject
-{
-    public List<GameInfo> games = new List<GameInfo>
-    {
-        new GameInfo { gameID = "Tetris", gameName = "테트리스", isPlayable = true },
-        new GameInfo { gameID = "UndeadSurvivor", gameName = "언데드 서바이버", isPlayable = true }  // 추가
-    };
-}
-```
-
-#### 3. 핵심 시스템별 참조 우선순위
-
-**높은 우선순위 (그대로 참조)**:
-1. ✅ **플레이어 이동 시스템**: `PlayerController.cs` - 정규화된 입력, 마지막 방향 저장
-2. ✅ **적 AI 시스템**: `EnemyController.cs` - 플레이어 추적, 레벨 스케일링
-3. ✅ **무기 시스템 구조**: `WeaponController.cs` - 추상 베이스 클래스 패턴
-4. ✅ **스폰 시스템**: `Spawner.cs` - 시간 기반 난이도, 보스 스폰 로직
-5. ✅ **레벨업 시스템**: `UI_LevelUp.cs` - 랜덤 강화 옵션 제시
-
-**중간 우선순위 (수정 필요)**:
-1. ⚠️ **데이터 구조**: JSON → ScriptableObject 변환
-2. ⚠️ **리소스 로딩**: Resources → Addressables 변환
-3. ⚠️ **매니저 접근**: `Managers.XXX` → `XXXManager.Instance`
-
-**낮은 우선순위 (재설계 권장)**:
-1. ❌ **통합 매니저 패턴**: 현재 프로젝트의 개별 매니저 유지
-2. ❌ **UI 생성 방식**: 현재 프로젝트의 UIManager 시스템 사용
-3. ❌ **씬 관리**: CustomSceneManager 활용
-
----
-
-## 추가 참고 사항
-
-### 성능 최적화 포인트
-
-1. **오브젝트 풀링**:
-   - 적, 투사체, 경험치, 데미지 텍스트는 모두 풀링 사용
-   - 최대 50마리 동시 스폰 제한으로 메모리 관리
-
-2. **무한 맵 구현**:
-   - `RePosition.cs`: 타일이 화면 밖으로 나가면 반대편으로 재배치
-   - 3x3 타일로 무한 맵 구현
-
-3. **프레임 최적화**:
-   - `FixedUpdate`에서 물리 계산
-   - `Update`에서 입력 처리
-   - `LateUpdate`에서 애니메이션/렌더링
-
-### 밸런싱 참조
-
-**난이도 곡선**:
-- 0~1분: 일반 적 위주
-- 1~2분: 엘리트 확률 증가 + 첫 중간 보스
-- 2~3분: 스폰 속도 증가
-- 3~4분: 엘리트 비율 대폭 증가
-- 4~5분: 원거리 공격 적 증가
-- 5분: 최종 보스 (게임 클리어 조건)
-
-**레벨 스케일링**:
-- 몬스터 체력: `baseHP * (1 + 0.1 * level)`
-- 몬스터 공격력: `baseDamage * (1 + 0.01 * level)`
-- 중간 보스 배율: 일반 적의 50배
-
-**무기 밸런싱**:
-- 레벨 1~5: 데미지 10 → 15 → 20 → 30 → 50
-- 쿨타임: 1.0초 → 0.9초 → 0.8초 → 0.7초 → 0.5초
-- 발사체 개수: 1 → 2 → 3 → 4 → 5
-
----
-
-## 결론
-
-이 문서는 Undead Survivor 프로젝트의 핵심 시스템과 메커니즘을 분석하여, 현재 프로젝트에 통합할 때 참조할 수 있도록 작성되었습니다.
-
-**핵심 참조 포인트**:
-1. ✅ **게임 루프**: 시간 기반 난이도 증가, 보스 스폰 타이밍
-2. ✅ **전투 시스템**: 플레이어/적 상호작용, 데미지 계산, 넉백
-3. ✅ **무기 시스템**: 추상 베이스 클래스를 통한 확장 가능한 구조
-4. ✅ **레벨업 시스템**: 랜덤 강화 옵션으로 다양한 빌드 지원
-5. ✅ **데이터 구조**: JSON 기반 밸런싱 (ScriptableObject로 변환 권장)
-
-**통합 시 주의사항**:
-- Addressables 경로 변환 필수
-- IMiniGame 인터페이스 구현 필수
-- 현재 프로젝트의 매니저 시스템 활용
-- ScriptableObject로 데이터 관리 권장
-
----
-
-**문서 버전**: 1.0
-**마지막 업데이트**: 2025-10-25
+## 7. 기술 요구 사항 및 최적화
+
+MVP 개발 시, PRD에 명시된 다음 기술 사항을 최우선으로 준수합니다.
+
+1.  **오브젝트 풀링 (Object Pooling):**
+    * **필수 대상:** 적(Enemy), 모든 투사체(Projectile), 경험치 보석(XP Gem), 데미지 텍스트(Damage Text)
+    * **구현:** `Instantiate` / `Destroy` 대신, 비활성화된 오브젝트를 재사용하는 `PoolManager`를 구현합니다.
+
+2.  **동시 스폰 제한 (Spawn Cap):**
+    * 메모리 및 CPU 연산 부하 관리를 위해, 화면에 동시 스폰되는 적의 최대 개체 수를 **50마리**로 제한합니다. (추후 성능 테스트 후 상향 가능)
+    * *기획 의도: 이 제한으로 인해 '광역 처리 능력'이 빌드 성능의 핵심 지표가 됩니다.*
+
+3.  **무한 맵 구현 (Infinite Map):**
+    * 플레이어 주변을 3x3 (총 9개)의 배경 타일맵으로 감쌉니다.
+    * `RePosition.cs` (혹은 유사 스크립트)를 구현하여, 플레이어 이동에 따라 화면 밖으로 나간 타일을 반대편으로 즉시 재배치합니다.
+
+4.  **프레임 최적화 (Update Loop Management):**
+    * 연산 부하를 Unity 생명주기에 맞춰 분산합니다.
+    * `FixedUpdate` : 모든 물리 계산 (플레이어 이동 `Rigidbody.MovePosition`, 적 이동)
+    * `Update` : 입력 처리 (이동 벡터값 갱신), 쿨타임 계산
+    * `LateUpdate` : **카메라 추적 (Cinemachine의 `Framing Transposer` 등을 사용한 Smooth 이동)**, UI 갱신

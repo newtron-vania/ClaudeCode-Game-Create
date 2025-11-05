@@ -178,17 +178,30 @@ namespace UndeadSurvivor
 
         /// <summary>
         /// 캐릭터 데이터 로드
+        /// JSON 파일로부터 동적으로 로드하여 CharacterDataList 생성
         /// </summary>
         private void LoadCharacterData()
         {
-            CharacterDataList dataList = Resources.Load<CharacterDataList>("Data/UndeadSurvivor/ScriptableObjects/CharacterDataList");
+            // JSON 파일 로드
+            TextAsset jsonFile = Resources.Load<TextAsset>("Data/UndeadSurvivor/Characters/CharacterData");
 
-            if (dataList == null)
+            if (jsonFile == null)
             {
-                Debug.LogError("[ERROR] UndeadSurvivor::DataProvider::LoadCharacterData - CharacterDataList not found");
+                Debug.LogError("[ERROR] UndeadSurvivor::DataProvider::LoadCharacterData - CharacterData.json not found");
                 return;
             }
 
+            // CharacterDataList 생성 및 JSON 파싱
+            CharacterDataList dataList = ScriptableObject.CreateInstance<CharacterDataList>();
+            dataList.LoadFromJson(jsonFile.text);
+
+            if (dataList.Characters == null || dataList.Characters.Count == 0)
+            {
+                Debug.LogError("[ERROR] UndeadSurvivor::DataProvider::LoadCharacterData - No characters loaded from JSON");
+                return;
+            }
+
+            // 딕셔너리에 추가
             foreach (var data in dataList.Characters)
             {
                 if (_characterDict.ContainsKey(data.Id))
@@ -200,7 +213,7 @@ namespace UndeadSurvivor
                 _characterDict.Add(data.Id, data);
             }
 
-            Debug.Log($"[INFO] UndeadSurvivor::DataProvider::LoadCharacterData - Loaded {_characterDict.Count} characters");
+            Debug.Log($"[INFO] UndeadSurvivor::DataProvider::LoadCharacterData - Loaded {_characterDict.Count} characters from JSON");
         }
 
         #endregion

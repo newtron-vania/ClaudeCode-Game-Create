@@ -1,0 +1,188 @@
+# Manager Usage Guide Skill
+# Provides quick reference and examples for project managers
+
+name: manager-guide
+description: 특정 Manager의 API와 사용 예제를 보여줍니다
+version: 1.0.0
+
+# Activation triggers
+triggers:
+  keywords:
+    - "매니저 사용법"
+    - "manager guide"
+    - "how to use manager"
+    - "manager api"
+    - "매니저 API"
+
+# Skill workflow
+workflow:
+  - step: 1
+    name: "Manager 선택"
+    action: prompt_user
+    message: |
+      어떤 Manager의 사용법을 확인하시겠습니까?
+
+      사용 가능한 Manager 목록:
+      1. MiniGameManager - 게임 생명주기 및 전환 관리
+      2. DataManager - 멀티게임 데이터 프로바이더 관리
+      3. ResourceManager - Addressables 리소스 로딩
+      4. PoolManager - GameObject 풀링
+      5. SoundManager - BGM/SFX 오디오 관리
+      6. UIManager - UI 패널 및 팝업 관리
+      7. CustomSceneManager - 씬 전환 및 로딩 화면
+      8. InputManager - 입력 이벤트 분배
+
+      번호 또는 Manager 이름을 입력하세요:
+    store_as: selected_manager
+
+  - step: 2
+    name: "문서 읽기"
+    action: read_file
+    file_path: "Assets/Docs/MANAGERS_GUIDE.md"
+    store_as: guide_content
+
+  - step: 3
+    name: "정보 추출"
+    action: extract_section
+    source: guide_content
+    pattern: "## {selected_manager}"
+    include_subsections: true
+    store_as: manager_info
+
+  - step: 4
+    name: "정보 표시"
+    action: display
+    format: markdown
+    content: |
+      # {selected_manager} 사용 가이드
+
+      {manager_info}
+
+      ---
+
+      ## 빠른 참조
+
+      ### 자주 사용하는 메서드 TOP 5
+      {extract_common_methods}
+
+      ### 주의사항
+      {extract_warnings}
+
+      ### 관련 Manager
+      {suggest_related_managers}
+
+  - step: 5
+    name: "컨텍스트 기반 추천"
+    action: analyze_context
+    rules:
+      - if: "working_on_ui"
+        suggest: ["UIManager", "ResourceManager", "SoundManager"]
+      - if: "working_on_game_logic"
+        suggest: ["MiniGameManager", "DataManager", "InputManager"]
+      - if: "working_on_resources"
+        suggest: ["ResourceManager", "PoolManager"]
+      - if: "working_on_scene"
+        suggest: ["CustomSceneManager", "UIManager"]
+
+  - step: 6
+    name: "추가 도움말"
+    action: prompt_user
+    message: |
+
+      다른 Manager의 사용법을 확인하시겠습니까? (y/n)
+      또는 특정 기능 구현 예제를 보시겠습니까? (예: "리소스 로딩 예제")
+    optional: true
+
+# Output format
+output:
+  format: markdown
+  include_code_examples: true
+  include_warnings: true
+  include_related_content: true
+
+# Integration with project
+integration:
+  required_files:
+    - "Assets/Docs/MANAGERS_GUIDE.md"
+
+  manager_relationships:
+    MiniGameManager:
+      - DataManager
+      - CustomSceneManager
+      - InputManager
+
+    DataManager:
+      - MiniGameManager
+
+    ResourceManager:
+      - PoolManager
+      - UIManager
+      - SoundManager
+
+    PoolManager:
+      - ResourceManager
+
+    SoundManager:
+      - ResourceManager
+
+    UIManager:
+      - ResourceManager
+      - CustomSceneManager
+
+    CustomSceneManager:
+      - UIManager
+      - MiniGameManager
+
+    InputManager:
+      - MiniGameManager
+
+# Common usage patterns
+patterns:
+  resource_loading:
+    managers: ["ResourceManager", "PoolManager"]
+    example: |
+      // Load and instantiate with pooling
+      ResourceManager.Instance.InstantiateAsync("Prefabs/Enemy", transform, (instance) => {
+          instance.transform.position = spawnPoint;
+      });
+
+  scene_transition:
+    managers: ["CustomSceneManager", "UIManager"]
+    example: |
+      // Scene transition with fade
+      UIManager.Instance.ShowPanel<FadePanel>((panel) => {
+          panel.FadeOut(() => {
+              CustomSceneManager.Instance.LoadScene("NextScene");
+          });
+      });
+
+  game_data_access:
+    managers: ["DataManager", "MiniGameManager"]
+    example: |
+      // Access game-specific data
+      var provider = DataManager.Instance.GetProvider<MyGameDataProvider>("MyGame");
+      var data = provider.GetData(dataId);
+
+  audio_management:
+    managers: ["SoundManager", "ResourceManager"]
+    example: |
+      // Play BGM with resource loading
+      SoundManager.Instance.PlayBGM("Audio/BGM/Theme");
+      SoundManager.Instance.PlaySFX("Audio/SFX/Click");
+
+# Best practices
+best_practices:
+  - "항상 Manager 가이드를 먼저 읽고 작업을 시작하세요"
+  - "Manager는 Singleton 패턴이므로 Instance를 통해 접근합니다"
+  - "ResourceManager를 통해서만 리소스를 로드하세요"
+  - "게임 전환 시 DataManager로 데이터를 언로드하세요"
+  - "Scene 전환은 반드시 CustomSceneManager를 사용하세요"
+  - "UI는 UIManager를 통해서만 관리하세요"
+
+# Warnings
+warnings:
+  - "Resources.Load 직접 사용 금지 → ResourceManager 사용"
+  - "SceneManager.LoadScene 직접 사용 금지 → CustomSceneManager 사용"
+  - "Instantiate 직접 사용 지양 → PoolManager 사용 권장"
+  - "Manager 초기화 순서 중요 - DontDestroyOnLoad 씬에서 초기화됨"
+  - "Manager에서 제공하는 콜백을 활용하여 비동기 작업 처리"

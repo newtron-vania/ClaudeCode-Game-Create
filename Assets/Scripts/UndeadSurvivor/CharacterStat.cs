@@ -19,6 +19,10 @@ namespace UndeadSurvivor
         [SerializeField] private float _cooldown;      // 쿨다운 감소 (%)
         [SerializeField] private int _amount;          // 발사체 개수 증가
         [SerializeField] private float _expMultiplier; // 경험치 획득량 배율
+        [SerializeField] private float _area;          // 공격 범위/크기 증가 (%)
+        [SerializeField] private int _pierce;          // 관통력 (관통 가능 적 수)
+        [SerializeField] private float _pickupRange;   // 아이템 획득 범위
+        [SerializeField] private float _luck;          // 행운 (드롭률, 크리티컬 등에 영향)
 
         /// <summary>
         /// 최대 체력
@@ -92,11 +96,75 @@ namespace UndeadSurvivor
 
         /// <summary>
         /// 경험치 획득량 배율
+        /// 용도: 경험치 보석 획득 시 경험치 양 증가
+        /// - 레벨업 선택지: +10% (곱연산)
+        /// - 기본값: 1.0 (100%)
         /// </summary>
         public float ExpMultiplier
         {
             get => _expMultiplier;
             set => _expMultiplier = Mathf.Max(0f, value);
+        }
+
+        /// <summary>
+        /// 공격 범위/크기 증가 (%)
+        /// 용도: 모든 무기의 공격 범위 또는 크기를 증가
+        /// - Fireball: 폭발 범위 증가
+        /// - Scythe: 무기 크기 증가
+        /// - Shotgun: 발사 각도 증가
+        /// - Flame Boots: 장판 크기 증가
+        /// - Poison Field: 장판 반경 증가
+        /// - Bomb: 영향 없음 (화면 전체)
+        /// - 레벨업 선택지: +10% (곱연산)
+        /// - 기본값: 0 (증가 없음)
+        /// </summary>
+        public float Area
+        {
+            get => _area;
+            set => _area = Mathf.Max(0f, value);
+        }
+
+        /// <summary>
+        /// 관통력
+        /// 용도: 모든 투사체의 관통 가능 적 수 증가
+        /// - 투사체가 적을 관통할 수 있는 횟수 증가
+        /// - 레벨업 선택지: +1 (합연산)
+        /// - 기본값: 0 (무기 기본 관통력만 적용)
+        /// - 예: Fireball 기본 관통 1 + Pierce 2 = 총 3번 관통
+        /// </summary>
+        public int Pierce
+        {
+            get => _pierce;
+            set => _pierce = Mathf.Max(0, value);
+        }
+
+        /// <summary>
+        /// 아이템 획득 범위
+        /// 용도: 경험치 보석 및 아이템 자동 획득 범위 증가
+        /// - 플레이어 주변 원형 범위 내 아이템 자동 획득
+        /// - 레벨업 선택지: +15% 또는 +0.5 (합연산)
+        /// - 기본값: 1.0 (기본 획득 범위)
+        /// - 예: 기본 1.0 + 선택 0.5 + 선택 0.5 = 2.0 (2배 범위)
+        /// </summary>
+        public float PickupRange
+        {
+            get => _pickupRange;
+            set => _pickupRange = Mathf.Max(0f, value);
+        }
+
+        /// <summary>
+        /// 행운
+        /// 용도: 아이템 드롭률, 크리티컬 확률 등에 영향
+        /// - 아이템 드롭 확률 증가
+        /// - 희귀 아이템 드롭 확률 증가
+        /// - 레벨업 선택지 품질 향상
+        /// - 레벨업 선택지: +10% (곱연산)
+        /// - 기본값: 0 (보너스 없음)
+        /// </summary>
+        public float Luck
+        {
+            get => _luck;
+            set => _luck = Mathf.Max(0f, value);
         }
 
         /// <summary>
@@ -122,6 +190,10 @@ namespace UndeadSurvivor
             _cooldown = 0f;
             _amount = 0;
             _expMultiplier = 1f;
+            _area = 0f;
+            _pierce = 0;
+            _pickupRange = 1f;
+            _luck = 0f;
         }
 
         /// <summary>
@@ -141,6 +213,10 @@ namespace UndeadSurvivor
             _cooldown = 0f;
             _amount = 0;
             _expMultiplier = 1f;
+            _area = 0f;
+            _pierce = 0;
+            _pickupRange = 1f;
+            _luck = 0f;
         }
 
         /// <summary>
@@ -157,6 +233,10 @@ namespace UndeadSurvivor
             _cooldown = other._cooldown;
             _amount = other._amount;
             _expMultiplier = other._expMultiplier;
+            _area = other._area;
+            _pierce = other._pierce;
+            _pickupRange = other._pickupRange;
+            _luck = other._luck;
         }
 
         /// <summary>
@@ -176,6 +256,77 @@ namespace UndeadSurvivor
             _cooldown = 0f;
             _amount = 0;
             _expMultiplier = 1f;
+            _area = 0f;
+            _pierce = 0;
+            _pickupRange = 1f;
+            _luck = 0f;
+        }
+
+        /// <summary>
+        /// CharacterData를 기반으로 스탯 초기화 (오버로드)
+        /// </summary>
+        /// <param name="characterData">캐릭터 데이터</param>
+        public void Initialize(CharacterData characterData)
+        {
+            if (characterData == null)
+            {
+                Debug.LogError("[ERROR] UndeadSurvivor::CharacterStat::Initialize - CharacterData is null!");
+                return;
+            }
+
+            // CharacterData로부터 기본 스탯 로드
+            _maxHp = Mathf.Max(0f, characterData.MaxHp);
+            _currentHp = _maxHp;
+            _moveSpeed = Mathf.Max(0f, characterData.MoveSpeed);
+            _damage = Mathf.Max(0f, characterData.Damage);
+            _defense = Mathf.Max(0f, characterData.Defense);
+            _cooldown = Mathf.Max(0f, characterData.Cooldown);
+            _amount = Mathf.Max(0, characterData.Amount);
+
+            // 기본값 설정 (캐릭터 데이터에 없는 스탯)
+            _expMultiplier = 1f;
+            _area = 0f;
+            _pierce = 0;
+            _pickupRange = 1f;
+            _luck = 0f;
+
+            Debug.Log($"[INFO] UndeadSurvivor::CharacterStat::Initialize - Initialized with {characterData.Name}: HP={_maxHp}, Speed={_moveSpeed}, Damage={_damage}%, Defense={_defense}");
+        }
+
+        /// <summary>
+        /// 특정 스탯 값 가져오기
+        /// </summary>
+        /// <param name="statType">스탯 타입</param>
+        /// <returns>스탯 값</returns>
+        public float GetStat(StatType statType)
+        {
+            switch (statType)
+            {
+                case StatType.MaxHp:
+                    return _maxHp;
+                case StatType.MoveSpeed:
+                    return _moveSpeed;
+                case StatType.Damage:
+                    return _damage;
+                case StatType.Defense:
+                    return _defense;
+                case StatType.Cooldown:
+                    return _cooldown;
+                case StatType.Amount:
+                    return _amount;
+                case StatType.ExpMultiplier:
+                    return _expMultiplier;
+                case StatType.Area:
+                    return _area;
+                case StatType.Pierce:
+                    return _pierce;
+                case StatType.PickupRange:
+                    return _pickupRange;
+                case StatType.Luck:
+                    return _luck;
+                default:
+                    return 0f;
+            }
         }
 
         /// <summary>
@@ -264,6 +415,26 @@ namespace UndeadSurvivor
                     _expMultiplier += value;
                     Debug.Log($"[INFO] UndeadSurvivor::CharacterStat::ApplyUpgrade - ExpMultiplier +{value:F1} (Total: {_expMultiplier:F1})");
                     break;
+
+                case StatType.Area:
+                    _area += value;
+                    Debug.Log($"[INFO] UndeadSurvivor::CharacterStat::ApplyUpgrade - Area +{value:F1}% (Total: {_area:F1}%)");
+                    break;
+
+                case StatType.Pierce:
+                    _pierce += (int)value;
+                    Debug.Log($"[INFO] UndeadSurvivor::CharacterStat::ApplyUpgrade - Pierce +{value:F0} (Total: {_pierce})");
+                    break;
+
+                case StatType.PickupRange:
+                    _pickupRange += value;
+                    Debug.Log($"[INFO] UndeadSurvivor::CharacterStat::ApplyUpgrade - PickupRange +{value:F1} (Total: {_pickupRange:F1})");
+                    break;
+
+                case StatType.Luck:
+                    _luck += value;
+                    Debug.Log($"[INFO] UndeadSurvivor::CharacterStat::ApplyUpgrade - Luck +{value:F1}% (Total: {_luck:F1}%)");
+                    break;
             }
         }
 
@@ -323,6 +494,30 @@ namespace UndeadSurvivor
                 isValid = false;
             }
 
+            if (_area < 0f)
+            {
+                Debug.LogError("[ERROR] UndeadSurvivor::CharacterStat::Validate - Area cannot be negative");
+                isValid = false;
+            }
+
+            if (_pierce < 0)
+            {
+                Debug.LogError("[ERROR] UndeadSurvivor::CharacterStat::Validate - Pierce cannot be negative");
+                isValid = false;
+            }
+
+            if (_pickupRange < 0f)
+            {
+                Debug.LogError("[ERROR] UndeadSurvivor::CharacterStat::Validate - PickupRange cannot be negative");
+                isValid = false;
+            }
+
+            if (_luck < 0f)
+            {
+                Debug.LogError("[ERROR] UndeadSurvivor::CharacterStat::Validate - Luck cannot be negative");
+                isValid = false;
+            }
+
             return isValid;
         }
 
@@ -349,6 +544,10 @@ namespace UndeadSurvivor
             _cooldown = other._cooldown;
             _amount = other._amount;
             _expMultiplier = other._expMultiplier;
+            _area = other._area;
+            _pierce = other._pierce;
+            _pickupRange = other._pickupRange;
+            _luck = other._luck;
         }
 
         /// <summary>
@@ -363,7 +562,11 @@ namespace UndeadSurvivor
                    $"Defense: {_defense:F1} | " +
                    $"Cooldown: {_cooldown:F1}% | " +
                    $"Amount: {_amount} | " +
-                   $"Exp: x{_expMultiplier:F1}";
+                   $"Exp: x{_expMultiplier:F1} | " +
+                   $"Area: {_area:F1}% | " +
+                   $"Pierce: {_pierce} | " +
+                   $"PickupRange: {_pickupRange:F1} | " +
+                   $"Luck: {_luck:F1}%";
         }
     }
 
@@ -378,6 +581,10 @@ namespace UndeadSurvivor
         Defense,       // 방어력
         Cooldown,      // 쿨다운 감소 (%)
         Amount,        // 발사체 개수
-        ExpMultiplier  // 경험치 배율
+        ExpMultiplier, // 경험치 배율
+        Area,          // 공격 범위/크기 증가 (%)
+        Pierce,        // 관통력
+        PickupRange,   // 아이템 획득 범위
+        Luck           // 행운 (드롭률, 크리티컬)
     }
 }

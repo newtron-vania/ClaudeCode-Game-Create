@@ -21,11 +21,12 @@ namespace UndeadSurvivor
     {
         [SerializeField] private int _id;
         [SerializeField] private string _name;
+        [SerializeField] private string _description;
         [SerializeField] private ItemType _type;
         [SerializeField] private float _value;  // 체력 회복량, 경험치량 등
 
         /// <summary>
-        /// 아이템 ID
+        /// 아이템 고유 ID
         /// </summary>
         public int Id => _id;
 
@@ -35,22 +36,32 @@ namespace UndeadSurvivor
         public string Name => _name;
 
         /// <summary>
+        /// 아이템 설명
+        /// </summary>
+        public string Description => _description;
+
+        /// <summary>
         /// 아이템 타입
         /// </summary>
         public ItemType Type => _type;
 
         /// <summary>
-        /// 효과 값 (체력 회복량, 경험치량 등)
+        /// 아이템 효과값
+        /// - Exp: 경험치량
+        /// - Health: 체력 회복량
+        /// - Magnet: 흡수 범위
+        /// - Box: 무작위 보상 개수
         /// </summary>
         public float Value => _value;
 
         /// <summary>
         /// 생성자
         /// </summary>
-        public ItemData(int id, string name, ItemType type, float value)
+        public ItemData(int id, string name, string description, ItemType type, float value)
         {
             _id = id;
             _name = name;
+            _description = description;
             _type = type;
             _value = value;
         }
