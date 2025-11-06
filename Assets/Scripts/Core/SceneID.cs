@@ -16,6 +16,15 @@ public enum SceneID
     /// <summary>슬라이딩 퍼즐 게임 씬</summary>
     SlidingPuzzle = 3,
 
+    /// <summary>언데드 서바이버 초기 화면 (게임 시작, 설정, 게임 종료)</summary>
+    UndeadSurvivor = 4,
+
+    /// <summary>언데드 서바이버 캐릭터 선택 씬</summary>
+    UndeadSurvivorCharacterSelectionScene = 5,
+
+    /// <summary>언데드 서바이버 게임 플레이 씬 (실제 전투)</summary>
+    UndeadSurvivorGameScene = 6,
+
     /// <summary>로딩 씬</summary>
     Loading = 10,
 

@@ -401,7 +401,7 @@ namespace UndeadSurvivor
         /// <summary>
         /// 레벨업 선택 완료 후 이동 재개
         /// </summary>
-        public void ResumMovement()
+        public void ResumeMovement()
         {
             if (_controller != null && _isAlive)
             {

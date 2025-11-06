@@ -435,6 +435,42 @@ public class CustomSceneManager : Singleton<CustomSceneManager>
 
     #endregion
 
+    #region 씬 재로드
+
+    /// <summary>
+    /// 현재 씬 재로드 (동기)
+    /// </summary>
+    public void ReloadCurrentScene()
+    {
+        string currentSceneName = CurrentSceneName;
+        Debug.Log($"[INFO] CustomSceneManager::ReloadCurrentScene - Reloading scene: {currentSceneName}");
+        LoadScene(currentSceneName);
+    }
+
+    /// <summary>
+    /// 현재 씬 재로드 (비동기)
+    /// </summary>
+    /// <param name="onComplete">완료 콜백</param>
+    public void ReloadCurrentSceneAsync(Action onComplete = null)
+    {
+        string currentSceneName = CurrentSceneName;
+        Debug.Log($"[INFO] CustomSceneManager::ReloadCurrentSceneAsync - Reloading scene: {currentSceneName}");
+        LoadSceneAsync(currentSceneName, onComplete);
+    }
+
+    /// <summary>
+    /// 현재 씬 재로드 (페이드 효과)
+    /// </summary>
+    /// <param name="fadeDuration">페이드 지속 시간</param>
+    public void ReloadCurrentSceneWithFade(float fadeDuration = 0.5f)
+    {
+        string currentSceneName = CurrentSceneName;
+        Debug.Log($"[INFO] CustomSceneManager::ReloadCurrentSceneWithFade - Reloading scene: {currentSceneName}");
+        StartCoroutine(LoadSceneWithFadeCoroutine(currentSceneName, fadeDuration));
+    }
+
+    #endregion
+
     #region 유틸리티
 
     /// <summary>
