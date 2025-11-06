@@ -1,0 +1,49 @@
+{
+  "monsters": [
+    {
+      "_id": 1,
+      "_name": "Slime",
+      "_maxHp": 10,
+      "_moveSpeed": 2.0,
+      "_damage": 5,
+      "_defense": 0,
+      "_expMultiplier": 1.0
+    },
+    {
+      "_id": 2,
+      "_name": "Zombie",
+      "_maxHp": 20,
+      "_moveSpeed": 1.5,
+      "_damage": 10,
+      "_defense": 2,
+      "_expMultiplier": 1.5
+    },
+    {
+      "_id": 3,
+      "_name": "Skeleton",
+      "_maxHp": 15,
+      "_moveSpeed": 2.5,
+      "_damage": 8,
+      "_defense": 1,
+      "_expMultiplier": 1.2
+    },
+    {
+      "_id": 4,
+      "_name": "Ghost",
+      "_maxHp": 12,
+      "_moveSpeed": 3.0,
+      "_damage": 7,
+      "_defense": 0,
+      "_expMultiplier": 1.3
+    },
+    {
+      "_id": 10,
+      "_name": "Boss_Demon",
+      "_maxHp": 100,
+      "_moveSpeed": 1.0,
+      "_damage": 20,
+      "_defense": 5,
+      "_expMultiplier": 10.0
+    }
+  ]
+}
