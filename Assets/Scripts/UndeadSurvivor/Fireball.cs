@@ -10,9 +10,11 @@ namespace UndeadSurvivor
     public class Fireball : Weapon
     {
         [Header("Fireball Settings")]
-        [SerializeField] private GameObject _projectilePrefab; // 투사체 프리팹 (Projectile 컴포넌트 포함)
         [SerializeField] private float _projectileSpeed = 10f; // 투사체 속도
         [SerializeField] private float _projectileLifeTime = 3f; // 투사체 생존 시간
+
+        // ResourceManager 경로 (Resources 폴더)
+        private const string PROJECTILE_PATH = "Prefabs/Weapon/UndeadSurvivor/Fireball_Projectile";
 
         #region Weapon Implementation
 
@@ -22,18 +24,6 @@ namespace UndeadSurvivor
         public override void Initialize(Player owner, WeaponData weaponData, int level = 0)
         {
             base.Initialize(owner, weaponData, level);
-
-            // 투사체 프리팹 로드 (없으면)
-            if (_projectilePrefab == null)
-            {
-                // TODO: Addressables로 변경
-                _projectilePrefab = Resources.Load<GameObject>("Prefabs/Weapon/UndeadSurvivor/Fireball_Projectile");
-
-                if (_projectilePrefab == null)
-                {
-                    Debug.LogError("[ERROR] Fireball::Initialize - Projectile prefab not found at Resources/Prefabs/Weapon/UndeadSurvivor/Fireball_Projectile");
-                }
-            }
 
             Debug.Log($"[INFO] Fireball::Initialize - Fireball Lv.{_currentLevel + 1} initialized with {_currentStat.CountPerCreate} projectiles");
         }
@@ -83,24 +73,19 @@ namespace UndeadSurvivor
         /// <param name="angleOffset">발사 각도 오프셋 (도 단위)</param>
         private void FireProjectile(Enemy target, float angleOffset)
         {
-            if (_projectilePrefab == null)
-            {
-                Debug.LogError("[ERROR] Fireball::FireProjectile - Projectile prefab is null");
-                return;
-            }
-
-            // 투사체 생성
+            // ResourceManager를 통한 투사체 생성 (InstantiateFromResources)
             Vector3 spawnPosition = _owner.transform.position;
-            GameObject projectileObj = Instantiate(_projectilePrefab, spawnPosition, Quaternion.identity);
 
-            // Projectile 컴포넌트 가져오기
-            Projectile projectile = projectileObj.GetComponent<Projectile>();
+            Projectile projectile = ResourceManager.Instance.InstantiateFromResources<Projectile>(PROJECTILE_PATH, null);
+
             if (projectile == null)
             {
-                Debug.LogError("[ERROR] Fireball::FireProjectile - Projectile component not found on prefab");
-                Destroy(projectileObj);
+                Debug.LogError("[ERROR] Fireball::FireProjectile - Failed to instantiate projectile from Resources");
                 return;
             }
+
+            // 위치 설정
+            projectile.transform.position = spawnPosition;
 
             // 발사 방향 계산 (적 방향 + 각도 오프셋)
             Vector2 direction = (target.transform.position - _owner.transform.position).normalized;

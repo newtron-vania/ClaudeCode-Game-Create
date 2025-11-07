@@ -244,6 +244,14 @@ public class PoolManager : Singleton<PoolManager>
         }
 
         poolData.ActiveObjects.Add(obj);
+
+        // IPoolable 인터페이스 구현 체크 및 호출
+        IPoolable poolable = obj.GetComponent<IPoolable>();
+        if (poolable != null)
+        {
+            poolable.OnSpawnedFromPool();
+        }
+
         return obj;
     }
 
@@ -303,6 +311,13 @@ public class PoolManager : Singleton<PoolManager>
 
         // 활성 오브젝트 목록에서 제거
         poolData.ActiveObjects.Remove(obj);
+
+        // IPoolable 인터페이스 구현 체크 및 호출
+        IPoolable poolable = obj.GetComponent<IPoolable>();
+        if (poolable != null)
+        {
+            poolable.OnReturnedToPool();
+        }
 
         // 오브젝트 비활성화 및 풀로 반환
         obj.SetActive(false);

@@ -11,10 +11,12 @@ namespace UndeadSurvivor
     public class Scythe : Weapon
     {
         [Header("Scythe Settings")]
-        [SerializeField] private GameObject _scytheBladePrefab; // 낫 프리팹
         [SerializeField] private float _orbitSpeed = 180f; // 공전 속도 (도/초)
         [SerializeField] private float _spinSpeed = 360f; // 자전 속도 (도/초)
         [SerializeField] private float _orbitRadius = 2f; // 궤도 반경
+
+        // ResourceManager 경로 (Resources 폴더)
+        private const string BLADE_PATH = "Prefabs/Weapon/UndeadSurvivor/Scythe_Blade";
 
         [Header("Damage Settings")]
         [SerializeField] private float _damageInterval = 0.5f; // 데미지 간격 (초)
@@ -34,18 +36,7 @@ namespace UndeadSurvivor
         {
             base.Initialize(owner, weaponData, level);
 
-            // 낫 프리팹 로드
-            if (_scytheBladePrefab == null)
-            {
-                _scytheBladePrefab = Resources.Load<GameObject>("Prefabs/Weapon/UndeadSurvivor/Scythe_Blade");
-
-                if (_scytheBladePrefab == null)
-                {
-                    Debug.LogError("[ERROR] Scythe::Initialize - Scythe blade prefab not found");
-                }
-            }
-
-            // 낫 생성
+            // 낫 생성 (ResourceManager 사용)
             CreateScytheBlades();
 
             Debug.Log($"[INFO] Scythe::Initialize - Scythe Lv.{_currentLevel + 1} initialized with {_currentStat.CountPerCreate} blades");
@@ -90,12 +81,6 @@ namespace UndeadSurvivor
         /// </summary>
         private void CreateScytheBlades()
         {
-            if (_scytheBladePrefab == null)
-            {
-                Debug.LogError("[ERROR] Scythe::CreateScytheBlades - Blade prefab is null");
-                return;
-            }
-
             // 기존 낫 제거
             ClearScytheBlades();
 
@@ -104,22 +89,23 @@ namespace UndeadSurvivor
 
             for (int i = 0; i < bladeCount; i++)
             {
-                GameObject bladeObj = Instantiate(_scytheBladePrefab, transform);
-                bladeObj.name = $"ScytheBlade_{i}";
+                // ResourceManager를 통한 낫 생성 (InstantiateFromResources)
+                ScytheBlade blade = ResourceManager.Instance.InstantiateFromResources<ScytheBlade>(BLADE_PATH, transform);
 
-                // ScytheBlade 컴포넌트 추가 또는 가져오기
-                ScytheBlade blade = bladeObj.GetComponent<ScytheBlade>();
                 if (blade == null)
                 {
-                    blade = bladeObj.AddComponent<ScytheBlade>();
+                    Debug.LogError($"[ERROR] Scythe::CreateScytheBlades - Failed to instantiate blade {i} from Resources");
+                    continue;
                 }
+
+                blade.name = $"ScytheBlade_{i}";
 
                 // 초기화
                 blade.Initialize(this, _spinSpeed);
 
                 // 크기 적용 (레벨업 시 증가)
                 float scale = 1f + (_currentLevel * 0.2f);
-                bladeObj.transform.localScale = Vector3.one * scale;
+                blade.transform.localScale = Vector3.one * scale;
 
                 _scytheBlades.Add(blade);
             }
@@ -136,6 +122,7 @@ namespace UndeadSurvivor
             {
                 if (blade != null && blade.gameObject != null)
                 {
+                    // Destroy 유지 (낫은 무기 해제 시 완전히 제거)
                     Destroy(blade.gameObject);
                 }
             }
@@ -282,9 +269,10 @@ namespace UndeadSurvivor
     /// <summary>
     /// ScytheBlade 컴포넌트 (개별 낫)
     /// 자전 및 충돌 감지를 담당합니다.
+    /// IPoolable 구현으로 풀링 시스템 지원
     /// </summary>
     [RequireComponent(typeof(CircleCollider2D))]
-    public class ScytheBlade : MonoBehaviour
+    public class ScytheBlade : MonoBehaviour, IPoolable
     {
         private Scythe _parentWeapon;
         private CircleCollider2D _collider;
@@ -328,5 +316,32 @@ namespace UndeadSurvivor
                 _parentWeapon.TryDamageEnemy(enemy);
             }
         }
+
+        #region IPoolable Implementation
+
+        /// <summary>
+        /// 오브젝트 풀에서 스폰될 때 호출 (IPoolable)
+        /// </summary>
+        public void OnSpawnedFromPool()
+        {
+            // 자전 각도 랜덤 초기화 (시각적 다양성)
+            _currentSpinAngle = Random.Range(0f, 360f);
+
+            Debug.Log("[INFO] ScytheBlade::OnSpawnedFromPool - Blade spawned from pool");
+        }
+
+        /// <summary>
+        /// 오브젝트 풀로 반환될 때 호출 (IPoolable)
+        /// </summary>
+        public void OnReturnedToPool()
+        {
+            // 회전 초기화
+            _currentSpinAngle = 0f;
+            transform.rotation = Quaternion.identity;
+
+            Debug.Log("[INFO] ScytheBlade::OnReturnedToPool - Blade returned to pool");
+        }
+
+        #endregion
     }
 }

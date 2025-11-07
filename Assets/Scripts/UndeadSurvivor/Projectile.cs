@@ -5,10 +5,11 @@ namespace UndeadSurvivor
     /// <summary>
     /// 투사체 클래스
     /// 원거리 무기가 발사하는 발사체 (Fireball, Arrow, Bullet 등)
+    /// IPoolable 구현으로 풀링 시스템 지원
     /// </summary>
     [RequireComponent(typeof(Rigidbody2D))]
     [RequireComponent(typeof(CircleCollider2D))]
-    public class Projectile : MonoBehaviour
+    public class Projectile : MonoBehaviour, IPoolable
     {
         [Header("Movement")]
         [SerializeField] private float _moveSpeed = 10f; // 이동 속도
@@ -139,9 +140,10 @@ namespace UndeadSurvivor
         /// </summary>
         private void OnHit(Vector2 hitPosition)
         {
-            // 충돌 이펙트 생성
+            // 충돌 이펙트 생성 (있으면)
             if (_hitEffectPrefab != null)
             {
+                // 임시: Instantiate 사용 (TODO: ResourceManager로 변경)
                 GameObject effectObj = Instantiate(_hitEffectPrefab, hitPosition, Quaternion.identity);
                 Destroy(effectObj, 2f); // 2초 후 이펙트 제거
             }
@@ -165,45 +167,44 @@ namespace UndeadSurvivor
         /// </summary>
         private void DestroyProjectile()
         {
-            // TODO: PoolManager 연동 시 ReturnToPool() 호출로 변경
+            // 임시: Destroy 사용 (TODO: PoolManager 연동 시 ResourceManager.ReleaseInstance로 변경)
             Destroy(gameObject);
         }
 
         #endregion
 
-        #region Object Pooling (TODO)
+        #region IPoolable Implementation
 
         /// <summary>
-        /// 오브젝트 풀에서 스폰될 때 호출
+        /// 오브젝트 풀에서 스폰될 때 호출 (IPoolable)
         /// </summary>
         public void OnSpawnedFromPool()
         {
-            gameObject.SetActive(true);
+            // 상태 초기화
             _currentPenetration = 0;
             _aliveTime = 0f;
 
+            // Trail Renderer 초기화
             if (_trailRenderer != null)
             {
                 _trailRenderer.Clear();
             }
+
+            Debug.Log("[INFO] Projectile::OnSpawnedFromPool - Projectile spawned from pool");
         }
 
         /// <summary>
-        /// 오브젝트 풀로 반환될 때 호출
+        /// 오브젝트 풀로 반환될 때 호출 (IPoolable)
         /// </summary>
         public void OnReturnedToPool()
         {
-            _rigidbody.linearVelocity = Vector2.zero;
-            gameObject.SetActive(false);
-        }
+            // 물리 초기화
+            if (_rigidbody != null)
+            {
+                _rigidbody.linearVelocity = Vector2.zero;
+            }
 
-        /// <summary>
-        /// 오브젝트 풀로 반환
-        /// </summary>
-        public void ReturnToPool()
-        {
-            // TODO: PoolManager.Instance.ReturnToPool(gameObject);
-            OnReturnedToPool();
+            Debug.Log("[INFO] Projectile::OnReturnedToPool - Projectile returned to pool");
         }
 
         #endregion
