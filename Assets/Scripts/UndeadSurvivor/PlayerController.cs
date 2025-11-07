@@ -40,26 +40,17 @@ namespace UndeadSurvivor
             }
         }
 
-        private void OnEnable()
-        {
-            // UndeadSurvivorInputAdapter의 게임 전용 입력 이벤트 구독
-            if (_inputAdapter != null)
-            {
-                _inputAdapter.OnGameInput += HandleGameInput;
-            }
-        }
-
-        private void OnDisable()
-        {
-            // MUST unsubscribe
-            if (_inputAdapter != null)
-            {
-                _inputAdapter.OnGameInput -= HandleGameInput;
-            }
-        }
+        // 이동 입력은 매 프레임 GetCurrentMoveDirection()으로 조회하므로 이벤트 구독 불필요
+        // 다른 게임 입력(Pause, Dash 등)이 필요하면 OnEnable/OnDisable에서 구독
 
         private void Update()
         {
+            // InputAdapter로부터 현재 이동 방향을 매 프레임 조회
+            if (_inputAdapter != null)
+            {
+                _moveInput = _inputAdapter.GetCurrentMoveDirection();
+            }
+
             // 이동 방향 벡터 계산
             _moveDirection = _moveInput.normalized;
 
@@ -80,18 +71,6 @@ namespace UndeadSurvivor
             // Rigidbody2D.MovePosition으로 물리 기반 이동
             Vector2 nextPosition = _rigidbody.position + _moveDirection * _moveSpeed * Time.fixedDeltaTime;
             _rigidbody.MovePosition(nextPosition);
-        }
-
-        /// <summary>
-        /// UndeadSurvivorInputAdapter로부터 게임 전용 입력 이벤트 수신
-        /// </summary>
-        private void HandleGameInput(UndeadSurvivorInputEventData inputData)
-        {
-            // Move 입력 처리
-            if (inputData.InputType == UndeadSurvivorInputType.Move)
-            {
-                _moveInput = inputData.MoveDirection;
-            }
         }
 
         /// <summary>
