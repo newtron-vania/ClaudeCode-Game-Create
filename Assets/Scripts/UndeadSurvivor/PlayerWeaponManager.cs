@@ -17,6 +17,9 @@ namespace UndeadSurvivor
         [Header("Weapon Spawn Point")]
         [SerializeField] private Transform _weaponParent; // 무기 오브젝트 부모 Transform
 
+        [Header("References")]
+        [SerializeField] private Player _player; // 플레이어 참조
+
         // 이벤트
         public event Action<int, string, int> OnWeaponAdded; // (weaponId, weaponName, currentLevel)
         public event Action<int, int> OnWeaponLevelUp; // (weaponId, newLevel)
@@ -27,11 +30,24 @@ namespace UndeadSurvivor
         public int MaxWeaponSlots => _maxWeaponSlots;
         public bool IsWeaponSlotsFull => _equippedWeapons.Count >= _maxWeaponSlots;
 
+        // 무기 타입 매핑 (WeaponData ID → 무기 클래스)
+        private Dictionary<int, System.Type> _weaponTypeMap = new Dictionary<int, System.Type>
+        {
+            { 1, typeof(Fireball) },  // WeaponData ID 1 = Fireball
+            { 2, typeof(Scythe) }     // WeaponData ID 2 = Scythe
+            // TODO: 다른 무기 추가 (Shotgun, Laser 등)
+        };
+
         private void Awake()
         {
             if (_weaponParent == null)
             {
                 _weaponParent = transform;
+            }
+
+            if (_player == null)
+            {
+                _player = GetComponent<Player>();
             }
         }
 
@@ -61,12 +77,33 @@ namespace UndeadSurvivor
                 return false;
             }
 
+            // 무기 오브젝트 생성
+            GameObject weaponObject = CreateWeaponObject(weaponData);
+            if (weaponObject == null)
+            {
+                Debug.LogError($"[ERROR] UndeadSurvivor::PlayerWeaponManager::AddWeapon - Failed to create weapon object for {weaponData.Name}");
+                return false;
+            }
+
+            // 무기 컴포넌트 가져오기
+            Weapon weaponComponent = weaponObject.GetComponent<Weapon>();
+            if (weaponComponent == null)
+            {
+                Debug.LogError($"[ERROR] UndeadSurvivor::PlayerWeaponManager::AddWeapon - Weapon component not found on {weaponData.Name}");
+                Destroy(weaponObject);
+                return false;
+            }
+
+            // 무기 초기화
+            weaponComponent.Initialize(_player, weaponData, 0);
+
             // 무기 슬롯 생성
             WeaponSlot newSlot = new WeaponSlot
             {
                 WeaponData = weaponData,
                 CurrentLevel = 0, // 레벨 0 (표시는 1)
-                WeaponObject = null // 실제 무기 오브젝트는 나중에 생성
+                WeaponObject = weaponObject,
+                WeaponComponent = weaponComponent
             };
 
             _equippedWeapons.Add(newSlot);
@@ -99,16 +136,21 @@ namespace UndeadSurvivor
 
             slot.CurrentLevel++;
 
+            // 무기 스크립트에 레벨업 알림
+            if (slot.WeaponComponent != null)
+            {
+                bool levelUpSuccess = slot.WeaponComponent.LevelUp();
+                if (!levelUpSuccess)
+                {
+                    Debug.LogError($"[ERROR] UndeadSurvivor::PlayerWeaponManager::LevelUpWeapon - Weapon component failed to level up");
+                    slot.CurrentLevel--; // 롤백
+                    return false;
+                }
+            }
+
             Debug.Log($"[INFO] UndeadSurvivor::PlayerWeaponManager::LevelUpWeapon - {slot.WeaponData.Name} leveled up to {slot.CurrentLevel + 1}");
 
             OnWeaponLevelUp?.Invoke(weaponId, slot.CurrentLevel + 1);
-
-            // 무기 스크립트에 레벨업 알림 (구현 예정)
-            // if (slot.WeaponObject != null)
-            // {
-            //     var weapon = slot.WeaponObject.GetComponent<Weapon>();
-            //     weapon?.LevelUp();
-            // }
 
             return true;
         }
@@ -183,7 +225,33 @@ namespace UndeadSurvivor
         }
 
         /// <summary>
-        /// 무기 오브젝트 등록 (무기 프리팹 인스턴스화 후 호출)
+        /// 무기 오브젝트 생성 (WeaponData에 따라 적절한 무기 생성)
+        /// </summary>
+        private GameObject CreateWeaponObject(WeaponData weaponData)
+        {
+            if (!_weaponTypeMap.ContainsKey(weaponData.Id))
+            {
+                Debug.LogError($"[ERROR] UndeadSurvivor::PlayerWeaponManager::CreateWeaponObject - Weapon type not mapped for ID {weaponData.Id}");
+                return null;
+            }
+
+            System.Type weaponType = _weaponTypeMap[weaponData.Id];
+
+            // 새 GameObject 생성
+            GameObject weaponObj = new GameObject($"Weapon_{weaponData.Name}");
+            weaponObj.transform.SetParent(_weaponParent);
+            weaponObj.transform.localPosition = Vector3.zero;
+
+            // 무기 컴포넌트 추가
+            Weapon weaponComponent = (Weapon)weaponObj.AddComponent(weaponType);
+
+            Debug.Log($"[INFO] UndeadSurvivor::PlayerWeaponManager::CreateWeaponObject - Created {weaponType.Name} for {weaponData.Name}");
+
+            return weaponObj;
+        }
+
+        /// <summary>
+        /// 무기 오브젝트 등록 (외부에서 직접 생성한 경우)
         /// </summary>
         public void RegisterWeaponObject(int weaponId, GameObject weaponObject)
         {
@@ -206,5 +274,6 @@ namespace UndeadSurvivor
         public WeaponData WeaponData;       // 무기 데이터
         public int CurrentLevel;            // 현재 레벨 (0-4, 표시는 1-5)
         public GameObject WeaponObject;     // 실제 무기 오브젝트 인스턴스
+        public Weapon WeaponComponent;      // 무기 컴포넌트 참조
     }
 }
