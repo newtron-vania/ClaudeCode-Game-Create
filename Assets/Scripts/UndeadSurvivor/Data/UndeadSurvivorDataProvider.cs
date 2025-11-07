@@ -127,17 +127,30 @@ namespace UndeadSurvivor
 
         /// <summary>
         /// 무기 데이터 로드
+        /// JSON 파일로부터 동적으로 로드하여 WeaponDataList 생성
         /// </summary>
         private void LoadWeaponData()
         {
-            WeaponDataList dataList = Resources.Load<WeaponDataList>("Data/UndeadSurvivor/ScriptableObjects/WeaponDataList");
+            // JSON 파일 로드
+            TextAsset jsonFile = Resources.Load<TextAsset>("Data/UndeadSurvivor/WeaponData");
 
-            if (dataList == null)
+            if (jsonFile == null)
             {
-                Debug.LogError("[ERROR] UndeadSurvivor::DataProvider::LoadWeaponData - WeaponDataList not found");
+                Debug.LogError("[ERROR] UndeadSurvivor::DataProvider::LoadWeaponData - WeaponData.json not found");
                 return;
             }
 
+            // WeaponDataList 생성 및 JSON 파싱
+            WeaponDataList dataList = ScriptableObject.CreateInstance<WeaponDataList>();
+            dataList.LoadFromJson(jsonFile.text);
+
+            if (dataList.Weapons == null || dataList.Weapons.Count == 0)
+            {
+                Debug.LogError("[ERROR] UndeadSurvivor::DataProvider::LoadWeaponData - No weapons loaded from JSON");
+                return;
+            }
+
+            // 딕셔너리에 추가
             foreach (var data in dataList.Weapons)
             {
                 if (_weaponDict.ContainsKey(data.Id))
@@ -149,22 +162,35 @@ namespace UndeadSurvivor
                 _weaponDict.Add(data.Id, data);
             }
 
-            Debug.Log($"[INFO] UndeadSurvivor::DataProvider::LoadWeaponData - Loaded {_weaponDict.Count} weapons");
+            Debug.Log($"[INFO] UndeadSurvivor::DataProvider::LoadWeaponData - Loaded {_weaponDict.Count} weapons from JSON");
         }
 
         /// <summary>
         /// 아이템 데이터 로드
+        /// JSON 파일로부터 동적으로 로드하여 ItemDataList 생성
         /// </summary>
         private void LoadItemData()
         {
-            ItemDataList dataList = Resources.Load<ItemDataList>("Data/UndeadSurvivor/ScriptableObjects/ItemDataList");
+            // JSON 파일 로드
+            TextAsset jsonFile = Resources.Load<TextAsset>("Data/UndeadSurvivor/ItemData");
 
-            if (dataList == null)
+            if (jsonFile == null)
             {
-                Debug.LogError("[ERROR] UndeadSurvivor::DataProvider::LoadItemData - ItemDataList not found");
+                Debug.LogError("[ERROR] UndeadSurvivor::DataProvider::LoadItemData - ItemData.json not found");
                 return;
             }
 
+            // ItemDataList 생성 및 JSON 파싱
+            ItemDataList dataList = ScriptableObject.CreateInstance<ItemDataList>();
+            dataList.LoadFromJson(jsonFile.text);
+
+            if (dataList.Items == null || dataList.Items.Count == 0)
+            {
+                Debug.LogError("[ERROR] UndeadSurvivor::DataProvider::LoadItemData - No items loaded from JSON");
+                return;
+            }
+
+            // 딕셔너리에 추가
             foreach (var data in dataList.Items)
             {
                 if (_itemDict.ContainsKey(data.Id))
@@ -176,7 +202,7 @@ namespace UndeadSurvivor
                 _itemDict.Add(data.Id, data);
             }
 
-            Debug.Log($"[INFO] UndeadSurvivor::DataProvider::LoadItemData - Loaded {_itemDict.Count} items");
+            Debug.Log($"[INFO] UndeadSurvivor::DataProvider::LoadItemData - Loaded {_itemDict.Count} items from JSON");
         }
 
         /// <summary>

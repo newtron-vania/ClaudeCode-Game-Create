@@ -63,6 +63,10 @@ namespace UndeadSurvivor
                     HandleKeyDown(inputData.KeyCode);
                     break;
 
+                case InputType.KeyPressing:
+                    HandleKeyPressing(inputData.KeyCode);
+                    break;
+
                 case InputType.KeyUp:
                     HandleKeyUp(inputData.KeyCode);
                     break;
@@ -74,14 +78,6 @@ namespace UndeadSurvivor
         /// </summary>
         private void HandleKeyDown(KeyCode keyCode)
         {
-            // WASD 이동 처리
-            if (_moveKeyMap.ContainsKey(keyCode))
-            {
-                _pressedMoveKeys.Add(keyCode);
-                UpdateMoveDirection();
-                return;
-            }
-
             // 일시정지
             if (keyCode == _pauseKey)
             {
@@ -120,15 +116,28 @@ namespace UndeadSurvivor
         }
 
         /// <summary>
+        /// 키 프레싱 이벤트 처리 (매 프레임 키가 눌려있을 때)
+        /// WASD 이동 키만 여기서 처리하여 매 프레임 이동 방향 업데이트
+        /// </summary>
+        private void HandleKeyPressing(KeyCode keyCode)
+        {
+            // WASD 이동 처리 - 키가 눌려있는 동안 매 프레임 처리
+            if (_moveKeyMap.ContainsKey(keyCode))
+            {
+                _pressedMoveKeys.Add(keyCode);
+                return;
+            }
+        }
+
+        /// <summary>
         /// 키 업 이벤트 처리
         /// </summary>
         private void HandleKeyUp(KeyCode keyCode)
         {
-            // WASD 이동 처리
+            // WASD 이동 처리 - 키를 뗄 때 제거
             if (_moveKeyMap.ContainsKey(keyCode))
             {
                 _pressedMoveKeys.Remove(keyCode);
-                UpdateMoveDirection();
                 return;
             }
 
@@ -136,15 +145,18 @@ namespace UndeadSurvivor
         }
 
         /// <summary>
-        /// 현재 눌린 이동 키들을 기반으로 이동 방향 벡터 계산 및 전송
+        /// 매 프레임 호출되어 현재 눌린 이동 키들을 기반으로 이동 방향 계산
         /// </summary>
-        private void UpdateMoveDirection()
+        private void Update()
         {
             Vector2 newDirection = Vector2.zero;
 
             foreach (var key in _pressedMoveKeys)
             {
-                newDirection += _moveKeyMap[key];
+                if (_moveKeyMap.TryGetValue(key, out Vector2 direction))
+                {
+                    newDirection += direction;
+                }
             }
 
             // 대각선 이동 시 정규화 (속도 일정하게 유지)
@@ -153,11 +165,11 @@ namespace UndeadSurvivor
                 newDirection.Normalize();
             }
 
-            _currentMoveDirection = newDirection;
-
-            // 이동 입력 이벤트 발생
-            var gameInput = new UndeadSurvivorInputEventData(_currentMoveDirection);
-            OnGameInput?.Invoke(gameInput);
+            // 방향이 변경되었을 때만 업데이트
+            if (_currentMoveDirection != newDirection)
+            {
+                _currentMoveDirection = newDirection;
+            }
         }
 
         /// <summary>

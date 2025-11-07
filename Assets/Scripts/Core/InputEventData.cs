@@ -9,6 +9,9 @@ public enum InputType
     /// <summary>키보드 키가 눌렸을 때</summary>
     KeyDown,
 
+    /// <summary>키보드 키가 눌려있을 때 (매 프레임)</summary>
+    KeyPressing,
+
     /// <summary>키보드 키가 떼어졌을 때</summary>
     KeyUp,
 
@@ -160,7 +163,7 @@ public struct InputEventData
     /// </summary>
     public override string ToString()
     {
-        if (Type == InputType.KeyDown || Type == InputType.KeyUp)
+        if (Type == InputType.KeyDown || Type == InputType.KeyPressing || Type == InputType.KeyUp)
         {
             return $"InputEvent [{Type}] Key: {KeyCode}";
         }
