@@ -97,17 +97,20 @@ namespace UndeadSurvivor
 
         /// <summary>
         /// 몬스터 데이터 로드
+        /// JSON 파일로부터 동적으로 로드하여 MonsterDataList 생성
         /// </summary>
         private void LoadMonsterData()
         {
-            MonsterDataList dataList = Resources.Load<MonsterDataList>("Data/UndeadSurvivor/ScriptableObjects/MonsterDataList");
+            // JSON 파일에서 로드
+            MonsterDataList dataList = MonsterDataList.LoadFromJson("Data/UndeadSurvivor/Monsters/MonsterData");
 
-            if (dataList == null)
+            if (dataList == null || dataList.Monsters == null || dataList.Monsters.Count == 0)
             {
-                Debug.LogError("[ERROR] UndeadSurvivor::DataProvider::LoadMonsterData - MonsterDataList not found");
+                Debug.LogError("[ERROR] UndeadSurvivor::DataProvider::LoadMonsterData - No monsters loaded from JSON");
                 return;
             }
 
+            // 딕셔너리에 추가
             foreach (var data in dataList.Monsters)
             {
                 if (_monsterDict.ContainsKey(data.Id))
@@ -119,7 +122,7 @@ namespace UndeadSurvivor
                 _monsterDict.Add(data.Id, data);
             }
 
-            Debug.Log($"[INFO] UndeadSurvivor::DataProvider::LoadMonsterData - Loaded {_monsterDict.Count} monsters");
+            Debug.Log($"[INFO] UndeadSurvivor::DataProvider::LoadMonsterData - Loaded {_monsterDict.Count} monsters from JSON");
         }
 
         /// <summary>

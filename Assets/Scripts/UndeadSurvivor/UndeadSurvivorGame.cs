@@ -15,6 +15,7 @@ namespace UndeadSurvivor
 
         private Player _player;
         private Transform _playerSpawnPoint;
+        private EnemySpawner _enemySpawner;
 
         // 게임 진행 관련
         private float _gameTime;
@@ -84,7 +85,9 @@ namespace UndeadSurvivor
                 _player.OnPlayerLevelUp += HandlePlayerLevelUp;
             }
 
-            // TODO Phase 2: 적 스폰 시작
+            // 적 스폰 시작 (Phase 2)
+            StartEnemySpawning();
+
             // TODO Phase 3: BGM 재생
 
             Debug.Log("[INFO] UndeadSurvivor::Game::StartGame - Game started");
@@ -104,8 +107,7 @@ namespace UndeadSurvivor
             _gameTime += deltaTime;
             _gameData.SurvivalTime = _gameTime;
 
-            // TODO Phase 2: 적 스폰 로직
-            // TODO Phase 2: 시간 기반 난이도 증가
+            // EnemySpawner가 자동으로 스폰 및 난이도 증가 처리 (Phase 2 완료)
             // TODO Phase 4: 보스 스폰 (30초, 1분, 2분, 3분, 5분)
         }
 
@@ -133,7 +135,9 @@ namespace UndeadSurvivor
                 _player = null;
             }
 
-            // TODO Phase 2: 모든 적 제거
+            // 적 스포너 정리 (Phase 2)
+            StopEnemySpawning();
+
             // TODO Phase 3: 사운드 정지
 
             _isInitialized = false;
@@ -256,6 +260,54 @@ namespace UndeadSurvivor
             }
 
             Debug.Log("[INFO] UndeadSurvivor::Game::OnLevelUpChoiceSelected - Resuming game after level up");
+        }
+
+        #endregion
+
+        #region Enemy Spawning
+
+        /// <summary>
+        /// 적 스폰 시작
+        /// </summary>
+        private void StartEnemySpawning()
+        {
+            // EnemySpawner GameObject 찾기 또는 생성
+            GameObject spawnerObj = GameObject.Find("EnemySpawner");
+            if (spawnerObj == null)
+            {
+                spawnerObj = new GameObject("EnemySpawner");
+                _enemySpawner = spawnerObj.AddComponent<EnemySpawner>();
+            }
+            else
+            {
+                _enemySpawner = spawnerObj.GetComponent<EnemySpawner>();
+                if (_enemySpawner == null)
+                {
+                    _enemySpawner = spawnerObj.AddComponent<EnemySpawner>();
+                }
+            }
+
+            // 스포너 초기화 및 시작
+            _enemySpawner.Initialize(_player, _dataProvider);
+            _enemySpawner.StartSpawning();
+
+            Debug.Log("[INFO] UndeadSurvivor::Game::StartEnemySpawning - Enemy spawning started");
+        }
+
+        /// <summary>
+        /// 적 스폰 정지 및 정리
+        /// </summary>
+        private void StopEnemySpawning()
+        {
+            if (_enemySpawner != null)
+            {
+                _enemySpawner.StopSpawning();
+                _enemySpawner.ClearAllEnemies();
+                Object.Destroy(_enemySpawner.gameObject);
+                _enemySpawner = null;
+
+                Debug.Log("[INFO] UndeadSurvivor::Game::StopEnemySpawning - Enemy spawning stopped");
+            }
         }
 
         #endregion
