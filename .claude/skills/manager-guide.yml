@@ -8,11 +8,94 @@ version: 1.0.0
 # Activation triggers
 triggers:
   keywords:
+    # Manager 관련
     - "매니저 사용법"
     - "manager guide"
     - "how to use manager"
     - "manager api"
     - "매니저 API"
+
+    # 오브젝트 생성 관련
+    - "오브젝트 생성"
+    - "게임오브젝트 생성"
+    - "instantiate"
+    - "Instantiate"
+    - "프리팹 생성"
+    - "prefab 생성"
+    - "spawn"
+    - "Spawn"
+    - "pool"
+    - "Pool"
+    - "풀링"
+    - "오브젝트 풀"
+
+    # 리소스 관련
+    - "리소스 로드"
+    - "리소스 호출"
+    - "resource load"
+    - "Resources.Load"
+    - "addressable"
+    - "Addressable"
+    - "asset load"
+    - "에셋 로드"
+
+    # UI 관련
+    - "UI 생성"
+    - "UI 관리"
+    - "패널 생성"
+    - "panel"
+    - "Panel"
+    - "팝업"
+    - "popup"
+    - "Popup"
+    - "ShowPanel"
+    - "HidePanel"
+
+    # Scene 관련
+    - "씬 전환"
+    - "씬 로드"
+    - "scene load"
+    - "SceneManager"
+    - "LoadScene"
+    - "scene transition"
+    - "씬 변경"
+
+    # 사운드 관련
+    - "소리 재생"
+    - "사운드 재생"
+    - "sound play"
+    - "audio play"
+    - "BGM"
+    - "bgm"
+    - "SFX"
+    - "sfx"
+    - "PlayBGM"
+    - "PlaySFX"
+    - "음악 재생"
+    - "효과음"
+
+    # Input 관련
+    - "입력 처리"
+    - "input"
+    - "Input"
+    - "키 입력"
+    - "마우스 입력"
+    - "터치 입력"
+    - "InputManager"
+
+    # 게임 데이터 관련
+    - "데이터 로드"
+    - "게임 데이터"
+    - "DataManager"
+    - "data provider"
+    - "데이터 프로바이더"
+
+    # 게임 라이프사이클 관련
+    - "게임 시작"
+    - "게임 전환"
+    - "미니게임"
+    - "MiniGameManager"
+    - "game lifecycle"
 
 # Skill workflow
 workflow:

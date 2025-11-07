@@ -200,18 +200,68 @@ PoolManager.Instance.DestroyPool("BulletPool");
 PoolManager.Instance.PrintAllPoolInfo();
 ```
 
+#### 4. IPoolable 인터페이스 구현 (권장)
+
+풀링되는 오브젝트는 `IPoolable` 인터페이스를 구현하여 생명주기를 관리할 수 있습니다.
+
+```csharp
+public class Projectile : MonoBehaviour, IPoolable
+{
+    private Rigidbody2D _rigidbody;
+    private int _currentPenetration;
+    private float _aliveTime;
+
+    // IPoolable 구현
+    public void OnSpawnedFromPool()
+    {
+        // 풀에서 스폰될 때 호출 (OnEnable 대신 사용)
+        _currentPenetration = 0;
+        _aliveTime = 0f;
+
+        if (_trailRenderer != null)
+        {
+            _trailRenderer.Clear();
+        }
+
+        Debug.Log("Projectile spawned from pool");
+    }
+
+    public void OnReturnedToPool()
+    {
+        // 풀로 반환될 때 호출 (OnDisable 대신 사용)
+        if (_rigidbody != null)
+        {
+            _rigidbody.linearVelocity = Vector2.zero;
+        }
+
+        Debug.Log("Projectile returned to pool");
+    }
+}
+```
+
+**IPoolable 인터페이스 메서드**:
+- `OnSpawnedFromPool()`: PoolManager.Spawn 시 자동 호출
+- `OnReturnedToPool()`: PoolManager.Despawn 시 자동 호출
+
+**장점**:
+- OnEnable/OnDisable 충돌 방지
+- 풀링 전용 초기화 로직 분리
+- 명시적인 생명주기 관리
+
 ### 💡 사용 팁
 
 - **초기 크기**: 동시에 사용할 최대 개수로 설정
 - **최대 크기**: 메모리 한계 고려하여 설정
 - **확장 가능**: true로 설정하면 부족 시 자동 확장
-- **ResourceManager 연동**: ResourceManager.InstantiateAsync 사용 권장
+- **ResourceManager 연동**: ResourceManager.InstantiateAsync 또는 InstantiateFromResources 사용 (자동 풀 생성)
+- **IPoolable 구현**: 풀링 객체는 IPoolable 인터페이스 구현 권장
 
 ### ⚠️ 주의사항
 
 - Spawn한 오브젝트는 반드시 Despawn으로 반환
-- Destroy 사용 금지 (풀 추적이 깨짐)
+- **Destroy 사용 금지** (풀 추적이 깨짐) → Despawn 사용
 - 풀 이름은 고유해야 함
+- OnEnable/OnDisable 사용 시 IPoolable과 충돌 가능 → IPoolable 사용 권장
 
 ---
 
