@@ -83,9 +83,7 @@ public class UndeadSurvivorGameScene : BaseScene
     private void InitializeDataProvider()
     {
         // 이미 등록되어 있는지 확인
-        var existingProvider = DataManager.Instance.GetProvider<UndeadSurvivorDataProvider>("UndeadSurvivor");
-
-        if (existingProvider == null)
+        if (!DataManager.Instance.HasProvider("UndeadSurvivor"))
         {
             // 등록되지 않았으면 생성 및 등록
             var dataProvider = new UndeadSurvivorDataProvider();
@@ -93,6 +91,10 @@ public class UndeadSurvivorGameScene : BaseScene
             DataManager.Instance.RegisterProvider(dataProvider);
 
             Debug.Log("[INFO] UndeadSurvivorGameScene::InitializeDataProvider - DataProvider registered");
+        }
+        else
+        {
+            Debug.Log("[INFO] UndeadSurvivorGameScene::InitializeDataProvider - DataProvider already registered");
         }
 
         // 데이터 로드

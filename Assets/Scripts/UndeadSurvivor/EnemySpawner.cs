@@ -71,6 +71,21 @@ namespace UndeadSurvivor
             _nextSpawnTime = Time.time + 1f; // 1초 후 첫 스폰
             _nextDifficultyIncreaseTime = Time.time + _difficultyIncreaseInterval;
 
+            // Enemy 프리팹 로드 (Resources 폴더에서)
+            if (_enemyPrefab == null)
+            {
+                _enemyPrefab = Resources.Load<GameObject>("Prefabs/Monster/UndeadSurvivor/Enemy");
+
+                if (_enemyPrefab == null)
+                {
+                    Debug.LogError("[ERROR] EnemySpawner::Initialize - Enemy prefab not found at 'Prefabs/Monster/UndeadSurvivor/Enemy'");
+                }
+                else
+                {
+                    Debug.Log("[INFO] EnemySpawner::Initialize - Enemy prefab loaded successfully");
+                }
+            }
+
             Debug.Log("[INFO] EnemySpawner::Initialize - Spawner initialized");
         }
 
@@ -104,6 +119,14 @@ namespace UndeadSurvivor
             if (_targetPlayer == null || !_targetPlayer.IsAlive)
             {
                 StopSpawning();
+                return;
+            }
+
+            // Enemy 프리팹이 없으면 스폰 불가
+            if (_enemyPrefab == null)
+            {
+                Debug.LogError("[ERROR] EnemySpawner::SpawnEnemy - Enemy prefab is null. Cannot spawn enemy.");
+                _isSpawning = false; // 스폰 중지
                 return;
             }
 

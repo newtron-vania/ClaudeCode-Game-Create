@@ -86,18 +86,8 @@ namespace UndeadSurvivor
             UpdateMovement();
         }
 
-        private void OnCollisionStay2D(Collision2D collision)
-        {
-            // 플레이어와 충돌 시 피해
-            if (collision.gameObject.CompareTag("Player"))
-            {
-                Player player = collision.gameObject.GetComponent<Player>();
-                if (player != null && player.IsAlive)
-                {
-                    player.TakeDamage(Damage);
-                }
-            }
-        }
+        // PlayerHitbox.cs에서 피격 판정을 처리하므로 Enemy.cs에서는 트리거 이벤트 불필요
+        // Enemy의 Collider는 isTrigger=false로 설정되어 PlayerHitbox의 Trigger와만 반응
 
         #endregion
 
@@ -120,8 +110,18 @@ namespace UndeadSurvivor
             _currentMoveSpeed = _monsterData.MoveSpeed * _difficultyMultiplier;
             _isAlive = true;
 
-            // 컴포넌트 활성화
+            // Rigidbody2D 설정 (Enemy끼리 충돌, Player와는 Trigger)
+            _rigidbody.bodyType = RigidbodyType2D.Dynamic;
+            _rigidbody.gravityScale = 0f; // 2D 탑다운이므로 중력 없음
+            _rigidbody.constraints = RigidbodyConstraints2D.FreezeRotation; // 회전 고정
+
+            // Collider 설정: Player Layer와는 Trigger로 처리
+            // Unity Layer 설정 필요: Player Layer와 Enemy Layer 분리
+            _collider.isTrigger = false; // Enemy끼리는 물리 충돌
             _collider.enabled = true;
+
+            // GameObject Layer 설정 (Unity에서 "Enemy" Layer 생성 필요)
+            gameObject.layer = LayerMask.NameToLayer("Enemy");
 
             Debug.Log($"[INFO] Enemy::Initialize - {_monsterData.Name} spawned (HP: {MaxHp:F0}, Speed: {_currentMoveSpeed:F1}, Multiplier: {_difficultyMultiplier:F2})");
         }

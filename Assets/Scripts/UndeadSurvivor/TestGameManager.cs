@@ -27,15 +27,31 @@ namespace UndeadSurvivor
         /// </summary>
         private void InitializeDataManager()
         {
-            // UndeadSurvivorDataProvider 생성 및 등록
-            _dataProvider = new UndeadSurvivorDataProvider();
-            _dataProvider.Initialize();
-            DataManager.Instance.RegisterProvider(_dataProvider);
+            // 이미 등록된 Provider가 있는지 확인
+            if (!DataManager.Instance.HasProvider("UndeadSurvivor"))
+            {
+                // 없으면 생성 및 등록
+                _dataProvider = new UndeadSurvivorDataProvider();
+                _dataProvider.Initialize();
+                DataManager.Instance.RegisterProvider(_dataProvider);
+                Debug.Log("[INFO] TestGameManager::InitializeDataManager - DataProvider registered");
+            }
+            else
+            {
+                _dataProvider = DataManager.Instance.GetProvider<UndeadSurvivorDataProvider>("UndeadSurvivor");
+                Debug.Log("[INFO] TestGameManager::InitializeDataManager - Using existing DataProvider");
+            }
 
-            // 게임 데이터 로드
-            DataManager.Instance.LoadGameData("UndeadSurvivor");
-
-            Debug.Log("[INFO] TestGameManager::InitializeDataManager - DataManager initialized and data loaded");
+            // 데이터가 로드되지 않았으면 로드
+            if (!_dataProvider.IsLoaded)
+            {
+                DataManager.Instance.LoadGameData("UndeadSurvivor");
+                Debug.Log("[INFO] TestGameManager::InitializeDataManager - Game data loaded");
+            }
+            else
+            {
+                Debug.Log("[INFO] TestGameManager::InitializeDataManager - Game data already loaded");
+            }
         }
 
         /// <summary>
@@ -80,11 +96,9 @@ namespace UndeadSurvivor
                 _player.OnPlayerLevelUp -= HandlePlayerLevelUp;
             }
 
-            // 게임 데이터 언로드
-            if (DataManager.Instance != null)
-            {
-                DataManager.Instance.UnloadGameData("UndeadSurvivor");
-            }
+            // TestGameManager는 씬이 종료될 때 데이터를 언로드하지 않음
+            // UndeadSurvivorGameScene이 데이터 언로드를 담당함
+            Debug.Log("[INFO] TestGameManager::OnDestroy - TestGameManager destroyed (data remains loaded)");
         }
 
         #region Event Handlers
