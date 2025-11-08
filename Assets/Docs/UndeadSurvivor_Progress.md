@@ -1,8 +1,9 @@
 # Undead Survivor 개발 진행 상황 보고서
 
-**최종 업데이트**: 2025-11-05
-**브랜치**: feature/undead-survivor
+**최종 업데이트**: 2025-11-08
+**브랜치**: featrue/undead-survivor-test
 **Phase 1 상태**: ✅ **100% 완료**
+**Phase 2 상태**: 🚧 **진행 중 (60%)**
 
 ---
 
@@ -208,20 +209,143 @@ Mage: MaxHp=80, Damage=+10%, Cooldown=-5%, MoveSpeed=5.0, StartWeapon=Fireball(1
 
 ---
 
-## 📋 다음 Phase 작업 계획
+## 🚧 Phase 2: 적 시스템 및 전투 (60% 완료)
 
-### Phase 2: 적 시스템 (예정)
-- [ ] 적 스폰 시스템
-- [ ] 적 AI (플레이어 추적)
-- [ ] 적 스탯 스케일링 (시간 기반)
-- [ ] 오브젝트 풀링 (PoolManager 활용)
-- [ ] MonsterData 구현
+### ✅ 완료된 항목
+
+#### 1. **Enemy 베이스 클래스** (Enemy.cs)
+**파일**: `Assets/Scripts/UndeadSurvivor/Enemy.cs`
+
+**완료된 기능**:
+- ✅ MonsterData 기반 초기화
+- ✅ 플레이어 추적 AI (Rigidbody2D.MovePosition)
+- ✅ 난이도 배율 시스템 (체력, 공격력 스케일링)
+- ✅ 피격 및 사망 처리
+- ✅ Rigidbody2D 및 Collider 자동 설정
+- ✅ Enemy Layer 자동 할당
+- ✅ Enemy끼리 물리 충돌 (서로 밀어냄)
+
+**주요 API**:
+```csharp
+public void Initialize(MonsterData monsterData, float difficultyMultiplier, Player targetPlayer)
+public void TakeDamage(float damage)
+public float CurrentHp { get; }
+public float MaxHp { get; }
+public float Damage { get; }
+public bool IsAlive { get; }
+```
+
+**이벤트**:
+```csharp
+event Action<Enemy> OnDeath
+event Action<float> OnDamaged
+```
+
+#### 2. **EnemySpawner 시스템** (EnemySpawner.cs)
+**파일**: `Assets/Scripts/UndeadSurvivor/EnemySpawner.cs`
+
+**완료된 기능**:
+- ✅ 시간 기반 적 자동 스폰 (기본 2초 간격)
+- ✅ 랜덤 몬스터 선택 (MonsterData ID 1-4)
+- ✅ 난이도 자동 증가 (30초마다 10% 증가)
+- ✅ 최대 적 수 제한 (기본 100마리)
+- ✅ 플레이어 주변 랜덤 스폰 (15 units 거리)
+- ✅ Enemy 프리팹 런타임 로드 (Resources)
+- ✅ 적 사망 시 경험치 드롭 처리
+
+**주요 API**:
+```csharp
+public void Initialize(Player targetPlayer, UndeadSurvivorDataProvider dataProvider)
+public void StartSpawning()
+public void StopSpawning()
+public void ClearAllEnemies()
+```
+
+#### 3. **Player-Enemy 충돌 및 피격 시스템** ✨ NEW
+**파일**: `Assets/Scripts/UndeadSurvivor/PlayerHitbox.cs`
+
+**완료된 기능**:
+- ✅ PlayerHitbox 전용 Trigger Collider (BoxCollider2D)
+- ✅ Enemy와 Trigger 충돌 시 피격 판정
+- ✅ PlayerHealth 무적 시간 (0.5초) 연동
+- ✅ Enemy 지속 피해 처리 (OnTriggerStay2D)
+- ✅ Gizmos 시각화 (Scene View에서 빨간 사각형)
+- ✅ Hitbox offset/size 설정 가능
+
+**주요 API**:
+```csharp
+public void SetHitboxSize(Vector2 size, Vector2 offset)
+public void SetHitboxSize(Vector2 size)
+public void SetHitboxOffset(Vector2 offset)
+```
+
+**충돌 시스템**:
+- Player ↔ Enemy: Trigger 이벤트 (피격 판정만, 물리 충돌 없음)
+- Enemy ↔ Enemy: 물리 충돌 (서로 밀어냄)
+- PlayerHealth 무적 시간으로 지속 피해 제어
+
+#### 4. **Unity Layer 및 Collision Matrix 설정** ✨ NEW
+**설정 파일**: `ProjectSettings/Physics2DSettings.asset`, `ProjectSettings/TagManager.asset`
+
+**완료된 설정**:
+- ✅ Player Layer (Layer 6) 생성
+- ✅ Enemy Layer (Layer 7) 생성
+- ✅ Physics2D Collision Matrix 설정 (Player ↔ Enemy 활성화)
+- ✅ Enemy Tag 자동 할당 (코드 기반)
+
+#### 5. **GameRegistry 자동 등록** ✨ NEW
+**파일**: `Assets/Scripts/Core/GameRegistry.cs`
+
+**완료된 기능**:
+- ✅ UndeadSurvivorGame 자동 등록 (Awake)
+- ✅ 게임 팩토리 패턴 적용
+- ✅ MiniGameManager 연동
+
+#### 6. **DataProvider 중복 등록 방지** ✨ NEW
+**파일**:
+- `Assets/Scripts/Scenes/UndeadSurvivorScene.cs`
+- `Assets/Scripts/UndeadSurvivor/TestGameManager.cs`
+
+**완료된 기능**:
+- ✅ `HasProvider()` 메서드 활용
+- ✅ DataProvider 재사용 로직
+- ✅ 중복 로드 방지
+
+#### 7. **문서화** ✨ NEW
+**파일**:
+- `Assets/Docs/UndeadSurvivor_Layer_Setup.md` (291 lines)
+- `Assets/Docs/UndeadSurvivor_Hitbox_Troubleshooting.md` (323 lines)
+
+**문서 내용**:
+- ✅ Layer 및 Collision Matrix 설정 가이드
+- ✅ GameObject 구조 및 컴포넌트 설정
+- ✅ 피격 이벤트 트러블슈팅 (9단계 체크리스트)
+- ✅ 자주 발생하는 문제 6가지 및 해결 방법
+
+### ⏳ 진행 중 항목
+
+- [ ] MonsterData JSON 작성 (4종 이상)
+- [ ] Enemy 체력바 UI
+- [ ] PoolManager 통합 (Enemy 오브젝트 풀링)
+- [ ] Enemy 애니메이션 시스템
+
+### 📊 Phase 2 통계
+- **구현 클래스**: 3개 (Enemy, EnemySpawner, PlayerHitbox)
+- **총 코드 라인**: ~600 lines
+- **이벤트 시스템**: 2개 (OnDeath, OnDamaged)
+- **문서**: 2개 (614 lines)
+- **Unity 설정**: Layer 2개, Collision Matrix, Tag
+
+---
+
+## 📋 다음 Phase 작업 계획
 
 ### Phase 3: 무기 시스템 (예정)
 - [ ] Weapon 베이스 클래스
 - [ ] 자동 공격 시스템
 - [ ] 무기 2종 구현 (Fireball, Scythe)
 - [ ] WeaponData 구현
+- [ ] 투사체 시스템 (PoolManager 활용)
 
 ### Phase 4: 레벨업 UI & 강화 시스템 (예정)
 - [ ] 레벨업 4지선다 UI
@@ -274,14 +398,17 @@ Mage: MaxHp=80, Damage=+10%, Cooldown=-5%, MoveSpeed=5.0, StartWeapon=Fireball(1
 
 ```
 Assets/Scripts/UndeadSurvivor/
+├── Player.cs                                 ✅ 완료 (417 lines)
 ├── PlayerController.cs                       ✅ 완료 (111 lines)
 ├── PlayerHealth.cs                           ✅ 완료 (190 lines)
 ├── PlayerExperience.cs                       ✅ 완료 (163 lines)
 ├── PlayerWeaponManager.cs                    ✅ 완료 (211 lines)
-├── Player.cs                                 ✅ 완료 (417 lines) ✨ NEW
-├── UndeadSurvivorInputType.cs                ✅ 완료 (18 lines) ✨ NEW
-├── UndeadSurvivorInputEventData.cs           ✅ 완료 (64 lines) ✨ NEW
-├── UndeadSurvivorInputAdapter.cs             ✅ 완료 (166 lines) ✨ NEW
+├── PlayerHitbox.cs                           ✅ 완료 (140 lines) ✨ Phase 2
+├── Enemy.cs                                  ✅ 완료 (200+ lines) ✨ Phase 2
+├── EnemySpawner.cs                           ✅ 완료 (250+ lines) ✨ Phase 2
+├── UndeadSurvivorInputType.cs                ✅ 완료 (18 lines)
+├── UndeadSurvivorInputEventData.cs           ✅ 완료 (64 lines)
+├── UndeadSurvivorInputAdapter.cs             ✅ 완료 (166 lines)
 ├── CharacterStat.cs                          ✅ 확장 완료 (CharacterData 초기화, GetStat)
 ├── Data/
 │   ├── UndeadSurvivorDataProvider.cs         ✅ 수정 완료 (JSON 동적 로드)
@@ -290,14 +417,30 @@ Assets/Scripts/UndeadSurvivor/
 │   ├── MonsterData.cs                        ✅ 완료
 │   └── ItemData.cs                           ✅ 완료
 └── ScriptableObjects/
-    └── CharacterDataList.cs                  ✅ 확장 완료 (JSON 로더)
+    ├── CharacterDataList.cs                  ✅ 확장 완료 (JSON 로더)
+    ├── WeaponDataList.cs                     ✅ 확장 완료 (JSON 로더)
+    ├── ItemDataList.cs                       ✅ 확장 완료 (JSON 로더)
+    └── MonsterDataList.cs                    ⏳ 작성 예정
+
+Assets/Scripts/Core/
+└── GameRegistry.cs                           ✅ 수정 완료 (UndeadSurvivor 자동 등록)
+
+Assets/Scripts/Scenes/
+└── UndeadSurvivorScene.cs                    ✅ 수정 완료 (DataProvider 중복 방지)
 
 Assets/Resources/Data/UndeadSurvivor/
-└── Characters/
-    └── CharacterData.json                    ✅ 완료 (Knight, Mage) ✨ NEW
+├── CharacterData.json                        ✅ 완료 (Knight, Mage)
+├── WeaponData.json                           ✅ 완료 (6 weapons)
+└── ItemData.json                             ✅ 완료 (4 items)
 
 Assets/Docs/
-└── UndeadSurvivor_TestScene_Guide.md         ✅ 완료 ✨ NEW
+├── UndeadSurvivor_TestScene_Guide.md         ✅ 완료
+├── UndeadSurvivor_Layer_Setup.md             ✅ 완료 (291 lines) ✨ Phase 2
+└── UndeadSurvivor_Hitbox_Troubleshooting.md  ✅ 완료 (323 lines) ✨ Phase 2
+
+ProjectSettings/
+├── Physics2DSettings.asset                   ✅ 설정 완료 (Collision Matrix)
+└── TagManager.asset                          ✅ 설정 완료 (Player/Enemy Layer)
 ```
 
 ---
@@ -381,7 +524,10 @@ Assets/Docs/
 - [ ] 무한 맵 시스템 버그 없음
 - [ ] 승리/패배 연출 완료
 
-**현재 진행률**: Phase 1 - ✅ **100% 완료** | 전체 MVP - **20% 완료**
+**현재 진행률**:
+- Phase 1 (플레이어) - ✅ **100% 완료**
+- Phase 2 (적 & 전투) - 🚧 **60% 완료**
+- 전체 MVP - **35% 완료**
 
 ---
 
@@ -390,4 +536,24 @@ Assets/Docs/
 - **작업용 PRD**: `Assets/Docs/UndeadSurvivor_WorkPRD.md`
 - **원본 PRD**: `Assets/Docs/UndeadSurvivor_Reference.md`
 - **Manager 가이드**: `Assets/Docs/MANAGERS_GUIDE.md`
+- **Layer 설정 가이드**: `Assets/Docs/UndeadSurvivor_Layer_Setup.md` ✨ NEW
+- **피격 이벤트 트러블슈팅**: `Assets/Docs/UndeadSurvivor_Hitbox_Troubleshooting.md` ✨ NEW
+- **테스트 씬 가이드**: `Assets/Docs/UndeadSurvivor_TestScene_Guide.md`
 - **코딩 규칙**: `.claude/UNITY_CONVENTIONS.md`
+
+---
+
+## 🎯 최근 커밋 (2025-11-08)
+
+**Commit**: `30cdef4` - `feat: Implement Player-Enemy collision and damage system`
+
+**주요 변경사항**:
+- ✅ PlayerHitbox.cs 추가 (Trigger 기반 피격 판정)
+- ✅ Enemy.cs 수정 (Rigidbody2D/Collider 자동 설정)
+- ✅ EnemySpawner.cs (Enemy 프리팹 런타임 로드)
+- ✅ GameRegistry.cs (UndeadSurvivor 자동 등록)
+- ✅ Physics2D Collision Matrix 설정
+- ✅ Player/Enemy Layer 생성
+- ✅ 문서 2개 추가 (614 lines)
+
+**파일 통계**: 13 files changed, +875, -46
