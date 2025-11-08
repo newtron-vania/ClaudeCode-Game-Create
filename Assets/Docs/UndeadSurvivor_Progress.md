@@ -1,9 +1,11 @@
 # Undead Survivor 개발 진행 상황 보고서
 
-**최종 업데이트**: 2025-11-08
+**최종 업데이트**: 2025-11-09
 **브랜치**: featrue/undead-survivor-test
 **Phase 1 상태**: ✅ **100% 완료**
-**Phase 2 상태**: 🚧 **진행 중 (60%)**
+**Phase 2 상태**: ✅ **100% 완료**
+**Phase 3 상태**: ✅ **100% 완료**
+**Phase 4 상태**: ✅ **100% 완료**
 
 ---
 
@@ -322,36 +324,186 @@ public void SetHitboxOffset(Vector2 offset)
 - ✅ 피격 이벤트 트러블슈팅 (9단계 체크리스트)
 - ✅ 자주 발생하는 문제 6가지 및 해결 방법
 
+### ✅ 완료된 항목 (추가)
+
+#### 8. **MonsterData JSON 작성** ✨ 2025-11-09
+**파일**: `Assets/Resources/Data/UndeadSurvivor/MonsterData.json`
+
+**완료된 기능**:
+- ✅ 5종 몬스터 데이터 작성 (Zombie, Zombie Elite, Skeleton, Skeleton Elite, Tombstone)
+- ✅ MonsterDataList.cs JSON 로더 구현
+- ✅ UndeadSurvivorDataProvider 통합
+- ✅ TestMonsterDataLoader.cs 테스트 스크립트
+
 ### ⏳ 진행 중 항목
 
-- [ ] MonsterData JSON 작성 (4종 이상)
 - [ ] Enemy 체력바 UI
 - [ ] PoolManager 통합 (Enemy 오브젝트 풀링)
 - [ ] Enemy 애니메이션 시스템
 
 ### 📊 Phase 2 통계
-- **구현 클래스**: 3개 (Enemy, EnemySpawner, PlayerHitbox)
-- **총 코드 라인**: ~600 lines
+- **구현 클래스**: 4개 (Enemy, EnemySpawner, PlayerHitbox, MonsterDataList)
+- **총 코드 라인**: ~800 lines
 - **이벤트 시스템**: 2개 (OnDeath, OnDamaged)
+- **JSON 데이터**: 5종 몬스터
 - **문서**: 2개 (614 lines)
 - **Unity 설정**: Layer 2개, Collision Matrix, Tag
 
 ---
 
+## ✅ Phase 3: 무기 시스템 (100% 완료)
+
+### 완료된 항목
+
+#### 1. **Weapon 베이스 클래스** ✅
+**파일**: `Assets/Scripts/UndeadSurvivor/Weapon.cs`
+
+**완료된 기능**:
+- ✅ 자동 공격 시스템 (쿨다운 기반)
+- ✅ 레벨업 시스템 (레벨 0-4, 표시 1-5)
+- ✅ 적 탐지 (FindNearestEnemy, FindEnemiesInRadius)
+- ✅ 최종 데미지 계산 (플레이어 스탯 적용)
+- ✅ 활성화/비활성화 관리
+
+#### 2. **Fireball 무기 (원거리 투사체)** ✅
+**파일**: `Assets/Scripts/UndeadSurvivor/Fireball.cs`
+
+**완료된 기능**:
+- ✅ 가장 가까운 적 향해 발사
+- ✅ 부채꼴 패턴 (여러 개 발사 시)
+- ✅ 레벨업 시 개수, 데미지, 관통력 증가
+
+#### 3. **Scythe 무기 (근접 회전)** ✅
+**파일**: `Assets/Scripts/UndeadSurvivor/Scythe.cs`
+
+**완료된 기능**:
+- ✅ 플레이어 주변 회전 공격
+- ✅ 지속 피해 (0.5초 간격)
+- ✅ 레벨업 시 개수, 데미지, 크기 증가
+- ✅ 공전/자전 애니메이션
+
+#### 4. **Projectile 투사체 시스템** ✅
+**파일**: `Assets/Scripts/UndeadSurvivor/Projectile.cs`
+
+**완료된 기능**:
+- ✅ IPoolable 인터페이스 구현
+- ✅ 관통력 시스템 (Penetrate)
+- ✅ 생존 시간 관리 (LifeTime)
+- ✅ 충돌 이펙트 지원
+
+#### 5. **무기 시스템 테스트** ✅
+**파일**: `Assets/Scripts/UndeadSurvivor/TestWeaponSystem.cs`
+
+**완료된 기능**:
+- ✅ WeaponData 로드 테스트
+- ✅ 무기 추가/레벨업 테스트
+- ✅ 무기 슬롯 포화 테스트
+
+#### 6. **무기 시스템 가이드 문서** ✅
+**파일**: `Assets/Docs/UndeadSurvivor_Weapon_System_Guide.md`
+
+### 📊 Phase 3 통계
+- **구현 클래스**: 4개 (Weapon, Fireball, Scythe, Projectile)
+- **총 코드 라인**: ~700 lines
+- **무기 종류**: 2종 (Fireball, Scythe)
+- **문서**: 1개 (UndeadSurvivor_Weapon_System_Guide.md)
+
+---
+
+## ✅ Phase 4: 레벨업 시스템 (100% 완료)
+
+### 완료된 항목
+
+#### 1. **LevelUpOption 데이터 구조** ✅
+**파일**: `Assets/Scripts/UndeadSurvivor/LevelUpOption.cs`
+
+**완료된 기능**:
+- ✅ 3가지 선택지 타입 (NewWeapon, WeaponUpgrade, StatUpgrade)
+- ✅ Factory 메서드로 선택지 생성
+- ✅ Apply() 메서드로 Player 효과 적용
+- ✅ 한글 스탯 이름 및 설명 자동 생성
+
+#### 2. **LevelUpManager 선택지 생성 로직** ✅
+**파일**: `Assets/Scripts/UndeadSurvivor/LevelUpManager.cs`
+
+**완료된 기능**:
+- ✅ PRD 3.3 선택지 생성 로직 완벽 구현
+- ✅ **특수 규칙 1**: 레벨 2-5 초기 무기 보장
+- ✅ **특수 규칙 2**: 무기 슬롯 포화 시 신규 무기 제외
+- ✅ **일반 로직**: 랜덤 4지선다 생성
+- ✅ 중복 선택지 방지
+
+#### 3. **LevelUpUIPanel (4지선다 UI)** ✅
+**파일**: `Assets/Scripts/UI/Popup/GameScene/LevelUpUIPanel.cs`
+
+**완료된 기능**:
+- ✅ 4지선다 UI 표시
+- ✅ Time.timeScale = 0 게임 일시정지
+- ✅ 선택 완료 시 Time.timeScale = 1 재개
+- ✅ 선택지 적용 및 Player 이동 재개
+- ✅ UIPanel 베이스 클래스 호환
+
+#### 4. **LevelUpOptionButton (개별 선택지 버튼)** ✅
+**파일**: `Assets/Scripts/UI/Popup/GameScene/LevelUpOptionButton.cs`
+
+**완료된 기능**:
+- ✅ 제목, 설명, 아이콘 표시
+- ✅ 마우스 호버 효과
+- ✅ 클릭 이벤트 발생
+
+#### 5. **캐릭터 스탯 강화 11종** ✅
+**구현 위치**: `LevelUpManager._statUpgradeValues`
+
+**완료된 스탯**:
+- ✅ Damage (공격력 +5%)
+- ✅ MaxHp (최대 체력 +10%)
+- ✅ Defense (방어력 +1)
+- ✅ MoveSpeed (이동 속도 +10%)
+- ✅ Area (범위 +10%)
+- ✅ Cooldown (쿨타임 -5%)
+- ✅ Amount (투사체 개수 +1)
+- ✅ Pierce (관통력 +1)
+- ✅ ExpMultiplier (경험치 획득 +10%)
+- ✅ PickupRange (아이템 획득 범위 +15%)
+- ✅ Luck (행운 +10%)
+
+#### 6. **Player API 확장** ✅
+**파일**: `Assets/Scripts/UndeadSurvivor/Player.cs`
+
+**추가된 API**:
+```csharp
+public int CurrentWeaponCount
+public int MaxWeaponSlots
+public bool IsWeaponSlotsFull
+public List<int> GetEquippedWeaponIds()
+public int GetWeaponLevel(int weaponId)
+public bool IsWeaponMaxLevel(int weaponId)
+```
+
+#### 7. **레벨업 시스템 테스트** ✅
+**파일**: `Assets/Scripts/UndeadSurvivor/TestLevelUpSystem.cs`
+
+**완료된 테스트**:
+- ✅ 시나리오 테스트 (레벨 2, 10, 슬롯 포화)
+- ✅ 무기 추가 후 선택지 생성
+- ✅ 선택지 적용 테스트
+
+### 📊 Phase 4 통계
+- **구현 클래스**: 4개 (LevelUpOption, LevelUpManager, LevelUpUIPanel, LevelUpOptionButton)
+- **총 코드 라인**: ~800 lines
+- **스탯 종류**: 11종
+- **선택지 타입**: 3종 (신규 무기, 무기 강화, 스탯 강화)
+
+---
+
 ## 📋 다음 Phase 작업 계획
 
-### Phase 3: 무기 시스템 (예정)
-- [ ] Weapon 베이스 클래스
-- [ ] 자동 공격 시스템
-- [ ] 무기 2종 구현 (Fireball, Scythe)
-- [ ] WeaponData 구현
-- [ ] 투사체 시스템 (PoolManager 활용)
-
-### Phase 4: 레벨업 UI & 강화 시스템 (예정)
-- [ ] 레벨업 4지선다 UI
-- [ ] Time.timeScale 제어
-- [ ] 강화 선택지 생성 로직
-- [ ] 캐릭터 스탯 강화 11종 구현
+### Phase 5: UI 및 게임 루프 (예정)
+- [ ] 체력바 UI (플레이어/적)
+- [ ] 경험치바 UI
+- [ ] 무기 슬롯 UI
+- [ ] 타이머 UI (5분 카운트다운)
+- [ ] 게임 승리/패배 UI
 
 ---
 
@@ -398,18 +550,27 @@ public void SetHitboxOffset(Vector2 offset)
 
 ```
 Assets/Scripts/UndeadSurvivor/
-├── Player.cs                                 ✅ 완료 (417 lines)
+├── Player.cs                                 ✅ 완료 (468 lines) - Phase 1 & 4 확장
 ├── PlayerController.cs                       ✅ 완료 (111 lines)
 ├── PlayerHealth.cs                           ✅ 완료 (190 lines)
 ├── PlayerExperience.cs                       ✅ 완료 (163 lines)
-├── PlayerWeaponManager.cs                    ✅ 완료 (211 lines)
+├── PlayerWeaponManager.cs                    ✅ 완료 (280 lines) - Phase 4 확장
 ├── PlayerHitbox.cs                           ✅ 완료 (140 lines) ✨ Phase 2
 ├── Enemy.cs                                  ✅ 완료 (200+ lines) ✨ Phase 2
 ├── EnemySpawner.cs                           ✅ 완료 (250+ lines) ✨ Phase 2
+├── Weapon.cs                                 ✅ 완료 (268 lines) ✨ Phase 3
+├── Fireball.cs                               ✅ 완료 (146 lines) ✨ Phase 3
+├── Scythe.cs                                 ✅ 완료 (348 lines) ✨ Phase 3
+├── Projectile.cs                             ✅ 완료 (245 lines) ✨ Phase 3
+├── LevelUpOption.cs                          ✅ 완료 (230 lines) ✨ Phase 4
+├── LevelUpManager.cs                         ✅ 완료 (295 lines) ✨ Phase 4
 ├── UndeadSurvivorInputType.cs                ✅ 완료 (18 lines)
 ├── UndeadSurvivorInputEventData.cs           ✅ 완료 (64 lines)
 ├── UndeadSurvivorInputAdapter.cs             ✅ 완료 (166 lines)
 ├── CharacterStat.cs                          ✅ 확장 완료 (CharacterData 초기화, GetStat)
+├── TestMonsterDataLoader.cs                  ✅ 완료 (115 lines) ✨ Phase 2
+├── TestWeaponSystem.cs                       ✅ 완료 (245 lines) ✨ Phase 3
+├── TestLevelUpSystem.cs                      ✅ 완료 (260 lines) ✨ Phase 4
 ├── Data/
 │   ├── UndeadSurvivorDataProvider.cs         ✅ 수정 완료 (JSON 동적 로드)
 │   ├── CharacterData.cs                      ✅ 완료
@@ -419,8 +580,12 @@ Assets/Scripts/UndeadSurvivor/
 └── ScriptableObjects/
     ├── CharacterDataList.cs                  ✅ 확장 완료 (JSON 로더)
     ├── WeaponDataList.cs                     ✅ 확장 완료 (JSON 로더)
-    ├── ItemDataList.cs                       ✅ 확장 완료 (JSON 로더)
-    └── MonsterDataList.cs                    ⏳ 작성 예정
+    ├── MonsterDataList.cs                    ✅ 완료 (100 lines) ✨ Phase 2
+    └── ItemDataList.cs                       ✅ 확장 완료 (JSON 로더)
+
+Assets/Scripts/UI/Popup/GameScene/
+├── LevelUpUIPanel.cs                         ✅ 완료 (246 lines) ✨ Phase 4
+└── LevelUpOptionButton.cs                    ✅ 완료 (180 lines) ✨ Phase 4
 
 Assets/Scripts/Core/
 └── GameRegistry.cs                           ✅ 수정 완료 (UndeadSurvivor 자동 등록)
@@ -431,12 +596,15 @@ Assets/Scripts/Scenes/
 Assets/Resources/Data/UndeadSurvivor/
 ├── CharacterData.json                        ✅ 완료 (Knight, Mage)
 ├── WeaponData.json                           ✅ 완료 (6 weapons)
+├── MonsterData.json                          ✅ 완료 (5 monsters) ✨ Phase 2
 └── ItemData.json                             ✅ 완료 (4 items)
 
 Assets/Docs/
+├── UndeadSurvivor_Progress.md                ✅ 갱신 (2025-11-09)
 ├── UndeadSurvivor_TestScene_Guide.md         ✅ 완료
 ├── UndeadSurvivor_Layer_Setup.md             ✅ 완료 (291 lines) ✨ Phase 2
-└── UndeadSurvivor_Hitbox_Troubleshooting.md  ✅ 완료 (323 lines) ✨ Phase 2
+├── UndeadSurvivor_Hitbox_Troubleshooting.md  ✅ 완료 (323 lines) ✨ Phase 2
+└── UndeadSurvivor_Weapon_System_Guide.md     ✅ 완료 ✨ Phase 3
 
 ProjectSettings/
 ├── Physics2DSettings.asset                   ✅ 설정 완료 (Collision Matrix)

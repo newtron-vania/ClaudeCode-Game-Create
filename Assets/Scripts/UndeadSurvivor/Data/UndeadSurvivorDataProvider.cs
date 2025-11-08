@@ -101,10 +101,20 @@ namespace UndeadSurvivor
         /// </summary>
         private void LoadMonsterData()
         {
-            // JSON 파일에서 로드
-            MonsterDataList dataList = MonsterDataList.LoadFromJson("Data/UndeadSurvivor/Monsters/MonsterData");
+            // JSON 파일 로드
+            TextAsset jsonFile = Resources.Load<TextAsset>("Data/UndeadSurvivor/MonsterData");
 
-            if (dataList == null || dataList.Monsters == null || dataList.Monsters.Count == 0)
+            if (jsonFile == null)
+            {
+                Debug.LogError("[ERROR] UndeadSurvivor::DataProvider::LoadMonsterData - MonsterData.json not found");
+                return;
+            }
+
+            // MonsterDataList 생성 및 JSON 파싱
+            MonsterDataList dataList = ScriptableObject.CreateInstance<MonsterDataList>();
+            dataList.LoadFromJson(jsonFile.text);
+
+            if (dataList.Monsters == null || dataList.Monsters.Count == 0)
             {
                 Debug.LogError("[ERROR] UndeadSurvivor::DataProvider::LoadMonsterData - No monsters loaded from JSON");
                 return;

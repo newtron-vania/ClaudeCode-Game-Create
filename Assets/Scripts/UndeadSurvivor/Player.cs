@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace UndeadSurvivor
@@ -70,6 +71,15 @@ namespace UndeadSurvivor
 
         /// <summary>캐릭터 스탯</summary>
         public CharacterStat CharacterStat => _characterStat;
+
+        /// <summary>현재 장착 무기 개수</summary>
+        public int CurrentWeaponCount => _weaponManager != null ? _weaponManager.CurrentWeaponCount : 0;
+
+        /// <summary>최대 무기 슬롯 개수</summary>
+        public int MaxWeaponSlots => _weaponManager != null ? _weaponManager.MaxWeaponSlots : 6;
+
+        /// <summary>무기 슬롯 포화 여부</summary>
+        public bool IsWeaponSlotsFull => _weaponManager != null && _weaponManager.IsWeaponSlotsFull;
 
         #endregion
 
@@ -396,6 +406,58 @@ namespace UndeadSurvivor
             }
 
             return _weaponManager.LevelUpWeapon(weaponId);
+        }
+
+        /// <summary>
+        /// 무기 보유 여부 확인
+        /// </summary>
+        public bool HasWeapon(int weaponId)
+        {
+            if (_weaponManager == null)
+            {
+                return false;
+            }
+
+            return _weaponManager.HasWeapon(weaponId);
+        }
+
+        /// <summary>
+        /// 장착된 모든 무기 ID 목록 반환
+        /// </summary>
+        public List<int> GetEquippedWeaponIds()
+        {
+            if (_weaponManager == null)
+            {
+                return new List<int>();
+            }
+
+            return _weaponManager.GetEquippedWeaponIds();
+        }
+
+        /// <summary>
+        /// 무기 현재 레벨 조회
+        /// </summary>
+        public int GetWeaponLevel(int weaponId)
+        {
+            if (_weaponManager == null)
+            {
+                return -1;
+            }
+
+            return _weaponManager.GetWeaponLevel(weaponId);
+        }
+
+        /// <summary>
+        /// 무기 최대 레벨 여부
+        /// </summary>
+        public bool IsWeaponMaxLevel(int weaponId)
+        {
+            if (_weaponManager == null)
+            {
+                return false;
+            }
+
+            return _weaponManager.IsWeaponMaxLevel(weaponId);
         }
 
         /// <summary>

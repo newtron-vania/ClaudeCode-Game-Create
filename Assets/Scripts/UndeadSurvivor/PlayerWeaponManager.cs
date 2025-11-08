@@ -263,6 +263,19 @@ namespace UndeadSurvivor
                 Debug.Log($"[INFO] UndeadSurvivor::PlayerWeaponManager::RegisterWeaponObject - Weapon object registered for {slot.WeaponData.Name}");
             }
         }
+
+        /// <summary>
+        /// 장착된 모든 무기 ID 목록 반환
+        /// </summary>
+        public List<int> GetEquippedWeaponIds()
+        {
+            List<int> weaponIds = new List<int>();
+            foreach (var slot in _equippedWeapons)
+            {
+                weaponIds.Add(slot.WeaponData.Id);
+            }
+            return weaponIds;
+        }
     }
 
     /// <summary>
