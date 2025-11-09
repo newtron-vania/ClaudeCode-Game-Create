@@ -1,0 +1,20 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <!-- Option Button Template -->
+    <ui:VisualElement name="option-button" class="option-button option-button--hidden">
+
+        <!-- Icon Container -->
+        <ui:VisualElement name="icon-container" class="icon-container">
+            <ui:VisualElement name="icon" class="icon-image" />
+        </ui:VisualElement>
+
+        <!-- Text Container -->
+        <ui:VisualElement name="text-container" class="text-container">
+            <!-- Name Text -->
+            <ui:Label name="name-text" text="무기 이름" class="name-text" />
+
+            <!-- Description Text -->
+            <ui:Label name="description-text" text="설명" class="description-text" />
+        </ui:VisualElement>
+
+    </ui:VisualElement>
+</ui:UXML>

@@ -1,0 +1,20 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <!-- Level Up Panel Root -->
+    <ui:VisualElement name="level-up-panel" class="panel-root">
+
+        <!-- Background Overlay -->
+        <ui:VisualElement name="background" class="background-overlay" />
+
+        <!-- Content Container -->
+        <ui:VisualElement name="content-container" class="content-container">
+
+            <!-- Title -->
+            <ui:Label name="title" text="LEVEL UP!" class="title-text" />
+
+            <!-- Options Container (4지선다 버튼이 동적으로 추가됨) -->
+            <ui:VisualElement name="options-container" class="options-container" />
+
+        </ui:VisualElement>
+
+    </ui:VisualElement>
+</ui:UXML>
