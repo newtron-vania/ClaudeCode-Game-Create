@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UndeadSurvivor.UI;
 
 namespace UndeadSurvivor
 {
@@ -16,6 +17,9 @@ namespace UndeadSurvivor
 
         [Header("References")]
         [SerializeField] private Player _player; // 플레이어 참조
+
+        [Header("UI References")]
+        [SerializeField] private LevelUpUIController _levelUpUIController; // UIToolkit UI 컨트롤러
 
         private UndeadSurvivorDataProvider _dataProvider;
 
@@ -40,6 +44,16 @@ namespace UndeadSurvivor
             if (_player == null)
             {
                 _player = FindObjectOfType<Player>();
+            }
+
+            if (_levelUpUIController == null)
+            {
+                _levelUpUIController = FindObjectOfType<LevelUpUIController>();
+            }
+
+            if (_levelUpUIController == null)
+            {
+                Debug.LogWarning("[WARNING] LevelUpManager::Awake - LevelUpUIController not found. UI will not be displayed.");
             }
         }
 
@@ -291,6 +305,58 @@ namespace UndeadSurvivor
                 default:
                     return false;
             }
+        }
+
+        #endregion
+
+        #region UI Integration
+
+        /// <summary>
+        /// 레벨업 UI 표시
+        /// </summary>
+        public void ShowLevelUpUI()
+        {
+            if (_levelUpUIController == null)
+            {
+                Debug.LogError("[ERROR] LevelUpManager::ShowLevelUpUI - LevelUpUIController is null");
+                return;
+            }
+
+            // 선택지 생성
+            List<LevelUpOption> options = GenerateLevelUpOptions();
+
+            if (options.Count == 0)
+            {
+                Debug.LogError("[ERROR] LevelUpManager::ShowLevelUpUI - No options generated");
+                return;
+            }
+
+            // UI 표시
+            _levelUpUIController.Show(options);
+
+            Debug.Log($"[INFO] LevelUpManager::ShowLevelUpUI - Displayed {options.Count} options");
+        }
+
+        /// <summary>
+        /// 선택지 적용 (UI에서 호출)
+        /// </summary>
+        public void OnOptionChosen(LevelUpOption option)
+        {
+            if (option == null || _player == null)
+            {
+                Debug.LogError("[ERROR] LevelUpManager::OnOptionChosen - Invalid option or player");
+                return;
+            }
+
+            Debug.Log($"[INFO] LevelUpManager::OnOptionChosen - Applying option: {option.Title}");
+
+            // 옵션 적용
+            option.Apply(_player);
+
+            // 플레이어 이동 재개
+            _player.ResumeMovement();
+
+            Debug.Log("[INFO] LevelUpManager::OnOptionChosen - Option applied successfully");
         }
 
         #endregion
