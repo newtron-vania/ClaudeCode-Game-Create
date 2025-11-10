@@ -1,11 +1,12 @@
 # Undead Survivor 개발 진행 상황 보고서
 
-**최종 업데이트**: 2025-11-09
-**브랜치**: featrue/undead-survivor-test
+**최종 업데이트**: 2024-11-10
+**브랜치**: feature/undead-survivor-ui-levelup
 **Phase 1 상태**: ✅ **100% 완료**
 **Phase 2 상태**: ✅ **100% 완료**
 **Phase 3 상태**: ✅ **100% 완료**
 **Phase 4 상태**: ✅ **100% 완료**
+**Phase 5 상태**: 🚧 **30% 완료** (CharacterSelectUI 완료)
 
 ---
 
@@ -498,12 +499,55 @@ public bool IsWeaponMaxLevel(int weaponId)
 
 ## 📋 다음 Phase 작업 계획
 
-### Phase 5: UI 및 게임 루프 (예정)
-- [ ] 체력바 UI (플레이어/적)
-- [ ] 경험치바 UI
-- [ ] 무기 슬롯 UI
-- [ ] 타이머 UI (5분 카운트다운)
-- [ ] 게임 승리/패배 UI
+### Phase 5: UI 및 게임 루프 (🚧 진행 중 - 30%)
+
+#### ✅ 완료된 항목 (2024-11-10)
+
+**1. CharacterSelectUI 시스템** ✨ NEW
+- ✅ CharacterSelectSubItem.cs (130 lines) - 캐릭터 선택 버튼
+- ✅ CharacterStatInfoPanel.cs (220 lines) - 스탯 정보 패널
+- ✅ CharacterSelectUIPanel.cs (280 lines) - 메인 UI 컨트롤러
+- ✅ UndeadSurvivorDataProvider.GetAllCharacters() 추가
+- ✅ UndeadSurvivor_CharacterSelectUI_Guide.md (640+ lines)
+
+**주요 기능**:
+- DataManager 연동하여 모든 캐릭터 로드
+- CharacterSelectSubItem 동적 생성
+- 선택 시 하이라이트 효과 (황금색)
+- 11개 스탯 + 시작 무기 정보 표시
+- 에러 메시지 코루틴 (3초 표시)
+- 시작/취소 버튼 처리
+
+#### 우선순위 조정 (2024-11-10)
+**레벨업 UI 테스트 → 후순위로 미룸**
+- 이유: 실제 게임플레이 가능한 상태 우선 구현
+- Phase 5 완료 후 통합 테스트 시 진행
+
+#### 남은 작업
+1. **CharacterSelectUI Unity 작업 (미완료)**
+   - [ ] CharacterSelectSubItem.prefab 생성
+   - [ ] CharacterSelectUI Scene 구성
+   - [ ] 캐릭터 초상화 스프라이트 준비
+   - [ ] 씬 전환 테스트
+
+2. **In-Game HUD (미착수)**
+   - [ ] 체력바 UI (플레이어)
+   - [ ] 경험치바 UI
+   - [ ] 레벨 표시 UI
+   - [ ] 생존 시간 타이머 UI
+   - [ ] 무기 슬롯 UI
+
+3. **Enemy UI (미착수)**
+   - [ ] 체력바 UI (적)
+
+4. **게임 종료 UI (미착수)**
+   - [ ] 게임 승리 UI
+   - [ ] 게임 패배 UI
+
+5. **레벨업 UI 통합 테스트 (최후순위)**
+   - [ ] LevelUpUIPanel 실제 게임 연동
+   - [ ] LevelUpOptionElement 버튼 동작 확인
+   - [ ] 4지선다 선택 플로우 검증
 
 ---
 
@@ -550,42 +594,55 @@ public bool IsWeaponMaxLevel(int weaponId)
 
 ```
 Assets/Scripts/UndeadSurvivor/
-├── Player.cs                                 ✅ 완료 (468 lines) - Phase 1 & 4 확장
-├── PlayerController.cs                       ✅ 완료 (111 lines)
-├── PlayerHealth.cs                           ✅ 완료 (190 lines)
-├── PlayerExperience.cs                       ✅ 완료 (163 lines)
-├── PlayerWeaponManager.cs                    ✅ 완료 (280 lines) - Phase 4 확장
-├── PlayerHitbox.cs                           ✅ 완료 (140 lines) ✨ Phase 2
-├── Enemy.cs                                  ✅ 완료 (200+ lines) ✨ Phase 2
-├── EnemySpawner.cs                           ✅ 완료 (250+ lines) ✨ Phase 2
-├── Weapon.cs                                 ✅ 완료 (268 lines) ✨ Phase 3
-├── Fireball.cs                               ✅ 완료 (146 lines) ✨ Phase 3
-├── Scythe.cs                                 ✅ 완료 (348 lines) ✨ Phase 3
-├── Projectile.cs                             ✅ 완료 (245 lines) ✨ Phase 3
-├── LevelUpOption.cs                          ✅ 완료 (230 lines) ✨ Phase 4
-├── LevelUpManager.cs                         ✅ 완료 (295 lines) ✨ Phase 4
-├── UndeadSurvivorInputType.cs                ✅ 완료 (18 lines)
-├── UndeadSurvivorInputEventData.cs           ✅ 완료 (64 lines)
-├── UndeadSurvivorInputAdapter.cs             ✅ 완료 (166 lines)
-├── CharacterStat.cs                          ✅ 확장 완료 (CharacterData 초기화, GetStat)
-├── TestMonsterDataLoader.cs                  ✅ 완료 (115 lines) ✨ Phase 2
-├── TestWeaponSystem.cs                       ✅ 완료 (245 lines) ✨ Phase 3
-├── TestLevelUpSystem.cs                      ✅ 완료 (260 lines) ✨ Phase 4
+├── Character/Player/                         # 플레이어 (Phase 1)
+│   ├── Player.cs                             ✅ 완료 (468 lines)
+│   ├── PlayerController.cs                   ✅ 완료 (111 lines)
+│   ├── PlayerHealth.cs                       ✅ 완료 (190 lines)
+│   ├── PlayerExperience.cs                   ✅ 완료 (163 lines)
+│   ├── PlayerHitbox.cs                       ✅ 완료 (140 lines)
+│   ├── PlayerWeaponManager.cs                ✅ 완료 (280 lines)
+│   └── CharacterStat.cs                      ✅ 완료
+├── Character/Enemy/                          # 적 (Phase 2)
+│   ├── Enemy.cs                              ✅ 완료 (200+ lines)
+│   └── EnemySpawner.cs                       ✅ 완료 (250+ lines)
+├── Weapon/                                   # 무기 (Phase 3)
+│   ├── Weapon.cs                             ✅ 완료 (268 lines)
+│   ├── Scythe.cs                             ✅ 완료 (348 lines)
+│   └── Projectile/
+│       ├── Projectile.cs                     ✅ 완료 (245 lines)
+│       └── Fireball.cs                       ✅ 완료 (146 lines)
+├── System/                                   # 게임 시스템
+│   ├── LevelUpOption.cs                      ✅ 완료 (230 lines) ✨ Phase 4
+│   ├── LevelUpManager.cs                     ✅ 완료 (295 lines) ✨ Phase 4
+│   ├── UndeadSurvivorInputType.cs            ✅ 완료 (18 lines)
+│   ├── UndeadSurvivorInputEventData.cs       ✅ 완료 (64 lines)
+│   └── UndeadSurvivorInputAdapter.cs         ✅ 완료 (166 lines)
+├── UI/                                       # 게임 전용 UI
+│   ├── LevelUpUIPanel.cs                     ✅ 완료 (246 lines) ✨ Phase 4
+│   ├── LevelUpUIController.cs                ✅ 완료 ✨ Phase 4
+│   ├── LevelUpOptionElement.cs               ✅ 완료 ✨ Phase 4
+│   ├── LevelUpOptionButton.cs                ✅ 완료 (180 lines) ✨ Phase 4
+│   ├── CharacterSelectUIPanel.cs             ✅ 완료 (280 lines) ✨ Phase 5
+│   ├── CharacterStatInfoPanel.cs             ✅ 완료 (220 lines) ✨ Phase 5
+│   └── CharacterSelectSubItem.cs             ✅ 완료 (130 lines) ✨ Phase 5
 ├── Data/
-│   ├── UndeadSurvivorDataProvider.cs         ✅ 수정 완료 (JSON 동적 로드)
+│   ├── UndeadSurvivorDataProvider.cs         ✅ 확장 완료 (GetAllCharacters 추가) ✨ Phase 5
 │   ├── CharacterData.cs                      ✅ 완료
 │   ├── WeaponData.cs                         ✅ 완료
 │   ├── MonsterData.cs                        ✅ 완료
 │   └── ItemData.cs                           ✅ 완료
-└── ScriptableObjects/
-    ├── CharacterDataList.cs                  ✅ 확장 완료 (JSON 로더)
-    ├── WeaponDataList.cs                     ✅ 확장 완료 (JSON 로더)
-    ├── MonsterDataList.cs                    ✅ 완료 (100 lines) ✨ Phase 2
-    └── ItemDataList.cs                       ✅ 확장 완료 (JSON 로더)
-
-Assets/Scripts/UI/Popup/GameScene/
-├── LevelUpUIPanel.cs                         ✅ 완료 (246 lines) ✨ Phase 4
-└── LevelUpOptionButton.cs                    ✅ 완료 (180 lines) ✨ Phase 4
+├── ScriptableObjects/
+│   ├── CharacterDataList.cs                  ✅ 확장 완료 (JSON 로더)
+│   ├── WeaponDataList.cs                     ✅ 확장 완료 (JSON 로더)
+│   ├── MonsterDataList.cs                    ✅ 완료 (100 lines) ✨ Phase 2
+│   └── ItemDataList.cs                       ✅ 확장 완료 (JSON 로더)
+├── UndeadSurvivorGame.cs                     ✅ 완료
+├── UndeadSurvivorGameData.cs                 ✅ 완료
+└── Tests/UndeadSurvivor/                     # 테스트 스크립트
+    ├── TestGameManager.cs                    ✅ 완료 (115 lines) ✨ Phase 2
+    ├── TestMonsterDataLoader.cs              ✅ 완료
+    ├── TestWeaponSystem.cs                   ✅ 완료 (245 lines) ✨ Phase 3
+    └── TestLevelUpSystem.cs                  ✅ 완료 (260 lines) ✨ Phase 4
 
 Assets/Scripts/Core/
 └── GameRegistry.cs                           ✅ 수정 완료 (UndeadSurvivor 자동 등록)
@@ -600,11 +657,12 @@ Assets/Resources/Data/UndeadSurvivor/
 └── ItemData.json                             ✅ 완료 (4 items)
 
 Assets/Docs/
-├── UndeadSurvivor_Progress.md                ✅ 갱신 (2025-11-09)
+├── UndeadSurvivor_Progress.md                ✅ 갱신 (2024-11-10)
 ├── UndeadSurvivor_TestScene_Guide.md         ✅ 완료
 ├── UndeadSurvivor_Layer_Setup.md             ✅ 완료 (291 lines) ✨ Phase 2
 ├── UndeadSurvivor_Hitbox_Troubleshooting.md  ✅ 완료 (323 lines) ✨ Phase 2
-└── UndeadSurvivor_Weapon_System_Guide.md     ✅ 완료 ✨ Phase 3
+├── UndeadSurvivor_Weapon_System_Guide.md     ✅ 완료 ✨ Phase 3
+└── UndeadSurvivor_CharacterSelectUI_Guide.md ✅ 완료 (640+ lines) ✨ Phase 5
 
 ProjectSettings/
 ├── Physics2DSettings.asset                   ✅ 설정 완료 (Collision Matrix)
@@ -661,23 +719,35 @@ ProjectSettings/
 
 ## 📝 다음 세션 작업 권장사항
 
-### 즉시 가능한 작업
-1. **Unity 에디터에서 테스트 씬 구성**
-   - `UndeadSurvivor_TestScene_Guide.md` 가이드 참조
-   - InputAdapter, Player, TestGameManager 설정
-   - 이동, 체력, 경험치 시스템 동작 확인
+### Phase 5: CharacterSelectUI Unity 작업 (최우선)
+1. **CharacterSelectSubItem.prefab 생성**
+   - Background, Sprite, Text 계층 구조
+   - Button 컴포넌트 및 스크립트 연결
+   - `UndeadSurvivor_CharacterSelectUI_Guide.md` 참조
 
-### Phase 2 준비 작업
-2. **적 시스템 설계 및 구현**
-   - EnemySpawner 시스템
-   - Enemy AI (플레이어 추적)
-   - 적 스탯 스케일링 (시간 기반)
-   - PoolManager 활용한 오브젝트 풀링
+2. **CharacterSelectUI Scene 구성**
+   - LeftPanel (CharacterStatInfoPanel) + RightPanel 레이아웃
+   - 11개 스탯 TextMeshProUGUI 배치
+   - ScrollView/Content 설정
+   - 시작/취소 버튼 연결
 
-3. **무기 시스템 설계 (Phase 3)**
-   - Weapon 베이스 클래스
-   - 자동 공격 시스템
-   - 무기 2종 우선 구현 (Fireball, Scythe)
+3. **리소스 준비**
+   - `Knight_portrait.png`, `Mage_portrait.png` 추가
+   - Addressables 경로: `Sprites/UndeadSurvivor/`
+
+4. **씬 전환 테스트**
+   - 메인 → 캐릭터 선택 → 게임 플로우 검증
+   - 캐릭터 선택 정보 GameScene 전달 메커니즘 구현
+
+### Phase 5: In-Game HUD 구현 (차순위)
+5. **체력바/경험치바 UI**
+   - PlayerHealthBar.cs
+   - PlayerExpBar.cs
+   - Player 이벤트 구독
+
+6. **타이머 및 무기 슬롯 UI**
+   - GameTimerUI.cs (5분 카운트다운)
+   - WeaponSlotsUI.cs
 
 ---
 
@@ -694,8 +764,11 @@ ProjectSettings/
 
 **현재 진행률**:
 - Phase 1 (플레이어) - ✅ **100% 완료**
-- Phase 2 (적 & 전투) - 🚧 **60% 완료**
-- 전체 MVP - **35% 완료**
+- Phase 2 (적 & 전투) - ✅ **100% 완료**
+- Phase 3 (무기) - ✅ **100% 완료**
+- Phase 4 (레벨업) - ✅ **100% 완료**
+- Phase 5 (UI) - 🚧 **30% 완료** (CharacterSelectUI 완료)
+- 전체 MVP - **45% 완료**
 
 ---
 
@@ -704,24 +777,26 @@ ProjectSettings/
 - **작업용 PRD**: `Assets/Docs/UndeadSurvivor_WorkPRD.md`
 - **원본 PRD**: `Assets/Docs/UndeadSurvivor_Reference.md`
 - **Manager 가이드**: `Assets/Docs/MANAGERS_GUIDE.md`
-- **Layer 설정 가이드**: `Assets/Docs/UndeadSurvivor_Layer_Setup.md` ✨ NEW
-- **피격 이벤트 트러블슈팅**: `Assets/Docs/UndeadSurvivor_Hitbox_Troubleshooting.md` ✨ NEW
+- **Layer 설정 가이드**: `Assets/Docs/UndeadSurvivor_Layer_Setup.md`
+- **피격 이벤트 트러블슈팅**: `Assets/Docs/UndeadSurvivor_Hitbox_Troubleshooting.md`
+- **무기 시스템 가이드**: `Assets/Docs/UndeadSurvivor_Weapon_System_Guide.md`
+- **캐릭터 선택 UI 가이드**: `Assets/Docs/UndeadSurvivor_CharacterSelectUI_Guide.md` ✨ NEW
 - **테스트 씬 가이드**: `Assets/Docs/UndeadSurvivor_TestScene_Guide.md`
 - **코딩 규칙**: `.claude/UNITY_CONVENTIONS.md`
 
 ---
 
-## 🎯 최근 커밋 (2025-11-08)
+## 🎯 최근 커밋 (2024-11-10)
 
-**Commit**: `30cdef4` - `feat: Implement Player-Enemy collision and damage system`
+**Commit**: (작성 중) - `feat: Implement CharacterSelectUI system for UndeadSurvivor`
 
 **주요 변경사항**:
-- ✅ PlayerHitbox.cs 추가 (Trigger 기반 피격 판정)
-- ✅ Enemy.cs 수정 (Rigidbody2D/Collider 자동 설정)
-- ✅ EnemySpawner.cs (Enemy 프리팹 런타임 로드)
-- ✅ GameRegistry.cs (UndeadSurvivor 자동 등록)
-- ✅ Physics2D Collision Matrix 설정
-- ✅ Player/Enemy Layer 생성
-- ✅ 문서 2개 추가 (614 lines)
+- ✅ CharacterSelectSubItem.cs (130 lines) - 캐릭터 선택 버튼
+- ✅ CharacterStatInfoPanel.cs (220 lines) - 스탯 정보 패널
+- ✅ CharacterSelectUIPanel.cs (280 lines) - 메인 UI 컨트롤러
+- ✅ UndeadSurvivorDataProvider.GetAllCharacters() 추가
+- ✅ UndeadSurvivor 폴더 구조 정리 (게임/시스템별)
+- ✅ UndeadSurvivor_CharacterSelectUI_Guide.md (640+ lines)
+- ✅ UndeadSurvivor_Progress.md 갱신
 
-**파일 통계**: 13 files changed, +875, -46
+**파일 통계**: 5 files changed, +1270 lines, -20 lines

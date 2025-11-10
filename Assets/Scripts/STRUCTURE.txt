@@ -1,0 +1,85 @@
+# Assets/Scripts 폴더 구조 (2024-11-10 정리 완료)
+
+Scripts/
+├── Core/                    # 플랫폼 아키텍처
+│   ├── IMiniGame.cs
+│   ├── IGameData.cs
+│   ├── IGameDataProvider.cs
+│   ├── GameRegistry.cs
+│   ├── GamePlayList.cs
+│   ├── CommonPlayerData.cs  # 모든 게임 공통 플레이어 데이터
+│   ├── BaseScene.cs
+│   ├── Singleton.cs
+│   └── ...
+├── Managers/                # 인프라 매니저 (8개)
+│   ├── MiniGameManager.cs
+│   ├── DataManager.cs
+│   ├── ResourceManager.cs
+│   ├── PoolManager.cs
+│   ├── SoundManager.cs
+│   ├── UIManager.cs
+│   ├── CustomSceneManager.cs
+│   └── InputManager.cs
+├── Scenes/                  # 씬 컨트롤러
+│   ├── MainMenuScene.cs
+│   ├── TetrisScene.cs
+│   ├── UndeadSurvivorScene.cs
+│   ├── UndeadSurvivorInitialScene.cs
+│   └── UndeadSurvivorCharacterSelectScene.cs
+├── UI/                      # 공통 UI 컴포넌트
+│   ├── UIPanel.cs
+│   ├── FadePanel.cs
+│   ├── GameSelectUIPanel.cs
+│   └── GameSelectButton.cs
+├── Tetris/                  # Tetris 게임
+│   ├── Data/
+│   │   ├── TetrisData.cs
+│   │   ├── TetrisGameData.cs
+│   │   └── TetrisPiece.cs
+│   ├── UI/
+│   │   └── TetrisUIPanel.cs
+│   ├── TetrisGame.cs
+│   └── TetrisRenderer.cs
+├── UndeadSurvivor/         # Undead Survivor 게임
+│   ├── UI/                 # 게임 전용 UI
+│   │   ├── LevelUpUIPanel.cs
+│   │   ├── LevelUpUIController.cs
+│   │   ├── LevelUpOptionElement.cs
+│   │   └── LevelUpOptionButton.cs
+│   ├── Data/               # 데이터 구조
+│   │   ├── UndeadSurvivorDataProvider.cs
+│   │   ├── CharacterData.cs
+│   │   ├── WeaponData.cs
+│   │   ├── MonsterData.cs
+│   │   └── ItemData.cs
+│   ├── ScriptableObjects/  # 데이터 리스트
+│   │   ├── CharacterDataList.cs
+│   │   ├── WeaponDataList.cs
+│   │   ├── MonsterDataList.cs
+│   │   └── ItemDataList.cs
+│   └── *.cs                # 게임 로직 (Player, Enemy, Weapon 등)
+└── Tests/                  # 모든 테스트 코드
+    ├── UndeadSurvivor/
+    │   ├── TestGameManager.cs
+    │   ├── TestLevelUpSystem.cs
+    │   ├── TestMonsterDataLoader.cs
+    │   ├── TestWeaponSystem.cs
+    │   ├── PlayerHealthTests.cs
+    │   ├── CharacterStatTests.cs
+    │   └── PlayerExperienceTests.cs
+    ├── ManagersTest.cs
+    └── ResourceManagerTest.cs
+
+## 정리 완료 항목
+✅ Tetris 게임 파일을 Tetris/ 폴더로 통합
+✅ UndeadSurvivor LevelUp UI를 UndeadSurvivor/UI/로 이동
+✅ UndeadSurvivor Test 파일들을 Tests/UndeadSurvivor/로 이동
+✅ CommonPlayerData를 Core/로 이동
+✅ 빈 폴더 정리 (Games, GameData, Renderers, UI/Popup)
+✅ 불필요한 파일 삭제 (ClaudeCoder.cs)
+
+## 구조 원칙
+- 게임별 폴더 분리 (Tetris, UndeadSurvivor)
+- 공통 시스템은 최상위 (Core, Managers, UI, Scenes, Tests)
+- 게임 전용 UI는 게임 폴더 내부
+- 모든 테스트 코드는 Tests 폴더로 통합

@@ -419,6 +419,27 @@ namespace UndeadSurvivor
             return new List<int>(_characterDict.Keys);
         }
 
+        /// <summary>
+        /// 모든 캐릭터 데이터 목록 반환
+        /// </summary>
+        public List<CharacterData> GetAllCharacters()
+        {
+            if (!IsLoaded)
+            {
+                Debug.LogError("[ERROR] UndeadSurvivor::DataProvider::GetAllCharacters - Data not loaded");
+                return new List<CharacterData>();
+            }
+
+            List<CharacterData> characters = new List<CharacterData>(_characterDict.Values);
+
+            // ID 순으로 정렬
+            characters.Sort((a, b) => a.Id.CompareTo(b.Id));
+
+            Debug.Log($"[INFO] UndeadSurvivor::DataProvider::GetAllCharacters - Returning {characters.Count} characters");
+
+            return characters;
+        }
+
         #endregion
 
         #region Helper Methods
