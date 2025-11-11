@@ -93,6 +93,30 @@ public class UIManager : Singleton<UIManager>
     #region 패널 관리
 
     /// <summary>
+    /// 게임별 UI 경로 생성
+    /// 현재 실행 중인 게임의 ID를 기반으로 UI 리소스 경로를 생성합니다.
+    /// </summary>
+    /// <param name="address">UI 주소 (예: "Popup/LevelUpUIPanel")</param>
+    /// <returns>게임별 UI 전체 경로 (예: "Prefabs/UI/UndeadSurvivor/Popup/LevelUpUIPanel")</returns>
+    private string GetGameSpecificUIPath(string address)
+    {
+        // 현재 게임 ID 가져오기 (프로퍼티 사용)
+        string currentGameID = MiniGameManager.Instance?.CurrentGameID;
+
+        if (!string.IsNullOrEmpty(currentGameID))
+        {
+            // 게임별 UI 경로: Prefabs/UI/{GameID}/{address}
+            return $"Prefabs/UI/{currentGameID}/{address}";
+        }
+        else
+        {
+            // 공통 UI 경로: UI/{address} (기존 방식, 게임이 없을 때)
+            Debug.LogWarning("[WARNING] UIManager::GetGameSpecificUIPath - No current game ID, using common UI path");
+            return $"UI/{address}";
+        }
+    }
+
+    /// <summary>
     /// 패널 찾기 또는 생성
     /// 씬에서 먼저 찾고, 없으면 Addressables로 생성
     /// </summary>
@@ -119,7 +143,7 @@ public class UIManager : Singleton<UIManager>
         }
 
         // 씬에서 패널 찾기
-        T existingPanel = FindObjectOfType<T>();
+        T existingPanel = FindFirstObjectByType<T>();
         if (existingPanel != null)
         {
             Debug.Log($"[INFO] UIManager::GetOrCreatePanel - Found existing panel in scene: {panelType.Name}");
@@ -169,7 +193,7 @@ public class UIManager : Singleton<UIManager>
         }
 
         // 씬에서 패널 찾기
-        T existingPanel = FindObjectOfType<T>();
+        T existingPanel = FindFirstObjectByType<T>();
         if (existingPanel != null)
         {
             Debug.Log($"[INFO] UIManager::OpenPanel - Found existing panel in scene: {panelType.Name}");
@@ -185,13 +209,16 @@ public class UIManager : Singleton<UIManager>
 
     /// <summary>
     /// 패널 열기 (Addressables 주소 지정)
+    /// 게임별 UI 경로를 자동으로 생성하여 패널을 로드합니다.
     /// </summary>
     /// <typeparam name="T">패널 타입</typeparam>
-    /// <param name="address">패널 프리팹 Addressable 주소</param>
+    /// <param name="address">패널 프리팹 Addressable 주소 (예: "Popup/LevelUpUIPanel")</param>
     /// <param name="onComplete">완료 콜백</param>
     public void OpenPanel<T>(string address, Action<T> onComplete = null) where T : UIPanel
     {
-        string uiAddress = $"UI/{address}";
+        // 게임별 UI 경로 생성
+        string uiAddress = GetGameSpecificUIPath(address);
+        Debug.Log($"[INFO] UIManager::OpenPanel - Resolved UI path: {uiAddress}");
         GetOrCreatePanel(uiAddress, onComplete);
     }
 
