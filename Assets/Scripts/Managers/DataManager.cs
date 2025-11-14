@@ -26,7 +26,12 @@ public class DataManager : Singleton<DataManager>
     {
         base.Awake();
         Debug.Log("[INFO] DataManager::Awake - DataManager initialized");
+
+        // 모든 게임 데이터 프로바이더 자동 등록
+        RegisterProvider(new SudokuDataProvider());
+
         _isInitialized = true;
+        Debug.Log($"[INFO] DataManager::Awake - {_providers.Count} providers auto-registered");
     }
 
     /// <summary>

@@ -173,8 +173,11 @@ public class GameRegistry : Singleton<GameRegistry>
         // UndeadSurvivor 게임 등록
         RegisterGame("UndeadSurvivor", () => new UndeadSurvivor.UndeadSurvivorGame());
 
-        // 향후 다른 게임들도 여기에 추가
-        // RegisterGame("Tetris", () => new Tetris.TetrisGame());
+        // Tetris 게임 등록
+        RegisterGame("Tetris", () => new TetrisGame());
+
+        // Sudoku 게임 등록
+        RegisterGame("Sudoku", () => new SudokuGame());
 
         Debug.Log($"[INFO] GameRegistry::Awake - {_gameFactories.Count} games auto-registered");
     }

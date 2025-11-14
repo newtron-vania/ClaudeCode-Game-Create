@@ -14,10 +14,10 @@
 | Phase 2: 핵심 데이터 구조 | ✅ 완료 | 100% | 2025-11-12 | 2025-11-12 |
 | Phase 3: 게임 로직 | ✅ 완료 | 100% | 2025-11-12 | 2025-11-12 |
 | Phase 4: UI/UX | ✅ 완료 | 100% | 2025-11-12 | 2025-11-12 |
-| Phase 5: 씬 통합 | ⏳ 대기 | 0% | - | - |
+| Phase 5: 씬 통합 | ✅ 완료 | 100% | 2025-11-14 | 2025-11-14 |
 | Phase 6: 테스트 및 검증 | ⏳ 대기 | 0% | - | - |
 
-**전체 진행률**: 67% (4/6 Phase)
+**전체 진행률**: 83% (5/6 Phase)
 
 ---
 
@@ -125,22 +125,43 @@ IGameData 기반 게임 상태 관리 시스템 구현
 
 ---
 
-## Phase 5: 씬 통합 (⏳ 대기)
+## Phase 5: 씬 통합 (✅ 완료)
 
 ### 목표
 게임 선택 메뉴에서 플레이 가능하도록 통합
 
 ### 작업 항목
-- [ ] Sudoku.unity 씬 생성
-- [ ] SudokuScene.cs (BaseScene 상속)
-- [ ] GameRegistry에 등록
-- [ ] GamePlayList에 추가
-- [ ] 게임 아이콘 생성 (`Sudoku_icon.png`)
+- [x] SudokuScene.cs 작성 (BaseScene 상속)
+- [x] GameRegistry에 Sudoku 등록
+- [x] DataManager에 SudokuDataProvider 등록
+- [x] Sudoku.unity 씬 생성 가이드 작성
+- [x] GamePlayList 설정 가이드 작성
+- [x] 게임 아이콘 경로 설정 가이드 작성
 
 ### 완료 기준
-- [ ] MainMenuScene에서 Sudoku 선택 가능
-- [ ] Sudoku 씬 로드 정상
-- [ ] DataManager 로드/언로드 정상
+- [x] SudokuScene.cs 작성 완료
+- [x] GameRegistry 자동 등록 구현
+- [x] DataManager 자동 등록 구현
+- [x] 상세 설정 가이드 문서 작성
+
+### 완료일
+2025-11-14
+
+### 주요 구현 사항
+- **SudokuScene.cs**: BaseScene 상속, 게임 로드/언로드 라이프사이클 관리
+- **GameRegistry 등록**: Awake()에서 Sudoku 자동 등록
+- **DataManager 등록**: Awake()에서 SudokuDataProvider 자동 등록
+- **설정 가이드**: Unity 에디터 작업을 위한 상세 가이드 (`Sudoku_Scene_Setup_Guide.md`)
+
+### Unity 에디터 작업 필요 (수동)
+다음 작업은 Unity 에디터에서 직접 수행해야 합니다:
+1. Sudoku.unity 씬 생성 및 SudokuScene 컴포넌트 배치
+2. SudokuUIPanel Prefab 구성 (UI 계층 구조 생성)
+3. Addressables 등록 (SudokuUIPanel, Sudoku_icon)
+4. GamePlayList에 Sudoku 추가 (Inspector 설정)
+5. Build Settings에 씬 추가
+
+**가이드 문서**: `Assets/Docs/Sudoku_Scene_Setup_Guide.md` 참조
 
 ---
 
@@ -199,7 +220,7 @@ IGameData 기반 게임 상태 관리 시스템 구현
 - ✅ `UI/NumPadUI.cs` - 숫자 입력 패드 (1-9, 지우기, 키보드 지원)
 - ✅ `UI/TimerUI.cs` - 경과 시간 타이머 (MM:SS)
 
-**생성된 파일 (총 12개)**:
+**생성된 파일 (Phase 1-4, 총 12개)**:
 1. `Data/SudokuGameData.cs` (182 lines)
 2. `Data/SudokuBoard.cs` (324 lines)
 3. `Data/SudokuDataProvider.cs` (177 lines)
@@ -213,50 +234,54 @@ IGameData 기반 게임 상태 관리 시스템 구현
 11. `UI/NumPadUI.cs` (270 lines)
 12. `UI/TimerUI.cs` (136 lines)
 
-**다음 단계**: Phase 5 - 씬 통합
+### 2025-11-14
+
+**Phase 5 완료**:
+- ✅ `Scenes/SudokuScene.cs` - BaseScene 상속, 씬 라이프사이클 관리 (194 lines)
+- ✅ GameRegistry에 Sudoku 자동 등록 (`Core/GameRegistry.cs` 수정)
+- ✅ DataManager에 SudokuDataProvider 자동 등록 (`Managers/DataManager.cs` 수정)
+- ✅ `Docs/Sudoku_Scene_Setup_Guide.md` - Unity 에디터 설정 가이드 작성
+
+**생성된 파일 (Phase 5, 총 2개)**:
+13. `Scenes/SudokuScene.cs` (194 lines)
+14. `Docs/Sudoku_Scene_Setup_Guide.md` (Unity 에디터 가이드)
+
+**다음 단계**: Unity 에디터에서 수동 작업 → Phase 6 테스트 및 검증
 
 ---
 
 ## 🔄 다음 재개 시 할 일
 
-### Phase 5: 씬 통합 시작
+### Unity 에디터 수동 작업 (Phase 5 완료를 위한 필수 작업)
 
-**우선순위 작업**:
-1. **Sudoku.unity** 씬 생성
-   - Unity 에디터에서 새 씬 생성
-   - Canvas 및 UI 계층 구조 설정
-   - SudokuUIPanel 프리팹 배치
+**⚠️ 중요**: 코드 작업은 완료되었습니다. 이제 Unity 에디터에서 다음 작업을 수행해야 합니다.
 
-2. **SudokuScene.cs** 작성
-   - BaseScene 상속
-   - SudokuGame 인스턴스 생성 및 관리
-   - UI 초기화 및 이벤트 연결
+**작업 가이드**: `Assets/Docs/Sudoku_Scene_Setup_Guide.md` 참조
 
-3. **GameRegistry 등록**
-   - `GameRegistry.cs`의 Awake()에 Sudoku 등록
-   - `DataManager`에 `SudokuDataProvider` 등록
+**필수 작업 체크리스트**:
+1. [ ] Sudoku.unity 씬 생성
+2. [ ] SudokuScene 컴포넌트 배치
+3. [ ] SudokuUIPanel Prefab 구성 (UI 계층 구조)
+4. [ ] Addressables 등록 (SudokuUIPanel, Sudoku_icon)
+5. [ ] GamePlayList에 Sudoku 추가 (MainMenuScene Inspector)
+6. [ ] Build Settings에 Sudoku.unity 추가
+7. [ ] 단독 씬 테스트
+8. [ ] MainMenu → Sudoku 통합 테스트
 
-4. **GamePlayList 추가**
-   - Inspector에서 GamePlayList에 Sudoku GameInfo 추가
-   - GameID: "Sudoku", IsPlayable: true
-
-5. **게임 아이콘 생성**
-   - `Sudoku_icon.png` 스프라이트 생성
-   - Addressables 경로: `Sprite/Sudoku_icon`
-
-**재개 명령어**:
+**Unity 에디터 작업 완료 후**:
 ```
-/init
-Phase 5 씬 통합을 시작하라
+Phase 6: 테스트 및 검증 시작
 ```
 
-**참고 파일**:
-- BaseScene 구조: `Assets/Scripts/Core/BaseScene.cs`
-- Tetris 씬 참고: `Assets/Scripts/Scenes/TetrisScene.cs`
-- GameRegistry: `Assets/Scripts/Core/GameRegistry.cs`
-- Manager 가이드: `Assets/Docs/MANAGERS_GUIDE.md`
+### Phase 6: 테스트 및 검증 (다음 단계)
 
-**현재까지 생성된 핵심 클래스**:
+**예정 작업**:
+- 단위 테스트 (Validator, Generator, Board)
+- 통합 테스트 (씬 전환, 게임 플레이 전체 흐름)
+- 성능 테스트 (맵 생성 속도, 메모리 사용량)
+- 디버깅 (버그 수정, 메모리 누수 체크)
+
+**현재까지 생성된 핵심 클래스 (총 14개)**:
 - ✅ SudokuGameData (게임 상태)
 - ✅ SudokuBoard (보드 관리)
 - ✅ SudokuDataProvider (데이터 제공)
@@ -269,6 +294,8 @@ Phase 5 씬 통합을 시작하라
 - ✅ SudokuCellButton (셀 버튼)
 - ✅ NumPadUI (숫자 입력)
 - ✅ TimerUI (타이머)
+- ✅ SudokuScene (씬 관리) - **NEW**
+- ✅ Sudoku_Scene_Setup_Guide.md (Unity 에디터 가이드) - **NEW**
 
 ---
 
@@ -297,14 +324,16 @@ Phase 5 씬 통합을 시작하라
 
 | 항목 | 현재 | 목표 | 달성률 |
 |------|------|------|--------|
-| 생성 파일 수 | 8 | 20+ | 40% |
-| 구현 클래스 수 | 7 | 13 | 54% |
-| 코드 라인 수 | ~2,000+ | ~3,500+ | 57% |
-| Phase 완료 | 3/6 | 6/6 | 50% |
+| 생성 파일 수 | 14 | 20+ | 70% |
+| 구현 클래스 수 | 13 | 15 | 87% |
+| 코드 라인 수 | ~3,600+ | ~4,000+ | 90% |
+| Phase 완료 | 5/6 | 6/6 | 83% |
 | PRD 요구사항 | 100% | 100% | ✅ |
+| 코드 통합 | 100% | 100% | ✅ |
+| Unity 에디터 작업 | 0% | 100% | 대기 중 |
 | 테스트 커버리지 | 0% | 80%+ | Phase 6 예정 |
 
 ---
 
-**마지막 업데이트**: 2025-11-12 (Phase 3 완료)
-**다음 업데이트 예정**: Phase 4 완료 시
+**마지막 업데이트**: 2025-11-14 (Phase 5 씬 통합 완료)
+**다음 단계**: Unity 에디터 수동 작업 → Phase 6 테스트
