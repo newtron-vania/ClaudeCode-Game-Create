@@ -10,44 +10,62 @@ using TMPro;
 /// </summary>
 public class SudokuUIPanel : UIPanel
 {
-    [Header("Sub Panels")]
-    [SerializeField] private GameObject _startMenuPanel;  // 난이도 선택 패널
-    [SerializeField] private GameObject _gameHUDPanel;    // 게임 플레이 패널
-    [SerializeField] private GameObject _winPopupPanel;   // 승리 팝업 패널
-    [SerializeField] private GameObject _loadingPanel;    // 로딩 패널 (맵 생성 중)
+    // ========================================
+    // 4개 메인 패널 (Setup Guide 명세)
+    // ========================================
+    [Header("Main Panels")]
+    [SerializeField] private GameObject _startMenuPanel;   // 시작 메뉴 패널
+    [SerializeField] private GameObject _loadingPanel;     // 맵 생성 중 패널
+    [SerializeField] private GameObject _playingPanel;     // 게임 플레이 패널
+    [SerializeField] private GameObject _gameEndPanel;     // 게임 완료 패널
 
-    [Header("Start Menu UI")]
-    [SerializeField] private Button _easyButton;
-    [SerializeField] private Button _mediumButton;
-    [SerializeField] private Button _hardButton;
-    [SerializeField] private Button _backButton;
+    // ========================================
+    // StartMenuPanel UI 요소
+    // ========================================
+    [Header("StartMenuPanel Elements")]
+    [SerializeField] private TextMeshProUGUI _titleText;        // 타이틀 텍스트
+    [SerializeField] private GameObject _difficultyPanel;       // 난이도 버튼 그룹 패널
+    [SerializeField] private Button _easyButton;                // 쉬움 버튼
+    [SerializeField] private Button _mediumButton;              // 중간 버튼
+    [SerializeField] private Button _hardButton;                // 어려움 버튼
+    [SerializeField] private Button _backButton;                // 뒤로가기 버튼
 
-    [Header("Game HUD UI")]
-    [SerializeField] private SudokuGridUI _gridUI;
-    [SerializeField] private NumPadUI _numPadUI;
-    [SerializeField] private TimerUI _timerUI;
-    [SerializeField] private TextMeshProUGUI _difficultyText;
-    [SerializeField] private TextMeshProUGUI _hintsUsedText;
-    [SerializeField] private TextMeshProUGUI _mistakesText;
-    [SerializeField] private Button _hintButton;
-    [SerializeField] private Button _newGameButton;
+    // ========================================
+    // LoadingPanel UI 요소
+    // ========================================
+    [Header("LoadingPanel Elements")]
+    [SerializeField] private TextMeshProUGUI _loadingText;      // "Generating..." 텍스트
+    [SerializeField] private Image _loadingSpinner;             // 회전 애니메이션 이미지
 
-    [Header("Win Popup UI")]
-    [SerializeField] private TextMeshProUGUI _winTitleText;
-    [SerializeField] private TextMeshProUGUI _clearTimeText;
-    [SerializeField] private TextMeshProUGUI _finalScoreText;
-    [SerializeField] private Button _playAgainButton;
-    [SerializeField] private Button _mainMenuButton;
+    // ========================================
+    // PlayingPanel UI 요소
+    // ========================================
+    [Header("PlayingPanel Elements")]
+    [SerializeField] private SudokuGridUI _gridUI;              // 그리드 UI 컴포넌트
+    [SerializeField] private NumPadUI _numPadUI;                // NumPad UI 컴포넌트
+    [SerializeField] private TimerUI _timerUI;                  // 타이머 UI 컴포넌트
+    [SerializeField] private TextMeshProUGUI _mistakesText;     // 실수 횟수
+    [SerializeField] private TextMeshProUGUI _hintsText;        // 남은 힌트
+    [SerializeField] private Button _hintButton;                // 힌트 버튼
+    [SerializeField] private Button _undoButton;                // 되돌리기 버튼
+    [SerializeField] private Button _eraseButton;               // 지우기 버튼
+    [SerializeField] private Button _pauseButton;               // 일시정지 버튼
 
-    [Header("Settings")]
-    [SerializeField] private Color _easyColor = new Color(0.3f, 0.8f, 0.3f);
-    [SerializeField] private Color _mediumColor = new Color(0.9f, 0.7f, 0.2f);
-    [SerializeField] private Color _hardColor = new Color(0.9f, 0.3f, 0.3f);
+    // ========================================
+    // GameEndPanel UI 요소
+    // ========================================
+    [Header("GameEndPanel Elements")]
+    [SerializeField] private TextMeshProUGUI _winText;          // "Congratulations!" 텍스트
+    [SerializeField] private TextMeshProUGUI _timeText;         // 클리어 타임
+    [SerializeField] private GameObject _statsPanel;            // 통계 정보 패널
+    [SerializeField] private Button _newGameButton;             // 새 게임 버튼
+    [SerializeField] private Button _mainMenuButton;            // 메인 메뉴 버튼
 
+    // ========================================
     // 이벤트
+    // ========================================
     public event Action<SudokuDifficulty> OnDifficultySelected;
     public event Action OnHintRequested;
-    public event Action OnNewGameRequested;
     public event Action OnBackToMenu;
 
     private SudokuGame _game;
@@ -100,15 +118,15 @@ public class SudokuUIPanel : UIPanel
         }
 
         // 시작 메뉴 표시
-        ShowStartMenu();
+        ShowStartMenuPanel();
     }
 
-    #region 상태별 UI 전환
+    #region 상태별 UI 전환 (Setup Guide 명세에 맞춤)
 
     /// <summary>
-    /// 시작 메뉴 표시 (난이도 선택)
+    /// StartMenuPanel 표시 (난이도 선택)
     /// </summary>
-    public void ShowStartMenu()
+    public void ShowStartMenuPanel()
     {
         HideAllPanels();
 
@@ -117,13 +135,13 @@ public class SudokuUIPanel : UIPanel
             _startMenuPanel.SetActive(true);
         }
 
-        Debug.Log("[INFO] SudokuUIPanel::ShowStartMenu - Start menu displayed");
+        Debug.Log("[INFO] SudokuUIPanel::ShowStartMenuPanel - Start menu displayed");
     }
 
     /// <summary>
-    /// 로딩 화면 표시 (맵 생성 중)
+    /// LoadingPanel 표시 (맵 생성 중)
     /// </summary>
-    public void ShowLoading()
+    public void ShowLoadingPanel()
     {
         HideAllPanels();
 
@@ -132,19 +150,19 @@ public class SudokuUIPanel : UIPanel
             _loadingPanel.SetActive(true);
         }
 
-        Debug.Log("[INFO] SudokuUIPanel::ShowLoading - Loading screen displayed");
+        Debug.Log("[INFO] SudokuUIPanel::ShowLoadingPanel - Loading screen displayed");
     }
 
     /// <summary>
-    /// 게임 HUD 표시 (플레이 중)
+    /// PlayingPanel 표시 (게임 플레이 중)
     /// </summary>
-    public void ShowGameHUD()
+    public void ShowPlayingPanel()
     {
         HideAllPanels();
 
-        if (_gameHUDPanel != null)
+        if (_playingPanel != null)
         {
-            _gameHUDPanel.SetActive(true);
+            _playingPanel.SetActive(true);
         }
 
         // 타이머 시작
@@ -156,17 +174,19 @@ public class SudokuUIPanel : UIPanel
         // 게임 정보 업데이트
         UpdateGameInfo();
 
-        Debug.Log("[INFO] SudokuUIPanel::ShowGameHUD - Game HUD displayed");
+        Debug.Log("[INFO] SudokuUIPanel::ShowPlayingPanel - Playing panel displayed");
     }
 
     /// <summary>
-    /// 승리 팝업 표시
+    /// GameEndPanel 표시 (게임 완료)
     /// </summary>
-    public void ShowWinPopup()
+    public void ShowGameEndPanel()
     {
-        if (_winPopupPanel != null)
+        HideAllPanels();
+
+        if (_gameEndPanel != null)
         {
-            _winPopupPanel.SetActive(true);
+            _gameEndPanel.SetActive(true);
         }
 
         // 타이머 정지
@@ -175,10 +195,10 @@ public class SudokuUIPanel : UIPanel
             _timerUI.StopTimer();
         }
 
-        // 승리 정보 업데이트
-        UpdateWinPopup();
+        // 게임 완료 정보 업데이트
+        UpdateGameEndPanel();
 
-        Debug.Log("[INFO] SudokuUIPanel::ShowWinPopup - Win popup displayed");
+        Debug.Log("[INFO] SudokuUIPanel::ShowGameEndPanel - Game end panel displayed");
     }
 
     /// <summary>
@@ -187,9 +207,9 @@ public class SudokuUIPanel : UIPanel
     private void HideAllPanels()
     {
         if (_startMenuPanel != null) _startMenuPanel.SetActive(false);
-        if (_gameHUDPanel != null) _gameHUDPanel.SetActive(false);
-        if (_winPopupPanel != null) _winPopupPanel.SetActive(false);
         if (_loadingPanel != null) _loadingPanel.SetActive(false);
+        if (_playingPanel != null) _playingPanel.SetActive(false);
+        if (_gameEndPanel != null) _gameEndPanel.SetActive(false);
     }
 
     #endregion
@@ -197,86 +217,50 @@ public class SudokuUIPanel : UIPanel
     #region UI 업데이트
 
     /// <summary>
-    /// 게임 정보 업데이트 (난이도, 힌트, 실수 등)
+    /// PlayingPanel 게임 정보 업데이트 (타이머, 힌트, 실수)
     /// </summary>
     public void UpdateGameInfo()
     {
         if (_gameData == null) return;
 
-        // 난이도 표시
-        if (_difficultyText != null)
-        {
-            _difficultyText.text = GetDifficultyDisplayName(_gameData.Difficulty);
-            _difficultyText.color = GetDifficultyColor(_gameData.Difficulty);
-        }
-
-        // 힌트 사용 횟수
-        if (_hintsUsedText != null)
-        {
-            _hintsUsedText.text = $"힌트: {_gameData.HintsUsed}";
-        }
-
-        // 실수 횟수
+        // 실수 횟수 업데이트
         if (_mistakesText != null)
         {
             _mistakesText.text = $"실수: {_gameData.Mistakes}";
         }
+
+        // 힌트 사용 횟수 업데이트
+        if (_hintsText != null)
+        {
+            _hintsText.text = $"힌트: {_gameData.HintsUsed}";
+        }
+
+        // 타이머는 TimerUI 컴포넌트가 자동으로 업데이트
     }
 
     /// <summary>
-    /// 승리 팝업 정보 업데이트
+    /// GameEndPanel 정보 업데이트
     /// </summary>
-    private void UpdateWinPopup()
+    private void UpdateGameEndPanel()
     {
         if (_gameData == null) return;
 
-        // 승리 타이틀
-        if (_winTitleText != null)
+        // 승리 텍스트
+        if (_winText != null)
         {
-            _winTitleText.text = "축하합니다!";
+            _winText.text = "Congratulations!";
         }
 
         // 클리어 타임
-        if (_clearTimeText != null)
+        if (_timeText != null)
         {
             int minutes = Mathf.FloorToInt(_gameData.PlayTime / 60f);
             int seconds = Mathf.FloorToInt(_gameData.PlayTime % 60f);
-            _clearTimeText.text = $"클리어 타임: {minutes:00}:{seconds:00}";
+            _timeText.text = $"클리어 타임: {minutes:00}:{seconds:00}";
         }
 
-        // 최종 점수
-        if (_finalScoreText != null)
-        {
-            _finalScoreText.text = $"점수: {_gameData.Score}\n힌트: {_gameData.HintsUsed} / 실수: {_gameData.Mistakes}";
-        }
-    }
-
-    /// <summary>
-    /// 난이도별 표시 이름 반환
-    /// </summary>
-    private string GetDifficultyDisplayName(SudokuDifficulty difficulty)
-    {
-        return difficulty switch
-        {
-            SudokuDifficulty.Easy => "쉬움",
-            SudokuDifficulty.Medium => "중간",
-            SudokuDifficulty.Hard => "어려움",
-            _ => "알 수 없음"
-        };
-    }
-
-    /// <summary>
-    /// 난이도별 색상 반환
-    /// </summary>
-    private Color GetDifficultyColor(SudokuDifficulty difficulty)
-    {
-        return difficulty switch
-        {
-            SudokuDifficulty.Easy => _easyColor,
-            SudokuDifficulty.Medium => _mediumColor,
-            SudokuDifficulty.Hard => _hardColor,
-            _ => Color.white
-        };
+        // 통계 정보는 StatsPanel 내부에서 별도 처리
+        // (향후 확장: StatsPanel에 점수, 힌트, 실수 등 표시)
     }
 
     #endregion
@@ -285,7 +269,7 @@ public class SudokuUIPanel : UIPanel
 
     private void RegisterButtonEvents()
     {
-        // 시작 메뉴 버튼
+        // StartMenuPanel 버튼
         if (_easyButton != null)
             _easyButton.onClick.AddListener(() => OnDifficultyButtonClicked(SudokuDifficulty.Easy));
         if (_mediumButton != null)
@@ -295,22 +279,26 @@ public class SudokuUIPanel : UIPanel
         if (_backButton != null)
             _backButton.onClick.AddListener(OnBackButtonClicked);
 
-        // 게임 HUD 버튼
+        // PlayingPanel 버튼
         if (_hintButton != null)
             _hintButton.onClick.AddListener(OnHintButtonClicked);
+        if (_undoButton != null)
+            _undoButton.onClick.AddListener(OnUndoButtonClicked);
+        if (_eraseButton != null)
+            _eraseButton.onClick.AddListener(OnEraseButtonClicked);
+        if (_pauseButton != null)
+            _pauseButton.onClick.AddListener(OnPauseButtonClicked);
+
+        // GameEndPanel 버튼
         if (_newGameButton != null)
             _newGameButton.onClick.AddListener(OnNewGameButtonClicked);
-
-        // 승리 팝업 버튼
-        if (_playAgainButton != null)
-            _playAgainButton.onClick.AddListener(OnPlayAgainButtonClicked);
         if (_mainMenuButton != null)
             _mainMenuButton.onClick.AddListener(OnMainMenuButtonClicked);
     }
 
     private void UnregisterButtonEvents()
     {
-        // 시작 메뉴 버튼
+        // StartMenuPanel 버튼
         if (_easyButton != null)
             _easyButton.onClick.RemoveAllListeners();
         if (_mediumButton != null)
@@ -320,15 +308,19 @@ public class SudokuUIPanel : UIPanel
         if (_backButton != null)
             _backButton.onClick.RemoveAllListeners();
 
-        // 게임 HUD 버튼
+        // PlayingPanel 버튼
         if (_hintButton != null)
             _hintButton.onClick.RemoveAllListeners();
+        if (_undoButton != null)
+            _undoButton.onClick.RemoveAllListeners();
+        if (_eraseButton != null)
+            _eraseButton.onClick.RemoveAllListeners();
+        if (_pauseButton != null)
+            _pauseButton.onClick.RemoveAllListeners();
+
+        // GameEndPanel 버튼
         if (_newGameButton != null)
             _newGameButton.onClick.RemoveAllListeners();
-
-        // 승리 팝업 버튼
-        if (_playAgainButton != null)
-            _playAgainButton.onClick.RemoveAllListeners();
         if (_mainMenuButton != null)
             _mainMenuButton.onClick.RemoveAllListeners();
     }
@@ -352,16 +344,28 @@ public class SudokuUIPanel : UIPanel
         UpdateGameInfo();
     }
 
+    private void OnUndoButtonClicked()
+    {
+        Debug.Log("[INFO] SudokuUIPanel::OnUndoButtonClicked - Undo requested");
+        // 향후 구현: 되돌리기 기능
+    }
+
+    private void OnEraseButtonClicked()
+    {
+        Debug.Log("[INFO] SudokuUIPanel::OnEraseButtonClicked - Erase requested");
+        // 향후 구현: 선택된 셀 지우기
+    }
+
+    private void OnPauseButtonClicked()
+    {
+        Debug.Log("[INFO] SudokuUIPanel::OnPauseButtonClicked - Pause requested");
+        // 향후 구현: 일시정지 기능
+    }
+
     private void OnNewGameButtonClicked()
     {
         Debug.Log("[INFO] SudokuUIPanel::OnNewGameButtonClicked - New game requested");
-        OnNewGameRequested?.Invoke();
-    }
-
-    private void OnPlayAgainButtonClicked()
-    {
-        Debug.Log("[INFO] SudokuUIPanel::OnPlayAgainButtonClicked - Play again");
-        ShowStartMenu();
+        ShowStartMenuPanel();
     }
 
     private void OnMainMenuButtonClicked()

@@ -12,7 +12,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Input System**: Unity Input System 1.14.2
 - **Resource System**: Unity Addressables 1.22.3
 - **Architecture**: IMiniGame interface + GameRegistry pattern + DataManager system
-- **Implemented Games**: Tetris, Undead Survivor (in progress)
+- **Implemented Games**: Tetris (완성), Undead Survivor (보류), Sudoku (개발 중)
 - **Game Select Scene**: MainMenuScene (game selection menu)
 
 ## Project Structure
@@ -141,7 +141,7 @@ Unity builds are managed through the Unity Editor. No CLI build commands are con
 **MUST READ AT START OF EVERY SESSION**: Before any code changes, read `Assets/Docs/MANAGERS_GUIDE.md`
 
 This guide contains:
-- Complete API reference for all 6 managers
+- Complete API reference for all 8 managers
 - Usage patterns and best practices
 - Integration examples
 - Memory management guidelines
@@ -295,14 +295,14 @@ User returns → Back to GameSelectScene
 ### Infrastructure Managers
 
 **Implemented Managers** (See `Assets/Docs/MANAGERS_GUIDE.md` for complete API):
-- `MiniGameManager`: Game lifecycle, switching, common player data
-- `DataManager`: Multi-game data provider management with lazy loading (NEW)
-- `ResourceManager`: Addressables resource loading with PoolManager integration
-- `PoolManager`: GameObject pooling for performance optimization
-- `SoundManager`: Audio management (BGM/SFX with volume control)
-- `UIManager`: UI panel and popup management with fade effects
-- `CustomSceneManager`: Scene loading with transitions and loading screens
-- `InputManager`: Event-based input distribution to active game
+1. `MiniGameManager`: Game lifecycle, switching, common player data
+2. `DataManager`: Multi-game data provider management with lazy loading
+3. `ResourceManager`: Addressables resource loading with PoolManager integration
+4. `PoolManager`: GameObject pooling for performance optimization
+5. `SoundManager`: Audio management (BGM/SFX with volume control)
+6. `UIManager`: UI panel and popup management with fade effects
+7. `CustomSceneManager`: Scene loading with transitions and loading screens
+8. `InputManager`: Event-based input distribution to active game
 
 ### Architecture Principles
 
@@ -673,11 +673,18 @@ CustomSceneManager.Instance.LoadScene("MyGame");
 ### Available Skills
 1. **manager-guide**: Manager API 빠른 참조 및 사용 예제
    - 트리거: "매니저 사용법", "manager guide"
-   - 8개 Manager의 완전한 API 문서 제공
+   - 모든 Manager의 완전한 API 문서 제공
 
 2. **pre-commit-check**: 커밋 전 코드 품질 자동 검사
    - 트리거: "커밋 체크", "pre-commit check"
    - 네이밍 컨벤션, 금지 패턴, Manager 사용 검증
+
+**사용 방법**:
+```bash
+# Claude Code에게 요청
+"매니저 사용법 보여줘"
+"커밋 전에 코드 체크해줘"
+```
 
 ## Documentation References
 
@@ -710,12 +717,12 @@ CustomSceneManager.Instance.LoadScene("MyGame");
 
 ## Current Work Context
 
-**Active Branch**: `feature/undead-survivor`
+**Active Branch**: `feature/sudoku`
 
-**Current Focus**: Undead Survivor 게임 개발
-- 게임 메커닉 구현 (플레이어, 무기, 적, 경험치 시스템)
-- DataManager와 UndeadSurvivorDataProvider 통합
-- 게임별 리소스 구조 적용
+**Current Focus**: Sudoku 게임 개발
+- 스도쿠 게임 메커닉 구현 (퍼즐 생성, 유효성 검증, UI)
+- IMiniGame 인터페이스 구현으로 플랫폼 통합
+- DataManager와 SudokuDataProvider 통합 (필요시)
 
 ## Language Policy
 
@@ -725,3 +732,29 @@ CustomSceneManager.Instance.LoadScene("MyGame");
 - Code comments should be in Korean when explaining complex logic
 - Commit messages can use English for type prefix, but description should be in Korean
 - Exception: Technical terms, class names, variable names follow English conventions
+
+## Quick Start Checklist for New Sessions
+
+새로운 작업 세션을 시작할 때마다 다음 순서로 진행하세요:
+
+1. ✅ **`Assets/Docs/MANAGERS_GUIDE.md` 읽기** (필수)
+2. ✅ **현재 브랜치 확인**: `git status && git branch`
+3. ✅ **현재 작업 맥락 파악**: CLAUDE.md의 "Current Work Context" 섹션 확인
+4. ✅ **Manager 시스템 우선 사용**: 기능 구현 전 기존 Manager 활용 검토
+5. ✅ **코딩 컨벤션 준수**: 네이밍 규칙, 파일 구조, 완전 구현 원칙
+
+## Debugging & Troubleshooting
+
+### Unity Console Errors
+```csharp
+// 로그 포맷
+Debug.Log("[INFO] ClassName::MethodName - Message");
+Debug.LogWarning("[WARNING] ClassName::MethodName - Warning");
+Debug.LogError("[ERROR] ClassName::MethodName - Error");
+```
+
+### Common Issues
+1. **Manager null reference**: Singleton이 초기화되었는지 확인
+2. **Addressables load fail**: 주소가 정확한지, Addressables 그룹에 등록되었는지 확인
+3. **Pool not found**: CreatePool 호출 또는 InstantiateAsync로 자동 생성 확인
+4. **InputManager 이벤트 누락**: StartGame에서 구독, Cleanup에서 구독 해제 확인

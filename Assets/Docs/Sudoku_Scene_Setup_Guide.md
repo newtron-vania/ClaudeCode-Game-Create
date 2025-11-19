@@ -84,45 +84,136 @@
 ```
 SudokuUIPanel (Panel)
 ├── StartMenuPanel (Panel) - 시작 메뉴 상태
-│   ├── TitleText (TextMeshPro)
+│   ├── TitleText (TextMeshPro) - "Sudoku"
 │   ├── DifficultyPanel (Panel)
-│   │   ├── EasyButton (Button)
-│   │   ├── MediumButton (Button)
-│   │   └── HardButton (Button)
-│   └── BackButton (Button)
+│   │   ├── EasyButton (Button) - "쉬움"
+│   │   ├── MediumButton (Button) - "중간"
+│   │   └── HardButton (Button) - "어려움"
+│   └── BackButton (Button) - "메인 메뉴"
+│
 ├── LoadingPanel (Panel) - 맵 생성 중 상태
 │   ├── LoadingText (TextMeshPro) - "Generating..."
 │   └── LoadingSpinner (Image) - 회전 애니메이션
+│
 ├── PlayingPanel (Panel) - 게임 플레이 상태
-│   ├── GridContainer (Panel) - 9x9 그리드 배치
-│   ├── NumPadPanel (Panel) - 숫자 입력 패드
-│   ├── TimerText (TextMeshPro) - MM:SS 타이머
-│   ├── MistakesText (TextMeshPro) - 실수 횟수
-│   ├── HintsText (TextMeshPro) - 남은 힌트
-│   ├── HintButton (Button)
-│   ├── UndoButton (Button)
-│   ├── EraseButton (Button)
-│   └── PauseButton (Button)
+│   ├── GridContainer (Panel) - 9x9 그리드 배치 영역
+│   │   └── SudokuGridUI (컴포넌트) - 81개 셀 버튼 동적 생성
+│   │       └── 셀 버튼 Prefab 필요: SudokuCellButton.prefab
+│   │           ├── Button (컴포넌트)
+│   │           ├── Image (배경)
+│   │           ├── TextMeshPro (숫자 표시)
+│   │           └── SudokuCellButton (스크립트)
+│   │
+│   ├── NumPadPanel (Panel) - 숫자 입력 패드 영역
+│   │   └── NumPadUI (컴포넌트)
+│   │       ├── NumberButtons (1-9 버튼 배열)
+│   │       └── ClearButton (지우기 버튼)
+│   │
+│   ├── TimerPanel (Panel) - 타이머 표시 영역
+│   │   ├── TimerText (TextMeshPro) - "00:00"
+│   │   └── TimerUI (컴포넌트) - 타이머 로직
+│   │
+│   ├── MistakesText (TextMeshPro) - "실수: 0"
+│   ├── HintsText (TextMeshPro) - "힌트: 0"
+│   ├── HintButton (Button) - 힌트 요청
+│   ├── UndoButton (Button) - 실행 취소
+│   ├── EraseButton (Button) - 지우기
+│   └── PauseButton (Button) - 일시정지
+│
 └── GameEndPanel (Panel) - 게임 완료 상태
-    ├── WinText (TextMeshPro) - "Congratulations!"
-    ├── TimeText (TextMeshPro) - 클리어 타임
-    ├── StatsPanel (Panel) - 통계 정보
-    ├── NewGameButton (Button)
-    └── MainMenuButton (Button)
+    ├── WinText (TextMeshPro) - "축하합니다!"
+    ├── TimeText (TextMeshPro) - "클리어 타임: 00:00"
+    ├── StatsPanel (Panel) - 통계 정보 영역
+    │   ├── HintsUsedText (TextMeshPro) - "힌트 사용: 0"
+    │   └── MistakesText (TextMeshPro) - "실수: 0"
+    ├── NewGameButton (Button) - "새 게임"
+    └── MainMenuButton (Button) - "메인 메뉴"
 ```
 
 #### 4.3. SudokuUIPanel 스크립트 연결
 
-Inspector에서 SudokuUIPanel 컴포넌트의 public 필드들을 위의 UI 요소들과 연결합니다:
+Inspector에서 SudokuUIPanel 컴포넌트의 SerializeField들을 UI 요소와 연결합니다:
 
-- `StartMenuPanel` → StartMenuPanel GameObject
-- `LoadingPanel` → LoadingPanel GameObject
-- `PlayingPanel` → PlayingPanel GameObject
-- `GameEndPanel` → GameEndPanel GameObject
+**Main Panels (4개)**:
+- `_startMenuPanel` → StartMenuPanel GameObject
+- `_loadingPanel` → LoadingPanel GameObject
+- `_playingPanel` → PlayingPanel GameObject
+- `_gameEndPanel` → GameEndPanel GameObject
 
-**각 패널의 하위 UI 요소들도 모두 연결 필요** (SudokuUIPanel.cs 참조)
+**Start Menu UI (5개)**:
+- `_titleText` → StartMenuPanel/TitleText
+- `_difficultyPanel` → StartMenuPanel/DifficultyPanel
+- `_easyButton` → DifficultyPanel/EasyButton
+- `_mediumButton` → DifficultyPanel/MediumButton
+- `_hardButton` → DifficultyPanel/HardButton
+- `_backButton` → StartMenuPanel/BackButton
 
-#### 4.4. Prefab 저장
+**Loading UI (2개)**:
+- `_loadingText` → LoadingPanel/LoadingText
+- `_loadingSpinner` → LoadingPanel/LoadingSpinner
+
+**Playing UI (13개)**:
+- `_gridContainer` → PlayingPanel/GridContainer
+- `_gridUI` → GridContainer 컴포넌트 (SudokuGridUI)
+- `_numPadPanel` → PlayingPanel/NumPadPanel
+- `_numPadUI` → NumPadPanel 컴포넌트 (NumPadUI)
+- `_timerText` → PlayingPanel/TimerPanel/TimerText
+- `_timerUI` → TimerPanel 컴포넌트 (TimerUI)
+- `_mistakesText` → PlayingPanel/MistakesText
+- `_hintsText` → PlayingPanel/HintsText
+- `_hintButton` → PlayingPanel/HintButton
+- `_undoButton` → PlayingPanel/UndoButton
+- `_eraseButton` → PlayingPanel/EraseButton
+- `_pauseButton` → PlayingPanel/PauseButton
+
+**GameEnd UI (5개)**:
+- `_winText` → GameEndPanel/WinText
+- `_timeText` → GameEndPanel/TimeText
+- `_statsPanel` → GameEndPanel/StatsPanel
+- `_newGameButton` → GameEndPanel/NewGameButton
+- `_mainMenuButton` → GameEndPanel/MainMenuButton
+
+**총 32개 SerializeField 연결 필요**
+
+#### 4.4. SudokuCellButton Prefab 생성
+
+**⚠️ 중요**: SudokuGridUI가 동적으로 81개 셀을 생성하려면 SudokuCellButton Prefab이 필요합니다.
+
+1. **빈 GameObject 생성**:
+   - Hierarchy에서 우클릭 → **UI → Button**
+   - 이름을 `SudokuCellButton`으로 변경
+
+2. **컴포넌트 구성**:
+   ```
+   SudokuCellButton (Button)
+   ├── Button (컴포넌트) - 자동 생성됨
+   ├── Image (컴포넌트) - 자동 생성됨 (배경)
+   ├── TextMeshProUGUI (자식 오브젝트) - 숫자 표시
+   └── SudokuCellButton (스크립트 추가)
+   ```
+
+3. **SudokuCellButton 스크립트 설정**:
+   - **Add Component** → `SudokuCellButton` 스크립트 추가
+   - Inspector에서 연결:
+     - `_button` → Button 컴포넌트
+     - `_background` → Image 컴포넌트
+     - `_numberText` → TextMeshProUGUI 자식 오브젝트
+
+4. **비주얼 설정** (선택 사항):
+   - Normal Color: `(1, 1, 1, 1)` - 흰색
+   - Selected Color: `(0.7, 0.9, 1, 1)` - 연한 파란색
+   - Fixed Color: `(0.9, 0.9, 0.9, 1)` - 회색
+   - Error Color: `(1, 0.6, 0.6, 1)` - 연한 빨간색
+
+5. **Prefab 저장**:
+   - Project 창으로 드래그
+   - 저장 위치: `Assets/Resources/Prefabs/UI/Sudoku/SudokuCellButton.prefab`
+
+6. **SudokuGridUI 연결**:
+   - GridContainer의 SudokuGridUI 컴포넌트 선택
+   - Inspector에서 `_cellButtonPrefab` → SudokuCellButton Prefab 연결
+
+#### 4.5. Prefab 저장
 
 1. SudokuUIPanel GameObject를 Project 창으로 드래그
 2. 저장 위치: `Assets/Resources/Prefabs/UI/Sudoku/SudokuUIPanel.prefab`
@@ -137,7 +228,45 @@ Inspector에서 SudokuUIPanel 컴포넌트의 public 필드들을 위의 UI 요�
 
 ---
 
-## 5. GamePlayList에 Sudoku 추가
+## 5. 추가 UI 컴포넌트 Prefab 생성
+
+### 5.1. NumPad 버튼 구성 (선택 사항)
+
+NumPadUI는 1-9 숫자 버튼과 Clear 버튼을 자동으로 찾습니다. 수동으로 배치하려면:
+
+1. NumPadPanel 하위에 1-9 버튼 생성
+2. 각 버튼 이름: `Button1`, `Button2`, ..., `Button9`
+3. Clear 버튼 생성: `ClearButton`
+4. NumPadUI 컴포넌트가 자동으로 찾음 (`_autoSetupButtons = true`)
+
+### 5.2. LoadingSpinner 회전 애니메이션 (선택 사항)
+
+**방법 1: Animation Clip 사용 (권장)**
+1. LoadingSpinner Image 선택
+2. Window → Animation → Animation
+3. Create New Clip: `LoadingSpinnerRotation.anim`
+4. Rotation.Z 키프레임 추가:
+   - 0초: 0도
+   - 2초: -360도
+5. Loop Time 체크
+
+**방법 2: 스크립트 사용**
+```csharp
+// LoadingSpinner 오브젝트에 추가
+public class LoadingSpinner : MonoBehaviour
+{
+    [SerializeField] private float _rotationSpeed = 180f;
+
+    private void Update()
+    {
+        transform.Rotate(0f, 0f, -_rotationSpeed * Time.deltaTime);
+    }
+}
+```
+
+---
+
+## 6. GamePlayList에 Sudoku 추가
 
 ### MainMenuScene 열기
 
@@ -165,7 +294,7 @@ Game List 예시:
 
 ---
 
-## 6. 게임 아이콘 스프라이트 배치
+## 7. 게임 아이콘 스프라이트 배치
 
 ### 아이콘 이미지 준비
 
@@ -197,7 +326,7 @@ Resources/Sprites/Sudoku_icon.png
 
 ---
 
-## 7. 씬 빌드 설정에 추가
+## 8. 씬 빌드 설정에 추가
 
 ### Build Settings 열기
 
@@ -223,7 +352,7 @@ Scenes In Build:
 
 ---
 
-## 8. 테스트 및 검증
+## 9. 테스트 및 검증
 
 ### 씬 단독 테스트
 
