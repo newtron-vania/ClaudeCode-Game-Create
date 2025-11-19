@@ -1,3 +1,5 @@
+using System;
+using System.Threading.Tasks;
 using UnityEngine;
 
 /// <summary>
@@ -17,6 +19,10 @@ public class SudokuGame : IMiniGame
     private int _selectedRow = -1;
     private int _selectedCol = -1;
 
+    // 퍼즐 생성 상태
+    private bool _isGeneratingPuzzle;
+    private SudokuGenerator.PuzzleResult _generatedPuzzle;
+
     /// <summary>
     /// 현재 보드
     /// </summary>
@@ -27,11 +33,16 @@ public class SudokuGame : IMiniGame
     /// </summary>
     public GameState CurrentState => _currentState;
 
-    /// <summary>
-    /// 선택된 셀 위치
-    /// </summary>
-    public (int row, int col) SelectedCell => (_selectedRow, _selectedCol);
 
+    public (int row, int col) SelectedCell
+    {
+        get { return (_selectedRow, _selectedCol); }
+        set
+        {
+            _selectedRow = value.row; 
+            _selectedCol = value.col; 
+        }
+    }
     /// <summary>
     /// 게임 상태 열거형
     /// </summary>
@@ -42,6 +53,34 @@ public class SudokuGame : IMiniGame
         Playing,        // 게임 플레이
         GameEnd         // 게임 종료 (승리/패배)
     }
+
+    // ========================================
+    // 상태별 Activity Actions (View 간접 접근)
+    // ========================================
+
+    /// <summary>
+    /// StartMenu 상태 진입 시 실행되는 Action
+    /// SudokuScene에서 UI 업데이트 로직을 등록하여 사용
+    /// </summary>
+    public Action StartMenuActivityAction;
+
+    /// <summary>
+    /// Generating 상태 진입 시 실행되는 Action
+    /// SudokuScene에서 UI 업데이트 로직을 등록하여 사용
+    /// </summary>
+    public Action GeneratingActivityAction;
+
+    /// <summary>
+    /// Playing 상태 진입 시 실행되는 Action
+    /// SudokuScene에서 UI 업데이트 로직을 등록하여 사용
+    /// </summary>
+    public Action PlayingActivityAction;
+
+    /// <summary>
+    /// GameEnd 상태 진입 시 실행되는 Action
+    /// SudokuScene에서 UI 업데이트 로직을 등록하여 사용
+    /// </summary>
+    public Action GameEndActivityAction;
 
     /// <summary>
     /// 게임 초기화
@@ -93,6 +132,32 @@ public class SudokuGame : IMiniGame
             return;
         }
 
+        // Generating 상태 처리 (비동기 퍼즐 생성 완료 확인)
+        if (_isGeneratingPuzzle && _generatedPuzzle != null)
+        {
+            // 검증: Solution과 Hints 데이터 확인
+            if (_generatedPuzzle.Solution == null || _generatedPuzzle.Hints == null)
+            {
+                Debug.LogError("[ERROR] SudokuGame::Update - Generated puzzle has null Solution or Hints");
+                _isGeneratingPuzzle = false;
+                _generatedPuzzle = null;
+                ChangeState(GameState.StartMenu);
+                return;
+            }
+
+            // 비동기 생성 완료 - 보드 설정
+            _board.SetSolution(_generatedPuzzle.Solution);
+            _board.SetInitialHints(_generatedPuzzle.Hints);
+
+            Debug.Log($"[INFO] SudokuGame::Update - Puzzle applied to board: {_generatedPuzzle}");
+
+            _isGeneratingPuzzle = false;
+            _generatedPuzzle = null;
+
+            // Playing 상태로 전환
+            ChangeState(GameState.Playing);
+        }
+
         // Playing 상태에서만 시간 업데이트
         if (_currentState == GameState.Playing)
         {
@@ -138,8 +203,7 @@ public class SudokuGame : IMiniGame
             case GameState.StartMenu:
                 OnEnterStartMenu();
                 break;
-            case GameState.Generating:
-                OnEnterGenerating();
+            case GameState.Generating: OnEnterGenerating();
                 break;
             case GameState.Playing:
                 OnEnterPlaying();
@@ -189,7 +253,7 @@ public class SudokuGame : IMiniGame
     }
 
     /// <summary>
-    /// 선택된 셀에 숫자 입력
+    /// 선택된 셀에 숫자 입력 (실시간 검증 방식)
     /// </summary>
     /// <param name="value">입력 값 (1-9, 0은 지우기)</param>
     public void InputNumber(int value)
@@ -211,32 +275,16 @@ public class SudokuGame : IMiniGame
             return;
         }
 
-        // 이전 값 저장
-        int prevValue = _board.GetCell(_selectedRow, _selectedCol);
-
         // 값 설정
         if (_board.SetCell(_selectedRow, _selectedCol, value))
         {
             Debug.Log($"[INFO] SudokuGame::InputNumber - Input {value} at ({_selectedRow}, {_selectedCol})");
 
-            // 정답과 비교 (틀렸으면 실수 카운트)
-            if (value != 0 && value != _board.GetSolution(_selectedRow, _selectedCol))
-            {
-                _data.AddMistake();
-
-                // 게임 오버 체크
-                if (_data.IsGameOver)
-                {
-                    ChangeState(GameState.GameEnd);
-                    return;
-                }
-            }
-
-            // 에러 체크 및 업데이트
+            // 실시간 검증: 에러 체크 및 업데이트 (정답 비교 없이 규칙만 검사)
             bool[,] errors = SudokuValidator.FindErrors(_board.Board);
             _board.UpdateErrors(errors);
 
-            // 완성 체크
+            // 완성 체크 (모든 칸이 채워지고 규칙을 만족하면 완료)
             if (_board.IsAllCellsFilled() && _board.IsSolved())
             {
                 OnPuzzleCompleted();
@@ -332,30 +380,45 @@ public class SudokuGame : IMiniGame
     {
         // UI에서 난이도 선택 대기
         Debug.Log("[INFO] SudokuGame::OnEnterStartMenu - Waiting for difficulty selection");
+
+        // StartMenu UI 업데이트 Action 실행
+        StartMenuActivityAction?.Invoke();
     }
 
-    private void OnEnterGenerating()
+    private async void OnEnterGenerating()
     {
-        Debug.Log("[INFO] SudokuGame::OnEnterGenerating - Generating puzzle");
+        Debug.Log("[INFO] SudokuGame::OnEnterGenerating - Starting async puzzle generation");
 
-        // 퍼즐 생성
-        var puzzleResult = _generator.GeneratePuzzle(_data.Difficulty);
+        // Generating UI 업데이트 Action 실행 (로딩 화면 표시)
+        GeneratingActivityAction?.Invoke();
 
-        if (puzzleResult == null)
+        // 비동기 퍼즐 생성 시작
+        _isGeneratingPuzzle = true;
+        _generatedPuzzle = null;
+
+        try
         {
-            Debug.LogError("[ERROR] SudokuGame::OnEnterGenerating - Failed to generate puzzle");
-            ChangeState(GameState.StartMenu);
-            return;
+            // 비동기로 퍼즐 생성 (백그라운드 스레드)
+            _generatedPuzzle = await _generator.GeneratePuzzleAsync(_data.Difficulty);
+
+            if (_generatedPuzzle == null)
+            {
+                Debug.LogError("[ERROR] SudokuGame::OnEnterGenerating - Failed to generate puzzle");
+                _isGeneratingPuzzle = false;
+                ChangeState(GameState.StartMenu);
+                return;
+            }
+
+            Debug.Log($"[INFO] SudokuGame::OnEnterGenerating - Puzzle generation complete: {_generatedPuzzle}");
+            // Update()에서 _generatedPuzzle을 감지하고 Playing 전환
         }
-
-        // 보드 설정
-        _board.SetSolution(puzzleResult.Solution);
-        _board.SetInitialHints(puzzleResult.Hints);
-
-        Debug.Log($"[INFO] SudokuGame::OnEnterGenerating - Puzzle generated: {puzzleResult}");
-
-        // 플레이 상태로 전환
-        ChangeState(GameState.Playing);
+        catch (System.Exception ex)
+        {
+            Debug.LogError($"[ERROR] SudokuGame::OnEnterGenerating - Exception during puzzle generation: {ex.Message}");
+            _isGeneratingPuzzle = false;
+            _generatedPuzzle = null;
+            ChangeState(GameState.StartMenu);
+        }
     }
 
     private void OnEnterPlaying()
@@ -365,6 +428,9 @@ public class SudokuGame : IMiniGame
         // 선택 초기화
         _selectedRow = -1;
         _selectedCol = -1;
+
+        // Playing UI 업데이트 Action 실행
+        PlayingActivityAction?.Invoke();
     }
 
     private void OnEnterGameEnd()
@@ -383,6 +449,9 @@ public class SudokuGame : IMiniGame
         {
             Debug.Log("[INFO] SudokuGame::OnEnterGameEnd - Game over (too many mistakes)");
         }
+
+        // GameEnd UI 업데이트 Action 실행
+        GameEndActivityAction?.Invoke();
     }
 
     #endregion

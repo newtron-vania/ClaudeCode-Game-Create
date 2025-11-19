@@ -300,4 +300,36 @@ public class SudokuValidator
 
         return true;
     }
+
+    /// <summary>
+    /// 특정 셀의 현재 값이 유효한지 실시간 검증
+    /// (행, 열, 3x3 박스에서 중복 없는지 확인)
+    /// </summary>
+    /// <param name="board">보드</param>
+    /// <param name="row">행</param>
+    /// <param name="col">열</param>
+    /// <returns>유효하면 true (초록색 표시)</returns>
+    public static bool IsPlacementValid(int[,] board, int row, int col)
+    {
+        int value = board[row, col];
+
+        // 빈 칸은 검증하지 않음
+        if (value == 0)
+        {
+            return false;
+        }
+
+        // 값의 범위 검증
+        if (value < 1 || value > 9)
+        {
+            return false;
+        }
+
+        // 임시로 값을 제거하고 놓을 수 있는지 확인
+        board[row, col] = 0;
+        bool isValid = CanPlaceValue(board, row, col, value);
+        board[row, col] = value;
+
+        return isValid;
+    }
 }

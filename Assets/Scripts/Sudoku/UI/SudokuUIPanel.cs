@@ -86,6 +86,13 @@ public class SudokuUIPanel : UIPanel
     {
         // 버튼 이벤트 해제
         UnregisterButtonEvents();
+
+        // NumPad 이벤트 구독 해제
+        if (_numPadUI != null)
+        {
+            _numPadUI.OnNumberInput -= OnNumPadNumberInput;
+            _numPadUI.OnClearInput -= OnNumPadClearInput;
+        }
     }
 
     /// <summary>
@@ -105,10 +112,14 @@ public class SudokuUIPanel : UIPanel
             _gridUI.Initialize(game);
         }
 
-        // NumPad UI 초기화
+        // NumPad UI 초기화 및 이벤트 구독
         if (_numPadUI != null)
         {
             _numPadUI.Initialize(game);
+
+            // NumPad 이벤트 구독
+            _numPadUI.OnNumberInput += OnNumPadNumberInput;
+            _numPadUI.OnClearInput += OnNumPadClearInput;
         }
 
         // 타이머 UI 초기화
@@ -163,6 +174,13 @@ public class SudokuUIPanel : UIPanel
         if (_playingPanel != null)
         {
             _playingPanel.SetActive(true);
+        }
+
+        // 그리드 UI 업데이트 (보드 데이터 동기화)
+        if (_gridUI != null)
+        {
+            _gridUI.UpdateBoard();
+            Debug.Log("[INFO] SudokuUIPanel::ShowPlayingPanel - Grid board updated");
         }
 
         // 타이머 시작
@@ -226,13 +244,13 @@ public class SudokuUIPanel : UIPanel
         // 실수 횟수 업데이트
         if (_mistakesText != null)
         {
-            _mistakesText.text = $"실수: {_gameData.Mistakes}";
+            _mistakesText.text = $"실수: {_gameData.Mistakes}/{_gameData.MaxMistakes}";
         }
 
-        // 힌트 사용 횟수 업데이트
+        // 남은 힌트 횟수 업데이트
         if (_hintsText != null)
         {
-            _hintsText.text = $"힌트: {_gameData.HintsUsed}";
+            _hintsText.text = $"힌트: {_gameData.RemainingHints}/{_gameData.MaxHints}";
         }
 
         // 타이머는 TimerUI 컴포넌트가 자동으로 업데이트
@@ -325,53 +343,191 @@ public class SudokuUIPanel : UIPanel
             _mainMenuButton.onClick.RemoveAllListeners();
     }
 
+    /// <summary>
+    /// 난이도 버튼 클릭 핸들러
+    /// 선택한 난이도로 새 게임 시작
+    /// </summary>
     private void OnDifficultyButtonClicked(SudokuDifficulty difficulty)
     {
         Debug.Log($"[INFO] SudokuUIPanel::OnDifficultyButtonClicked - Difficulty: {difficulty}");
+
+        if (_game == null)
+        {
+            Debug.LogError("[ERROR] SudokuUIPanel::OnDifficultyButtonClicked - Game instance is null");
+            return;
+        }
+
+        // 난이도 선택 이벤트 발생
         OnDifficultySelected?.Invoke(difficulty);
+
+        // 새 게임 시작
+        _game.StartNewGame(difficulty);
+
+        // 로딩 패널 표시
+        ShowLoadingPanel();
     }
 
+    /// <summary>
+    /// 뒤로가기 버튼 클릭 핸들러
+    /// 메인 메뉴로 돌아가기
+    /// </summary>
     private void OnBackButtonClicked()
     {
         Debug.Log("[INFO] SudokuUIPanel::OnBackButtonClicked - Returning to main menu");
+
+        // 메인 메뉴 복귀 이벤트 발생
         OnBackToMenu?.Invoke();
+
+        // 씬 전환 (SudokuScene에서 처리)
+        // CustomSceneManager를 통해 MainMenuScene으로 이동
     }
 
+    /// <summary>
+    /// 힌트 버튼 클릭 핸들러
+    /// 선택된 셀에 정답 힌트 표시
+    /// </summary>
     private void OnHintButtonClicked()
     {
         Debug.Log("[INFO] SudokuUIPanel::OnHintButtonClicked - Hint requested");
+
+        if (_game == null)
+        {
+            Debug.LogError("[ERROR] SudokuUIPanel::OnHintButtonClicked - Game instance is null");
+            return;
+        }
+
+        // 힌트 잔여 개수 확인
+        if (_gameData == null || _gameData.RemainingHints <= 0)
+        {
+            Debug.LogWarning("[WARNING] SudokuUIPanel::OnHintButtonClicked - No hints remaining");
+            return;
+        }
+
+        // 힌트 사용
+        _game.UseHint();
+
+        // 힌트 이벤트 발생
         OnHintRequested?.Invoke();
+
+        // UI 업데이트
         UpdateGameInfo();
     }
 
+    /// <summary>
+    /// 되돌리기 버튼 클릭 핸들러
+    /// 마지막 입력 취소 (미구현)
+    /// </summary>
     private void OnUndoButtonClicked()
     {
         Debug.Log("[INFO] SudokuUIPanel::OnUndoButtonClicked - Undo requested");
-        // 향후 구현: 되돌리기 기능
+
+        if (_game == null)
+        {
+            Debug.LogError("[ERROR] SudokuUIPanel::OnUndoButtonClicked - Game instance is null");
+            return;
+        }
+
+        // TODO: 게임 히스토리 스택 구현 필요
+        // _game.UndoLastMove();
+
+        Debug.LogWarning("[WARNING] SudokuUIPanel::OnUndoButtonClicked - Undo feature not implemented yet");
     }
 
+    /// <summary>
+    /// 지우기 버튼 클릭 핸들러
+    /// 선택된 셀의 값을 지움
+    /// </summary>
     private void OnEraseButtonClicked()
     {
         Debug.Log("[INFO] SudokuUIPanel::OnEraseButtonClicked - Erase requested");
-        // 향후 구현: 선택된 셀 지우기
+
+        if (_game == null)
+        {
+            Debug.LogError("[ERROR] SudokuUIPanel::OnEraseButtonClicked - Game instance is null");
+            return;
+        }
+
+        // 선택된 셀에 0 입력 (지우기)
+        _game.InputNumber(0);
     }
 
+    /// <summary>
+    /// 일시정지 버튼 클릭 핸들러
+    /// 게임 일시정지 (미구현)
+    /// </summary>
     private void OnPauseButtonClicked()
     {
         Debug.Log("[INFO] SudokuUIPanel::OnPauseButtonClicked - Pause requested");
-        // 향후 구현: 일시정지 기능
+
+        if (_game == null)
+        {
+            Debug.LogError("[ERROR] SudokuUIPanel::OnPauseButtonClicked - Game instance is null");
+            return;
+        }
+
+        // TODO: 일시정지 UI 패널 구현 필요
+        // UIManager.Instance.OpenPanel<PausePanel>();
+
+        Debug.LogWarning("[WARNING] SudokuUIPanel::OnPauseButtonClicked - Pause feature not implemented yet");
     }
 
+    /// <summary>
+    /// 새 게임 버튼 클릭 핸들러 (게임 종료 후)
+    /// 시작 메뉴로 돌아가기
+    /// </summary>
     private void OnNewGameButtonClicked()
     {
         Debug.Log("[INFO] SudokuUIPanel::OnNewGameButtonClicked - New game requested");
+
+        // 시작 메뉴 패널 표시 (난이도 재선택)
         ShowStartMenuPanel();
     }
 
+    /// <summary>
+    /// 메인 메뉴 버튼 클릭 핸들러 (게임 종료 후)
+    /// 메인 메뉴로 돌아가기
+    /// </summary>
     private void OnMainMenuButtonClicked()
     {
         Debug.Log("[INFO] SudokuUIPanel::OnMainMenuButtonClicked - Back to main menu");
+
+        // 메인 메뉴 복귀 이벤트 발생
         OnBackToMenu?.Invoke();
+    }
+
+    /// <summary>
+    /// NumPad 숫자 입력 이벤트 핸들러
+    /// </summary>
+    /// <param name="number">입력된 숫자 (1-9)</param>
+    private void OnNumPadNumberInput(int number)
+    {
+        Debug.Log($"[INFO] SudokuUIPanel::OnNumPadNumberInput - Number {number} input from NumPad");
+
+        // GridUI 업데이트 (게임에서 이미 InputNumber 호출됨)
+        if (_gridUI != null && _game != null)
+        {
+            _gridUI.UpdateBoard();
+        }
+
+        // 게임 정보 업데이트
+        UpdateGameInfo();
+    }
+
+    /// <summary>
+    /// NumPad 지우기 입력 이벤트 핸들러
+    /// </summary>
+    private void OnNumPadClearInput()
+    {
+        Debug.Log("[INFO] SudokuUIPanel::OnNumPadClearInput - Clear input from NumPad");
+
+        // GridUI 업데이트 (게임에서 이미 InputNumber(0) 호출됨)
+        if (_gridUI != null && _game != null)
+        {
+            _gridUI.UpdateBoard();
+        }
+
+        // 게임 정보 업데이트
+        UpdateGameInfo();
     }
 
     #endregion

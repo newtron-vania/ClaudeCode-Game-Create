@@ -110,6 +110,7 @@ public class SudokuBoard
             return;
         }
 
+        int hintCount = 0;
         for (int row = 0; row < SIZE; row++)
         {
             for (int col = 0; col < SIZE; col++)
@@ -118,6 +119,7 @@ public class SudokuBoard
                 if (_isFixed[row, col])
                 {
                     _board[row, col] = _solution[row, col];
+                    hintCount++;
                 }
                 else
                 {
@@ -126,7 +128,7 @@ public class SudokuBoard
             }
         }
 
-        Debug.Log("[INFO] SudokuBoard::SetInitialHints - Initial hints set");
+        Debug.Log($"[INFO] SudokuBoard::SetInitialHints - Initial hints set ({hintCount} hints applied)");
     }
 
     /// <summary>

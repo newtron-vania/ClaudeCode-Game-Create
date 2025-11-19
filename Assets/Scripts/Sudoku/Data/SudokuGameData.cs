@@ -17,6 +17,7 @@ public class SudokuGameData : IGameData
 
     // 게임 설정
     private const int MAX_MISTAKES = 3;
+    private const int MAX_HINTS = 3;        // 최대 힌트 사용 횟수
 
     // 통계
     private float _bestTimeEasy;
@@ -38,6 +39,16 @@ public class SudokuGameData : IGameData
     /// 사용한 힌트 수
     /// </summary>
     public int HintsUsed => _hintsUsed;
+
+    /// <summary>
+    /// 남은 힌트 수
+    /// </summary>
+    public int RemainingHints => MAX_HINTS - _hintsUsed;
+
+    /// <summary>
+    /// 최대 힌트 사용 횟수
+    /// </summary>
+    public int MaxHints => MAX_HINTS;
 
     /// <summary>
     /// 실수 횟수

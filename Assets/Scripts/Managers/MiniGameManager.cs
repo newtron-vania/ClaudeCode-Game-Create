@@ -328,6 +328,15 @@ public class MiniGameManager : Singleton<MiniGameManager>
     }
 
     /// <summary>
+    /// 현재 실행 중인 게임 인스턴스 가져오기
+    /// </summary>
+    /// <returns>현재 게임 인스턴스 (게임이 없으면 null)</returns>
+    public IMiniGame GetCurrentGame()
+    {
+        return _currentGame;
+    }
+
+    /// <summary>
     /// 게임 리셋 알림
     /// 게임이 재시작될 때 호출하여 UI 등에 리셋을 알립니다.
     /// </summary>

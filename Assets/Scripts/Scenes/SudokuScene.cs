@@ -24,20 +24,6 @@ public class SudokuScene : BaseScene
 
         Debug.Log("[INFO] SudokuScene::OnSceneLoaded - Initializing Sudoku scene");
 
-        // UI 패널 열기
-        UIManager.Instance.OpenPanel<SudokuUIPanel>((panel) =>
-        {
-            if (panel != null)
-            {
-                _uiPanel = panel;
-                Debug.Log("[INFO] SudokuScene::OnSceneLoaded - UI Panel opened");
-            }
-            else
-            {
-                Debug.LogError("[ERROR] SudokuScene::OnSceneLoaded - Failed to open UI Panel");
-            }
-        });
-
         // 게임 리셋 이벤트 구독
         MiniGameManager.Instance.OnGameReset += OnGameReset;
 
@@ -54,17 +40,47 @@ public class SudokuScene : BaseScene
             DataManager.Instance.RegisterProvider(provider);
         }
 
-        // 스도쿠 게임 로드 및 시작
-        bool success = MiniGameManager.Instance.LoadGame("Sudoku");
+        // UI 패널 열기
+        UIManager.Instance.OpenPanel<SudokuUIPanel>((panel) =>
+        {
+            if (panel != null)
+            {
+                _uiPanel = panel;
+                Debug.Log("[INFO] SudokuScene::OnSceneLoaded - UI Panel opened");
 
-        if (success)
-        {
-            Debug.Log("[INFO] SudokuScene::OnSceneLoaded - Sudoku game started successfully");
-        }
-        else
-        {
-            Debug.LogError("[ERROR] SudokuScene::OnSceneLoaded - Failed to start Sudoku game");
-        }
+                // 스도쿠 게임 로드 및 시작
+                bool success = MiniGameManager.Instance.LoadGame("Sudoku");
+
+                if (success)
+                {
+                    // 게임 인스턴스 가져오기
+                    var game = MiniGameManager.Instance.GetCurrentGame() as SudokuGame;
+
+                    if (game != null)
+                    {
+                        // UI 패널 초기화 (게임 인스턴스 전달)
+                        _uiPanel.Initialize(game);
+
+                        // UI 이벤트 구독
+                        SubscribeUIEvents();
+
+                        Debug.Log("[INFO] SudokuScene::OnSceneLoaded - Sudoku game started and UI initialized");
+                    }
+                    else
+                    {
+                        Debug.LogError("[ERROR] SudokuScene::OnSceneLoaded - Game instance is null");
+                    }
+                }
+                else
+                {
+                    Debug.LogError("[ERROR] SudokuScene::OnSceneLoaded - Failed to start Sudoku game");
+                }
+            }
+            else
+            {
+                Debug.LogError("[ERROR] SudokuScene::OnSceneLoaded - Failed to open UI Panel");
+            }
+        });
     }
 
     /// <summary>
@@ -124,6 +140,149 @@ public class SudokuScene : BaseScene
             Debug.Log("[INFO] SudokuScene::OnGameReset - Game reset via event");
         }
     }
+    
+    #region UI 이벤트 구독/해제
+
+    /// <summary>
+    /// UI 이벤트 구독
+    /// </summary>
+    private void SubscribeUIEvents()
+    {
+        if (_uiPanel == null)
+        {
+            Debug.LogError("[ERROR] SudokuScene::SubscribeUIEvents - UI Panel is null");
+            return;
+        }
+
+        var game = MiniGameManager.Instance.GetCurrentGame() as SudokuGame;
+
+        if (game == null)
+        {
+            Debug.LogError("[ERROR] SudokuScene::SubscribeUIEvents - Game instance is null");
+            return;
+        }
+
+        // ========================================
+        // 상태별 Activity Action 등록 (게임 → UI 간접 연결)
+        // ========================================
+
+        // StartMenu 상태 진입 시 UI 업데이트
+        game.StartMenuActivityAction = () =>
+        {
+            Debug.Log("[INFO] SudokuScene::StartMenuActivityAction - Showing start menu panel");
+            _uiPanel.ShowStartMenuPanel();
+        };
+
+        // Generating 상태 진입 시 UI 업데이트
+        game.GeneratingActivityAction = () =>
+        {
+            Debug.Log("[INFO] SudokuScene::GeneratingActivityAction - Showing loading panel");
+            _uiPanel.ShowLoadingPanel();
+        };
+
+        // Playing 상태 진입 시 UI 업데이트
+        game.PlayingActivityAction = () =>
+        {
+            Debug.Log("[INFO] SudokuScene::PlayingActivityAction - Showing playing panel");
+            _uiPanel.ShowPlayingPanel();
+        };
+
+        // GameEnd 상태 진입 시 UI 업데이트
+        game.GameEndActivityAction = () =>
+        {
+            Debug.Log("[INFO] SudokuScene::GameEndActivityAction - Showing game end panel");
+            _uiPanel.ShowGameEndPanel();
+        };
+
+        // ========================================
+        // UI → 게임 이벤트 구독
+        // ========================================
+
+        // 난이도 선택 이벤트
+        _uiPanel.OnDifficultySelected += HandleDifficultySelected;
+
+        // 힌트 요청 이벤트
+        _uiPanel.OnHintRequested += HandleHintRequested;
+
+        // 메인 메뉴 복귀 이벤트
+        _uiPanel.OnBackToMenu += HandleBackToMenu;
+
+        Debug.Log("[INFO] SudokuScene::SubscribeUIEvents - UI events and activity actions subscribed");
+    }
+
+    /// <summary>
+    /// UI 이벤트 구독 해제
+    /// </summary>
+    private void UnsubscribeUIEvents()
+    {
+        if (_uiPanel == null)
+        {
+            return;
+        }
+
+        // Activity Action 해제
+        var game = MiniGameManager.Instance.GetCurrentGame() as SudokuGame;
+
+        if (game != null)
+        {
+            game.StartMenuActivityAction = null;
+            game.GeneratingActivityAction = null;
+            game.PlayingActivityAction = null;
+            game.GameEndActivityAction = null;
+
+            Debug.Log("[INFO] SudokuScene::UnsubscribeUIEvents - Activity actions unsubscribed");
+        }
+
+        // UI 이벤트 구독 해제
+        _uiPanel.OnDifficultySelected -= HandleDifficultySelected;
+        _uiPanel.OnHintRequested -= HandleHintRequested;
+        _uiPanel.OnBackToMenu -= HandleBackToMenu;
+
+        Debug.Log("[INFO] SudokuScene::UnsubscribeUIEvents - UI events unsubscribed");
+    }
+
+    #endregion
+
+    #region UI 이벤트 핸들러
+
+    /// <summary>
+    /// 난이도 선택 이벤트 핸들러
+    /// </summary>
+    /// <param name="difficulty">선택된 난이도</param>
+    private void HandleDifficultySelected(SudokuDifficulty difficulty)
+    {
+        Debug.Log($"[INFO] SudokuScene::HandleDifficultySelected - Difficulty selected: {difficulty}");
+
+        // 게임이 난이도에 따라 퍼즐을 생성하고 있음
+        // UI는 자동으로 로딩 → 플레이 패널로 전환됨
+    }
+
+    /// <summary>
+    /// 힌트 요청 이벤트 핸들러
+    /// </summary>
+    private void HandleHintRequested()
+    {
+        Debug.Log("[INFO] SudokuScene::HandleHintRequested - Hint used");
+
+        // 힌트 사용 후 UI 자동 업데이트됨
+        // 추가 로직 필요 시 여기에 구현
+    }
+
+    /// <summary>
+    /// 메인 메뉴 복귀 이벤트 핸들러
+    /// </summary>
+    private void HandleBackToMenu()
+    {
+        Debug.Log("[INFO] SudokuScene::HandleBackToMenu - Returning to main menu");
+
+        // 현재 게임 저장
+        MiniGameManager.Instance.SaveCurrentGame();
+
+        // 메인 메뉴 씬 로드
+        LoadScene(SceneID.MainMenu);
+    }
+
+    #endregion
 
     /// <summary>
     /// 씬 언로드 시 호출
@@ -131,6 +290,9 @@ public class SudokuScene : BaseScene
     protected override void OnSceneUnloaded()
     {
         base.OnSceneUnloaded();
+
+        // UI 이벤트 구독 해제
+        UnsubscribeUIEvents();
 
         // 이벤트 구독 해제
         if (MiniGameManager.Instance != null)

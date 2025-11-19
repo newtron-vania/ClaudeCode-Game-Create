@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using UnityEngine;
 
 /// <summary>
@@ -14,7 +15,24 @@ public class SudokuGenerator
     private System.Random _random;
 
     /// <summary>
-    /// 새 퍼즐 생성
+    /// 새 퍼즐 비동기 생성 (추천)
+    /// </summary>
+    /// <param name="difficulty">난이도</param>
+    /// <param name="hintCount">힌트 개수 (0이면 난이도에 따라 자동 결정)</param>
+    /// <returns>생성된 퍼즐 Task</returns>
+    public async Task<PuzzleResult> GeneratePuzzleAsync(SudokuDifficulty difficulty, int hintCount = 0)
+    {
+        Debug.Log($"[INFO] SudokuGenerator::GeneratePuzzleAsync - Starting async puzzle generation for {difficulty}");
+
+        // 백그라운드 스레드에서 퍼즐 생성 실행
+        PuzzleResult result = await Task.Run(() => GeneratePuzzle(difficulty, hintCount));
+
+        Debug.Log($"[INFO] SudokuGenerator::GeneratePuzzleAsync - Async puzzle generation complete");
+        return result;
+    }
+
+    /// <summary>
+    /// 새 퍼즐 생성 (동기)
     /// </summary>
     /// <param name="difficulty">난이도</param>
     /// <param name="hintCount">힌트 개수 (0이면 난이도에 따라 자동 결정)</param>

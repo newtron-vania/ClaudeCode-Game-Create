@@ -21,12 +21,14 @@ public class SudokuCellButton : MonoBehaviour
     [SerializeField] private Color _selectedColor = new Color(0.7f, 0.9f, 1f);
     [SerializeField] private Color _fixedColor = new Color(0.9f, 0.9f, 0.9f);
     [SerializeField] private Color _errorColor = new Color(1f, 0.6f, 0.6f);
+    [SerializeField] private Color _validColor = new Color(0.6f, 1f, 0.6f); // 초록색 (유효한 입력)
     [SerializeField] private Color _highlightColor = new Color(0.9f, 0.95f, 1f);
 
     [Header("Text Settings")]
     [SerializeField] private Color _normalTextColor = Color.black;
     [SerializeField] private Color _fixedTextColor = new Color(0.2f, 0.2f, 0.2f);
     [SerializeField] private Color _errorTextColor = Color.red;
+    [SerializeField] private Color _validTextColor = new Color(0f, 0.5f, 0f); // 진한 초록색
     [SerializeField] private int _normalFontSize = 36;
     [SerializeField] private int _fixedFontSize = 40;
 
@@ -39,6 +41,7 @@ public class SudokuCellButton : MonoBehaviour
     private bool _isFixed;
     private bool _isSelected;
     private bool _hasError;
+    private bool _isValid; // 유효한 입력 여부 (초록색 표시)
     private bool _isHighlighted;
     private Color _highlightTint = Color.white;
 
@@ -74,6 +77,7 @@ public class SudokuCellButton : MonoBehaviour
         _isFixed = false;
         _isSelected = false;
         _hasError = false;
+        _isValid = false;
         _isHighlighted = false;
 
         UpdateVisual();
@@ -100,6 +104,7 @@ public class SudokuCellButton : MonoBehaviour
         _isFixed = false;
         _isSelected = false;
         _hasError = false;
+        _isValid = false;
         _isHighlighted = false;
 
         UpdateVisual();
@@ -156,6 +161,16 @@ public class SudokuCellButton : MonoBehaviour
     }
 
     /// <summary>
+    /// 유효한 입력 상태 설정 (초록색 표시)
+    /// </summary>
+    /// <param name="isValid">유효 여부</param>
+    public void SetValid(bool isValid)
+    {
+        _isValid = isValid;
+        UpdateVisual();
+    }
+
+    /// <summary>
     /// 하이라이트 설정 (동일 숫자 강조)
     /// </summary>
     /// <param name="isHighlighted">하이라이트 여부</param>
@@ -201,10 +216,14 @@ public class SudokuCellButton : MonoBehaviour
 
         Color targetColor = _normalColor;
 
-        // 우선순위: 에러 > 선택 > 하이라이트 > 고정 > 일반
+        // 우선순위: 에러 > 유효 > 선택 > 하이라이트 > 고정 > 일반
         if (_hasError)
         {
             targetColor = _errorColor;
+        }
+        else if (_isValid && !_isFixed) // 고정된 셀이 아니고 유효한 입력
+        {
+            targetColor = _validColor;
         }
         else if (_isSelected)
         {
@@ -231,12 +250,16 @@ public class SudokuCellButton : MonoBehaviour
 
         // 숫자 표시 (0이면 빈 문자열)
         _numberText.text = _value > 0 ? _value.ToString() : "";
-
-        // 텍스트 색상
+        
+        // 텍스트 색상 (우선순위: 에러 > 유효 > 고정 > 일반)
         Color textColor = _normalTextColor;
         if (_hasError)
         {
             textColor = _errorTextColor;
+        }
+        else if (_isValid && !_isFixed)
+        {
+            textColor = _validTextColor;
         }
         else if (_isFixed)
         {

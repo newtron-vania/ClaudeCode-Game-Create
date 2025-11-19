@@ -129,29 +129,28 @@ public class NumPadUI : MonoBehaviour
     private void OnNumberButtonClicked(int number)
     {
         Debug.Log($"[INFO] NumPadUI::OnNumberButtonClicked - Number: {number}");
-
-        // 이벤트 발생
-        OnNumberInput?.Invoke(number);
-
+        
         // 게임에 직접 입력
         if (_game != null)
         {
             _game.InputNumber(number);
         }
+
+        // 이벤트 발생
+        OnNumberInput?.Invoke(number);
     }
 
     private void OnClearButtonClicked()
     {
         Debug.Log("[INFO] NumPadUI::OnClearButtonClicked - Clear input");
-
-        // 이벤트 발생
-        OnClearInput?.Invoke();
-
         // 게임에 직접 입력 (0 = 삭제)
         if (_game != null)
         {
             _game.InputNumber(0);
         }
+
+        // 이벤트 발생
+        OnClearInput?.Invoke();
     }
 
     #endregion

@@ -31,8 +31,32 @@ public class SudokuGridUI : MonoBehaviour
     private SudokuCellButton[,] _cellButtons = new SudokuCellButton[9, 9];
     private SudokuCellButton _selectedCell;
 
-    private int _selectedRow = -1;
-    private int _selectedCol = -1;
+    private int SelectedRow
+    {
+        get 
+        { 
+            return _game.SelectedCell.row; 
+        }
+        set
+        {
+            _game.SelectedCell = (value, _game.SelectedCell.col);
+        }
+    }
+
+    private int SelectedCol
+    {
+        get 
+        { 
+            return _game.SelectedCell.col; 
+        }
+        set
+        {
+            // 오류 발생 코드: _game.SelectedCell.col = value;
+        
+            // 해결 코드: 기존 row값은 유지하고, col값만 변경하여 '새로운 튜플'을 대입
+            _game.SelectedCell = (_game.SelectedCell.row, value);
+        }
+    }
 
     /// <summary>
     /// 그리드 UI 초기화
@@ -169,8 +193,8 @@ public class SudokuGridUI : MonoBehaviour
         }
 
         _selectedCell = null;
-        _selectedRow = -1;
-        _selectedCol = -1;
+        SelectedRow = -1;
+        SelectedCol = -1;
     }
 
     #region 보드 데이터 → UI 동기화
@@ -180,21 +204,30 @@ public class SudokuGridUI : MonoBehaviour
     /// </summary>
     public void UpdateBoard()
     {
-        if (_board == null) return;
+        if (_board == null)
+        {
+            Debug.LogWarning("[WARNING] SudokuGridUI::UpdateBoard - Board is null, cannot update");
+            return;
+        }
 
+        int filledCells = 0;
         for (int row = 0; row < 9; row++)
         {
             for (int col = 0; col < 9; col++)
             {
                 UpdateCell(row, col);
+                if (_board.GetCell(row, col) != 0)
+                {
+                    filledCells++;
+                }
             }
         }
 
-        Debug.Log("[INFO] SudokuGridUI::UpdateBoard - Board updated");
+        Debug.Log($"[INFO] SudokuGridUI::UpdateBoard - Board updated ({filledCells} cells filled)");
     }
 
     /// <summary>
-    /// 특정 셀 업데이트
+    /// 특정 셀 업데이트 (실시간 검증 포함)
     /// </summary>
     public void UpdateCell(int row, int col)
     {
@@ -204,9 +237,13 @@ public class SudokuGridUI : MonoBehaviour
         bool isFixed = _board.IsCellFixed(row, col);
         bool hasError = _board.HasCellError(row, col);
 
+        // 실시간 검증: 유효한 입력인지 확인 (고정 셀이 아니고, 값이 있으며, 에러가 없을 때)
+        bool isValid = !isFixed && value != 0 && !hasError && SudokuValidator.IsPlacementValid(_board.Board, row, col);
+
         _cellButtons[row, col].SetValue(value);
         _cellButtons[row, col].SetFixed(isFixed);
         _cellButtons[row, col].SetError(hasError);
+        _cellButtons[row, col].SetValid(isValid); // 유효한 입력 표시 (초록색)
 
         // 고정 셀은 편집 불가
         _cellButtons[row, col].SetInteractable(!isFixed);
@@ -291,14 +328,13 @@ public class SudokuGridUI : MonoBehaviour
         }
 
         // 새로운 셀 선택
-        _selectedRow = row;
-        _selectedCol = col;
+        SelectedRow = row;
+        SelectedCol = col;
         _selectedCell = _cellButtons[row, col];
 
         if (_selectedCell != null)
         {
             _selectedCell.SetSelected(true);
-
             // 동일 숫자 하이라이팅
             int value = _board.GetCell(row, col);
             if (value != 0)
@@ -320,24 +356,24 @@ public class SudokuGridUI : MonoBehaviour
     /// <param name="number">입력할 숫자 (1-9, 0은 삭제)</param>
     public void InputNumber(int number)
     {
-        if (_selectedRow < 0 || _selectedCol < 0)
+        if (SelectedRow < 0 || SelectedCol < 0)
         {
             Debug.LogWarning("[WARNING] SudokuGridUI::InputNumber - No cell selected");
             return;
         }
 
         // 고정 셀은 입력 불가
-        if (_board.IsCellFixed(_selectedRow, _selectedCol))
+        if (_board.IsCellFixed(SelectedRow, SelectedCol))
         {
             Debug.LogWarning("[WARNING] SudokuGridUI::InputNumber - Cannot modify fixed cell");
             return;
         }
 
         // 보드에 숫자 설정
-        _board.SetCell(_selectedRow, _selectedCol, number);
+        _board.SetCell(SelectedRow, SelectedCol, number);
 
         // UI 업데이트
-        UpdateCell(_selectedRow, _selectedCol);
+        UpdateCell(SelectedRow, SelectedCol);
 
         // 에러 체크 및 업데이트
         UpdateErrors();
@@ -352,7 +388,7 @@ public class SudokuGridUI : MonoBehaviour
             ClearHighlights();
         }
 
-        Debug.Log($"[INFO] SudokuGridUI::InputNumber - Input {number} at ({_selectedRow}, {_selectedCol})");
+        Debug.Log($"[INFO] SudokuGridUI::InputNumber - Input {number} at ({SelectedRow}, {SelectedCol})");
     }
 
     /// <summary>
@@ -366,8 +402,8 @@ public class SudokuGridUI : MonoBehaviour
             _selectedCell = null;
         }
 
-        _selectedRow = -1;
-        _selectedCol = -1;
+        SelectedRow = -1;
+        SelectedCol = -1;
 
         ClearHighlights();
     }
@@ -377,19 +413,9 @@ public class SudokuGridUI : MonoBehaviour
     #region Public API
 
     /// <summary>
-    /// 현재 선택된 행
-    /// </summary>
-    public int SelectedRow => _selectedRow;
-
-    /// <summary>
-    /// 현재 선택된 열
-    /// </summary>
-    public int SelectedCol => _selectedCol;
-
-    /// <summary>
     /// 셀이 선택되어 있는지 여부
     /// </summary>
-    public bool HasSelection => _selectedRow >= 0 && _selectedCol >= 0;
+    public bool HasSelection => SelectedRow >= 0 && SelectedCol >= 0;
 
     #endregion
 
