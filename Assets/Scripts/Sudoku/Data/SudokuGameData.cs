@@ -163,21 +163,103 @@ public class SudokuGameData : IGameData
     }
 
     /// <summary>
-    /// 게임 상태 저장
+    /// 게임 상태 저장 (PlayerPrefs JSON)
     /// </summary>
     public void SaveState()
     {
         Debug.Log("[INFO] SudokuGameData::SaveState - Saving game state");
-        // TODO: JSON 직렬화로 현재 게임 상태 저장
+
+        // JSON 직렬화할 데이터 구조
+        var saveData = new SaveData
+        {
+            playTime = _playTime,
+            score = _score,
+            hintsUsed = _hintsUsed,
+            mistakes = _mistakes,
+            isCompleted = _isCompleted,
+            difficulty = _difficulty
+        };
+
+        // JSON 직렬화
+        string json = JsonUtility.ToJson(saveData, true);
+
+        // PlayerPrefs에 저장
+        PlayerPrefs.SetString("SudokuGameData_SaveState", json);
+        PlayerPrefs.Save();
+
+        Debug.Log($"[INFO] SudokuGameData::SaveState - State saved: {json}");
     }
 
     /// <summary>
-    /// 게임 상태 로드
+    /// 게임 상태 로드 (PlayerPrefs JSON)
     /// </summary>
     public void LoadState()
     {
         Debug.Log("[INFO] SudokuGameData::LoadState - Loading game state");
-        // TODO: JSON 역직렬화로 저장된 게임 상태 로드
+
+        // PlayerPrefs에서 JSON 가져오기
+        if (!PlayerPrefs.HasKey("SudokuGameData_SaveState"))
+        {
+            Debug.LogWarning("[WARNING] SudokuGameData::LoadState - No saved state found");
+            return;
+        }
+
+        string json = PlayerPrefs.GetString("SudokuGameData_SaveState");
+
+        // JSON 역직렬화
+        var saveData = JsonUtility.FromJson<SaveData>(json);
+
+        if (saveData != null)
+        {
+            _playTime = saveData.playTime;
+            _score = saveData.score;
+            _hintsUsed = saveData.hintsUsed;
+            _mistakes = saveData.mistakes;
+            _isCompleted = saveData.isCompleted;
+            _difficulty = saveData.difficulty;
+
+            Debug.Log($"[INFO] SudokuGameData::LoadState - State loaded: {json}");
+        }
+        else
+        {
+            Debug.LogError("[ERROR] SudokuGameData::LoadState - Failed to deserialize save data");
+        }
+    }
+
+    /// <summary>
+    /// 저장된 상태 삭제
+    /// </summary>
+    public void ClearSavedState()
+    {
+        if (PlayerPrefs.HasKey("SudokuGameData_SaveState"))
+        {
+            PlayerPrefs.DeleteKey("SudokuGameData_SaveState");
+            PlayerPrefs.Save();
+            Debug.Log("[INFO] SudokuGameData::ClearSavedState - Saved state cleared");
+        }
+    }
+
+    /// <summary>
+    /// 저장된 상태 존재 여부 확인
+    /// </summary>
+    /// <returns>저장된 상태가 있으면 true</returns>
+    public bool HasSavedState()
+    {
+        return PlayerPrefs.HasKey("SudokuGameData_SaveState");
+    }
+
+    /// <summary>
+    /// JSON 직렬화용 데이터 구조
+    /// </summary>
+    [System.Serializable]
+    private class SaveData
+    {
+        public float playTime;
+        public int score;
+        public int hintsUsed;
+        public int mistakes;
+        public bool isCompleted;
+        public SudokuDifficulty difficulty;
     }
 
     /// <summary>

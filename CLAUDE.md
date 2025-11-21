@@ -234,6 +234,87 @@ The game selection system dynamically generates UI buttons based on available ga
 5. Place icon sprite at Addressables path: `Sprite/{GameID}_icon`
 6. Game will automatically appear in selection menu
 
+### Sudoku Game Architecture (Activity Action Pattern)
+
+Sudoku 게임은 특수한 **Activity Action 패턴**을 사용하여 게임 로직과 UI를 분리합니다:
+
+**Architecture Pattern**:
+```
+SudokuGame (Model/Controller)
+    ↓ Activity Actions (간접 연결)
+SudokuScene (UI Coordinator)
+    ↓ Direct UI Updates
+SudokuUIPanel (View)
+```
+
+**Activity Action Pattern 구현**:
+```csharp
+// SudokuGame.cs - 상태별 Activity Actions 정의
+public Action StartMenuActivityAction;    // StartMenu 진입 시 실행
+public Action GeneratingActivityAction;   // Generating 진입 시 실행
+public Action PlayingActivityAction;      // Playing 진입 시 실행
+public Action GameEndActivityAction;      // GameEnd 진입 시 실행
+
+// 상태 전환 시 해당 Action 실행
+private void ChangeState(GameState newState)
+{
+    _currentState = newState;
+    switch (newState)
+    {
+        case GameState.StartMenu:
+            StartMenuActivityAction?.Invoke();  // UI 업데이트 트리거
+            break;
+        // ...
+    }
+}
+```
+
+**UI 연결 (SudokuScene)**:
+```csharp
+// SudokuScene.cs - Activity Actions에 UI 업데이트 로직 등록
+private void SubscribeUIEvents()
+{
+    var game = MiniGameManager.Instance.GetCurrentGame() as SudokuGame;
+
+    // 게임 → UI 간접 연결
+    game.StartMenuActivityAction = () => _uiPanel.ShowStartMenuPanel();
+    game.GeneratingActivityAction = () => _uiPanel.ShowLoadingPanel();
+    game.PlayingActivityAction = () => _uiPanel.ShowPlayingPanel();
+    game.GameEndActivityAction = () => _uiPanel.ShowGameEndPanel();
+
+    // UI → 게임 이벤트 구독
+    _uiPanel.OnDifficultySelected += (difficulty) => { /* ... */ };
+    _uiPanel.OnHintRequested += () => { /* ... */ };
+}
+```
+
+**Benefits**:
+- 게임 로직이 UI 구체 클래스를 직접 참조하지 않음
+- UI 변경이 게임 로직에 영향을 주지 않음
+- 테스트 시 UI 없이 게임 로직만 테스트 가능
+- 상태 전환과 UI 업데이트가 자동으로 동기화
+
+**Real-time Validation System**:
+```csharp
+// 실시간 검증: 규칙 위반을 즉시 표시 (정답 비교 없음)
+bool[,] errors = SudokuValidator.FindErrors(_board.Board);
+_board.UpdateErrors(errors);
+
+// 완성 체크: 모든 칸 채워지고 규칙 만족하면 완료
+if (_board.IsAllCellsFilled() && _board.IsSolved())
+{
+    OnPuzzleCompleted();
+}
+```
+
+**Key Components**:
+- `SudokuGame`: 게임 로직, 상태 관리, Activity Actions 정의
+- `SudokuScene`: UI 코디네이터, Activity Actions 등록, 이벤트 중개
+- `SudokuUIPanel`: 4-상태 패널 (StartMenu/Generating/Playing/GameEnd)
+- `SudokuBoard`: 게임 보드 상태 관리 (정답, 힌트, 에러)
+- `SudokuValidator`: 실시간 규칙 검증 (행/열/박스 중복 체크)
+- `SudokuGenerator`: 비동기 퍼즐 생성 (백그라운드 스레드)
+
 **Addressables Path Conventions** (Game-Specific Organization):
 ```csharp
 // NEW: Game-specific resource structure (Type → Game)
@@ -692,6 +773,7 @@ CustomSceneManager.Instance.LoadScene("MyGame");
 - **Manager System Guide**: `Assets/Docs/MANAGERS_GUIDE.md` ⚠️ **READ THIS FIRST EVERY SESSION**
 - **Undead Survivor Reference**: `Assets/Docs/UndeadSurvivor_Reference.md` - Original game implementation reference
 - **Game Select UI Setup**: `Assets/Docs/GameSelectUI_Setup_Guide.md` - Dynamic button generation guide
+- **Sudoku Scene Setup**: `Assets/Docs/Sudoku_Scene_Setup_Guide.md` - Sudoku Unity scene integration guide
 - **Git Workflow**: `Assets/Docs/Github-Flow.md`
 - **Unity Standards**: `Assets/Docs/[유니티] 개발 표준 v2.md` (Korean)
 - **Setup Guide**: `Assets/Docs/SETUP_GUIDE.md`
@@ -719,10 +801,21 @@ CustomSceneManager.Instance.LoadScene("MyGame");
 
 **Active Branch**: `feature/sudoku`
 
-**Current Focus**: Sudoku 게임 개발
-- 스도쿠 게임 메커닉 구현 (퍼즐 생성, 유효성 검증, UI)
-- IMiniGame 인터페이스 구현으로 플랫폼 통합
-- DataManager와 SudokuDataProvider 통합 (필요시)
+**Current Focus**: Sudoku 게임 미구현 메서드 구체화 및 Unity 씬 통합
+- **Phase 4 완료**: 핵심 게임 로직 구현
+  - ✅ SudokuGame (IMiniGame 구현, Activity Action 패턴)
+  - ✅ SudokuGenerator (비동기 퍼즐 생성)
+  - ✅ SudokuValidator (실시간 오류 검증)
+  - ✅ SudokuBoard (게임 보드 상태 관리)
+  - ✅ SudokuDataProvider (난이도별 힌트 설정)
+  - ✅ SudokuScene (씬 컨트롤러, UI 이벤트 연결)
+  - ✅ SudokuUIPanel (4-상태 UI 패널)
+  - ✅ SudokuGridUI, SudokuCellButton, NumPadUI, TimerUI
+- **Phase 5 진행 중**: 미구현 메서드 구체화
+  - 🔧 SudokuScene 이벤트 핸들러 구체화
+  - 🔧 SudokuUIPanel Undo/Pause 기능 구현
+  - 🔧 SudokuGameData SaveState/LoadState 구현
+- **Phase 6 예정**: Unity 씬 설정 및 통합 테스트
 
 ## Language Policy
 

@@ -49,7 +49,7 @@ public class SudokuUIPanel : UIPanel
     [SerializeField] private Button _hintButton;                // 힌트 버튼
     [SerializeField] private Button _undoButton;                // 되돌리기 버튼
     [SerializeField] private Button _eraseButton;               // 지우기 버튼
-    [SerializeField] private Button _pauseButton;               // 일시정지 버튼
+    // 일시정지 버튼 제거됨 (Phase 6+에서 재구현 예정)
 
     // ========================================
     // GameEndPanel UI 요소
@@ -304,8 +304,6 @@ public class SudokuUIPanel : UIPanel
             _undoButton.onClick.AddListener(OnUndoButtonClicked);
         if (_eraseButton != null)
             _eraseButton.onClick.AddListener(OnEraseButtonClicked);
-        if (_pauseButton != null)
-            _pauseButton.onClick.AddListener(OnPauseButtonClicked);
 
         // GameEndPanel 버튼
         if (_newGameButton != null)
@@ -333,8 +331,6 @@ public class SudokuUIPanel : UIPanel
             _undoButton.onClick.RemoveAllListeners();
         if (_eraseButton != null)
             _eraseButton.onClick.RemoveAllListeners();
-        if (_pauseButton != null)
-            _pauseButton.onClick.RemoveAllListeners();
 
         // GameEndPanel 버튼
         if (_newGameButton != null)
@@ -357,14 +353,24 @@ public class SudokuUIPanel : UIPanel
             return;
         }
 
+        // DataProvider에서 난이도 정보 가져오기 (선택적)
+        var provider = DataManager.Instance.GetProvider<SudokuDataProvider>("Sudoku");
+        if (provider != null && provider.IsLoaded)
+        {
+            var config = provider.GetDifficultyConfig(difficulty);
+            if (config != null)
+            {
+                Debug.Log($"[INFO] SudokuUIPanel::OnDifficultyButtonClicked - {config.DisplayName} selected (hints: {config.MinHints}-{config.MaxHints})");
+            }
+        }
+
         // 난이도 선택 이벤트 발생
         OnDifficultySelected?.Invoke(difficulty);
 
         // 새 게임 시작
         _game.StartNewGame(difficulty);
 
-        // 로딩 패널 표시
-        ShowLoadingPanel();
+        // 로딩 패널 표시 (Activity Action을 통해 자동으로 전환됨)
     }
 
     /// <summary>
@@ -415,7 +421,7 @@ public class SudokuUIPanel : UIPanel
 
     /// <summary>
     /// 되돌리기 버튼 클릭 핸들러
-    /// 마지막 입력 취소 (미구현)
+    /// 마지막 입력 취소
     /// </summary>
     private void OnUndoButtonClicked()
     {
@@ -427,10 +433,19 @@ public class SudokuUIPanel : UIPanel
             return;
         }
 
-        // TODO: 게임 히스토리 스택 구현 필요
-        // _game.UndoLastMove();
+        // Undo 기능 구현 안내:
+        // 1. SudokuGame에 Stack<(int row, int col, int oldValue, int newValue)> 추가
+        // 2. InputNumber()에서 변경 전 값을 스택에 저장
+        // 3. UndoLastMove() 메서드로 스택에서 꺼내어 복원
+        // 4. 에러 체크 및 UI 업데이트
 
-        Debug.LogWarning("[WARNING] SudokuUIPanel::OnUndoButtonClicked - Undo feature not implemented yet");
+        // 현재는 버튼 비활성화 권장
+        if (_undoButton != null)
+        {
+            _undoButton.interactable = false;
+        }
+
+        Debug.LogWarning("[WARNING] SudokuUIPanel::OnUndoButtonClicked - Undo feature not implemented (Phase 6+)");
     }
 
     /// <summary>
@@ -451,25 +466,6 @@ public class SudokuUIPanel : UIPanel
         _game.InputNumber(0);
     }
 
-    /// <summary>
-    /// 일시정지 버튼 클릭 핸들러
-    /// 게임 일시정지 (미구현)
-    /// </summary>
-    private void OnPauseButtonClicked()
-    {
-        Debug.Log("[INFO] SudokuUIPanel::OnPauseButtonClicked - Pause requested");
-
-        if (_game == null)
-        {
-            Debug.LogError("[ERROR] SudokuUIPanel::OnPauseButtonClicked - Game instance is null");
-            return;
-        }
-
-        // TODO: 일시정지 UI 패널 구현 필요
-        // UIManager.Instance.OpenPanel<PausePanel>();
-
-        Debug.LogWarning("[WARNING] SudokuUIPanel::OnPauseButtonClicked - Pause feature not implemented yet");
-    }
 
     /// <summary>
     /// 새 게임 버튼 클릭 핸들러 (게임 종료 후)

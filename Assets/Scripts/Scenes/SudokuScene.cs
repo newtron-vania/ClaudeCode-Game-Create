@@ -253,8 +253,19 @@ public class SudokuScene : BaseScene
     {
         Debug.Log($"[INFO] SudokuScene::HandleDifficultySelected - Difficulty selected: {difficulty}");
 
-        // 게임이 난이도에 따라 퍼즐을 생성하고 있음
-        // UI는 자동으로 로딩 → 플레이 패널로 전환됨
+        // 게임 데이터 갱신 (게임이 난이도에 따라 퍼즐을 생성하고 있음)
+        _sudokuData = MiniGameManager.Instance.GetCurrentGameData<SudokuGameData>();
+
+        if (_sudokuData != null)
+        {
+            Debug.Log($"[INFO] SudokuScene::HandleDifficultySelected - Game started with difficulty: {_sudokuData.Difficulty}");
+        }
+        else
+        {
+            Debug.LogWarning("[WARNING] SudokuScene::HandleDifficultySelected - Failed to get game data");
+        }
+
+        // UI는 자동으로 로딩 → 플레이 패널로 전환됨 (Activity Action을 통해)
     }
 
     /// <summary>
@@ -264,8 +275,14 @@ public class SudokuScene : BaseScene
     {
         Debug.Log("[INFO] SudokuScene::HandleHintRequested - Hint used");
 
-        // 힌트 사용 후 UI 자동 업데이트됨
-        // 추가 로직 필요 시 여기에 구현
+        // 힌트 사용 후 UI 자동 업데이트됨 (SudokuUIPanel에서 UpdateGameInfo 호출)
+        if (_uiPanel != null)
+        {
+            _uiPanel.UpdateGameInfo();
+        }
+
+        // SFX 재생 (선택 사항)
+        // SoundManager.Instance.PlaySFX("Audio/SFX/Sudoku/hint_used");
     }
 
     /// <summary>
