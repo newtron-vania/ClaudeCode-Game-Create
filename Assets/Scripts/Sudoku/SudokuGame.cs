@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
 
@@ -11,7 +12,7 @@ public class SudokuGame : IMiniGame
     private SudokuGameData _data;
     private CommonPlayerData _commonData;
     private SudokuBoard _board;
-    private SudokuGenerator _generator;
+    private SudokuGeneratorWrapper _generator;
     private bool _isInitialized;
 
     // 게임 상태
@@ -21,7 +22,11 @@ public class SudokuGame : IMiniGame
 
     // 퍼즐 생성 상태
     private bool _isGeneratingPuzzle;
-    private SudokuGenerator.PuzzleResult _generatedPuzzle;
+    private SudokuGeneratorWrapper.PuzzleResult _generatedPuzzle;
+
+    // Undo 기능
+    private Stack<MoveRecord> _moveHistory;
+    private const int MAX_UNDO_HISTORY = 50; // 최대 50개 이동 기록
 
     /// <summary>
     /// 현재 보드
@@ -93,7 +98,8 @@ public class SudokuGame : IMiniGame
         _data.Initialize();
 
         _board = new SudokuBoard();
-        _generator = new SudokuGenerator();
+        _generator = new SudokuGeneratorWrapper();
+        _moveHistory = new Stack<MoveRecord>();
 
         _currentState = GameState.StartMenu;
         _isInitialized = true;
@@ -203,7 +209,8 @@ public class SudokuGame : IMiniGame
             case GameState.StartMenu:
                 OnEnterStartMenu();
                 break;
-            case GameState.Generating: OnEnterGenerating();
+            case GameState.Generating:
+                OnEnterGenerating();
                 break;
             case GameState.Playing:
                 OnEnterPlaying();
@@ -275,10 +282,16 @@ public class SudokuGame : IMiniGame
             return;
         }
 
+        // 이전 값 저장 (Undo용)
+        int oldValue = _board.GetCell(_selectedRow, _selectedCol);
+
         // 값 설정
         if (_board.SetCell(_selectedRow, _selectedCol, value))
         {
             Debug.Log($"[INFO] SudokuGame::InputNumber - Input {value} at ({_selectedRow}, {_selectedCol})");
+
+            // 이동 기록 (Undo용)
+            RecordMove(_selectedRow, _selectedCol, oldValue, value);
 
             // 실시간 검증: 에러 체크 및 업데이트 (정답 비교 없이 규칙만 검사)
             bool[,] errors = SudokuValidator.FindErrors(_board.Board);
@@ -429,6 +442,9 @@ public class SudokuGame : IMiniGame
         _selectedRow = -1;
         _selectedCol = -1;
 
+        // Undo 스택 초기화
+        _moveHistory?.Clear();
+
         // Playing UI 업데이트 Action 실행
         PlayingActivityAction?.Invoke();
     }
@@ -476,7 +492,132 @@ public class SudokuGame : IMiniGame
 
         _data.Reset();
         _board.ClearBoard();
+        _moveHistory?.Clear();
 
         ChangeState(GameState.StartMenu);
     }
+
+    #region Undo 기능
+
+    /// <summary>
+    /// 이동 기록 구조체
+    /// </summary>
+    private struct MoveRecord
+    {
+        public int Row;
+        public int Col;
+        public int OldValue;
+        public int NewValue;
+
+        public MoveRecord(int row, int col, int oldValue, int newValue)
+        {
+            Row = row;
+            Col = col;
+            OldValue = oldValue;
+            NewValue = newValue;
+        }
+    }
+
+    /// <summary>
+    /// 이동 기록
+    /// </summary>
+    /// <param name="row">행</param>
+    /// <param name="col">열</param>
+    /// <param name="oldValue">이전 값</param>
+    /// <param name="newValue">새 값</param>
+    private void RecordMove(int row, int col, int oldValue, int newValue)
+    {
+        // 저장 조건 검증
+        // 1. 이전 값이 0이거나
+        // 2. 이전 값이 유효한 값(규칙 위반 없음)이어야 함
+        // 3. 이전 값과 새 값이 다를 때만 저장
+        if (oldValue == newValue)
+        {
+            return; // 값이 같으면 저장하지 않음
+        }
+
+        // 이전 값이 0이 아닌 경우, 유효성 검사
+        if (oldValue != 0)
+        {
+            // 이전 값으로 임시 설정하여 검증
+            int currentValue = _board.GetCell(row, col);
+            _board.SetCell(row, col, oldValue);
+
+            bool[,] errors = SudokuValidator.FindErrors(_board.Board);
+            bool wasValid = !errors[row, col];
+
+            // 원래 값으로 복원
+            _board.SetCell(row, col, currentValue);
+
+            if (!wasValid)
+            {
+                Debug.Log($"[INFO] SudokuGame::RecordMove - Old value {oldValue} was invalid, not recording");
+                return; // 이전 값이 유효하지 않으면 저장하지 않음
+            }
+        }
+
+        // 스택 크기 제한
+        if (_moveHistory.Count >= MAX_UNDO_HISTORY)
+        {
+            // 가장 오래된 기록 제거 (Stack을 List로 변환 후 재구성)
+            var tempList = new List<MoveRecord>(_moveHistory);
+            tempList.RemoveAt(tempList.Count - 1); // 맨 아래 제거
+            _moveHistory = new Stack<MoveRecord>(tempList);
+            _moveHistory = new Stack<MoveRecord>(new List<MoveRecord>(_moveHistory)); // 순서 복원
+        }
+
+        _moveHistory.Push(new MoveRecord(row, col, oldValue, newValue));
+        Debug.Log($"[INFO] SudokuGame::RecordMove - Recorded move ({row}, {col}): {oldValue} -> {newValue}, History: {_moveHistory.Count}");
+    }
+
+    /// <summary>
+    /// 마지막 이동 취소
+    /// </summary>
+    /// <returns>취소 성공 여부</returns>
+    public bool UndoLastMove()
+    {
+        if (_currentState != GameState.Playing)
+        {
+            Debug.LogWarning("[WARNING] SudokuGame::UndoLastMove - Cannot undo outside Playing state");
+            return false;
+        }
+
+        if (_moveHistory == null || _moveHistory.Count == 0)
+        {
+            Debug.LogWarning("[WARNING] SudokuGame::UndoLastMove - No moves to undo");
+            return false;
+        }
+
+        MoveRecord lastMove = _moveHistory.Pop();
+
+        // 이전 값으로 복원
+        if (_board.SetCell(lastMove.Row, lastMove.Col, lastMove.OldValue))
+        {
+            Debug.Log($"[INFO] SudokuGame::UndoLastMove - Undone move ({lastMove.Row}, {lastMove.Col}): {lastMove.NewValue} -> {lastMove.OldValue}");
+
+            // 에러 체크 및 업데이트
+            bool[,] errors = SudokuValidator.FindErrors(_board.Board);
+            _board.UpdateErrors(errors);
+
+            return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Undo 가능 여부
+    /// </summary>
+    /// <returns>Undo 가능하면 true</returns>
+    public bool CanUndo()
+    {
+        return _moveHistory != null && _moveHistory.Count > 0 && _currentState == GameState.Playing;
+    }
+
+    /// <summary>
+    /// Undo 기록 개수
+    /// </summary>
+    public int UndoHistoryCount => _moveHistory?.Count ?? 0;
+
+    #endregion
 }

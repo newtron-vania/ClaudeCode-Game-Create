@@ -129,7 +129,7 @@ public class SudokuUIPanel : UIPanel
         }
 
         // 시작 메뉴 표시
-        ShowStartMenuPanel();
+        ShowPanel(PanelType.StartMenu);
     }
 
     #region 상태별 UI 전환 (Setup Guide 명세에 맞춤)
@@ -139,14 +139,7 @@ public class SudokuUIPanel : UIPanel
     /// </summary>
     public void ShowStartMenuPanel()
     {
-        HideAllPanels();
-
-        if (_startMenuPanel != null)
-        {
-            _startMenuPanel.SetActive(true);
-        }
-
-        Debug.Log("[INFO] SudokuUIPanel::ShowStartMenuPanel - Start menu displayed");
+        ShowPanel(PanelType.StartMenu);
     }
 
     /// <summary>
@@ -154,14 +147,7 @@ public class SudokuUIPanel : UIPanel
     /// </summary>
     public void ShowLoadingPanel()
     {
-        HideAllPanels();
-
-        if (_loadingPanel != null)
-        {
-            _loadingPanel.SetActive(true);
-        }
-
-        Debug.Log("[INFO] SudokuUIPanel::ShowLoadingPanel - Loading screen displayed");
+        ShowPanel(PanelType.Loading);
     }
 
     /// <summary>
@@ -169,12 +155,7 @@ public class SudokuUIPanel : UIPanel
     /// </summary>
     public void ShowPlayingPanel()
     {
-        HideAllPanels();
-
-        if (_playingPanel != null)
-        {
-            _playingPanel.SetActive(true);
-        }
+        ShowPanel(PanelType.Playing);
 
         // 그리드 UI 업데이트 (보드 데이터 동기화)
         if (_gridUI != null)
@@ -191,8 +172,6 @@ public class SudokuUIPanel : UIPanel
 
         // 게임 정보 업데이트
         UpdateGameInfo();
-
-        Debug.Log("[INFO] SudokuUIPanel::ShowPlayingPanel - Playing panel displayed");
     }
 
     /// <summary>
@@ -200,12 +179,7 @@ public class SudokuUIPanel : UIPanel
     /// </summary>
     public void ShowGameEndPanel()
     {
-        HideAllPanels();
-
-        if (_gameEndPanel != null)
-        {
-            _gameEndPanel.SetActive(true);
-        }
+        ShowPanel(PanelType.GameEnd);
 
         // 타이머 정지
         if (_timerUI != null)
@@ -215,8 +189,43 @@ public class SudokuUIPanel : UIPanel
 
         // 게임 완료 정보 업데이트
         UpdateGameEndPanel();
+    }
 
-        Debug.Log("[INFO] SudokuUIPanel::ShowGameEndPanel - Game end panel displayed");
+    /// <summary>
+    /// 지정된 패널 타입을 표시하고 나머지 패널들을 숨김
+    /// </summary>
+    /// <param name="panelType">표시할 패널 타입</param>
+    private void ShowPanel(PanelType panelType)
+    {
+        HideAllPanels();
+
+        GameObject targetPanel = GetPanelByType(panelType);
+        if (targetPanel != null)
+        {
+            targetPanel.SetActive(true);
+            Debug.Log($"[INFO] SudokuUIPanel::ShowPanel - {panelType} panel displayed");
+        }
+        else
+        {
+            Debug.LogError($"[ERROR] SudokuUIPanel::ShowPanel - {panelType} panel is null");
+        }
+    }
+
+    /// <summary>
+    /// 패널 타입에 해당하는 GameObject 반환
+    /// </summary>
+    /// <param name="panelType">패널 타입</param>
+    /// <returns>해당 패널 GameObject</returns>
+    private GameObject GetPanelByType(PanelType panelType)
+    {
+        return panelType switch
+        {
+            PanelType.StartMenu => _startMenuPanel,
+            PanelType.Loading => _loadingPanel,
+            PanelType.Playing => _playingPanel,
+            PanelType.GameEnd => _gameEndPanel,
+            _ => null
+        };
     }
 
     /// <summary>
@@ -253,6 +262,12 @@ public class SudokuUIPanel : UIPanel
             _hintsText.text = $"힌트: {_gameData.RemainingHints}/{_gameData.MaxHints}";
         }
 
+        // Undo 버튼 활성화/비활성화
+        if (_undoButton != null && _game != null)
+        {
+            _undoButton.interactable = _game.CanUndo();
+        }
+
         // 타이머는 TimerUI 컴포넌트가 자동으로 업데이트
     }
 
@@ -285,58 +300,66 @@ public class SudokuUIPanel : UIPanel
 
     #region 버튼 이벤트
 
+    /// <summary>
+    /// 모든 버튼 이벤트 등록
+    /// </summary>
     private void RegisterButtonEvents()
     {
         // StartMenuPanel 버튼
-        if (_easyButton != null)
-            _easyButton.onClick.AddListener(() => OnDifficultyButtonClicked(SudokuDifficulty.Easy));
-        if (_mediumButton != null)
-            _mediumButton.onClick.AddListener(() => OnDifficultyButtonClicked(SudokuDifficulty.Medium));
-        if (_hardButton != null)
-            _hardButton.onClick.AddListener(() => OnDifficultyButtonClicked(SudokuDifficulty.Hard));
-        if (_backButton != null)
-            _backButton.onClick.AddListener(OnBackButtonClicked);
+        RegisterButtonIfExists(_easyButton, () => OnDifficultyButtonClicked(SudokuDifficulty.Easy));
+        RegisterButtonIfExists(_mediumButton, () => OnDifficultyButtonClicked(SudokuDifficulty.Medium));
+        RegisterButtonIfExists(_hardButton, () => OnDifficultyButtonClicked(SudokuDifficulty.Hard));
+        RegisterButtonIfExists(_backButton, OnBackButtonClicked);
 
         // PlayingPanel 버튼
-        if (_hintButton != null)
-            _hintButton.onClick.AddListener(OnHintButtonClicked);
-        if (_undoButton != null)
-            _undoButton.onClick.AddListener(OnUndoButtonClicked);
-        if (_eraseButton != null)
-            _eraseButton.onClick.AddListener(OnEraseButtonClicked);
+        RegisterButtonIfExists(_hintButton, OnHintButtonClicked);
+        RegisterButtonIfExists(_undoButton, OnUndoButtonClicked);
+        RegisterButtonIfExists(_eraseButton, OnEraseButtonClicked);
 
         // GameEndPanel 버튼
-        if (_newGameButton != null)
-            _newGameButton.onClick.AddListener(OnNewGameButtonClicked);
-        if (_mainMenuButton != null)
-            _mainMenuButton.onClick.AddListener(OnMainMenuButtonClicked);
+        RegisterButtonIfExists(_newGameButton, OnNewGameButtonClicked);
+        RegisterButtonIfExists(_mainMenuButton, OnMainMenuButtonClicked);
     }
 
+    /// <summary>
+    /// 버튼이 존재하면 이벤트 리스너 등록
+    /// </summary>
+    /// <param name="button">등록할 버튼</param>
+    /// <param name="action">클릭 시 실행할 액션</param>
+    private void RegisterButtonIfExists(Button button, UnityEngine.Events.UnityAction action)
+    {
+        if (button != null)
+        {
+            button.onClick.AddListener(action);
+        }
+    }
+
+    /// <summary>
+    /// 모든 버튼 이벤트 해제
+    /// </summary>
     private void UnregisterButtonEvents()
     {
-        // StartMenuPanel 버튼
-        if (_easyButton != null)
-            _easyButton.onClick.RemoveAllListeners();
-        if (_mediumButton != null)
-            _mediumButton.onClick.RemoveAllListeners();
-        if (_hardButton != null)
-            _hardButton.onClick.RemoveAllListeners();
-        if (_backButton != null)
-            _backButton.onClick.RemoveAllListeners();
+        UnregisterButtonIfExists(_easyButton);
+        UnregisterButtonIfExists(_mediumButton);
+        UnregisterButtonIfExists(_hardButton);
+        UnregisterButtonIfExists(_backButton);
+        UnregisterButtonIfExists(_hintButton);
+        UnregisterButtonIfExists(_undoButton);
+        UnregisterButtonIfExists(_eraseButton);
+        UnregisterButtonIfExists(_newGameButton);
+        UnregisterButtonIfExists(_mainMenuButton);
+    }
 
-        // PlayingPanel 버튼
-        if (_hintButton != null)
-            _hintButton.onClick.RemoveAllListeners();
-        if (_undoButton != null)
-            _undoButton.onClick.RemoveAllListeners();
-        if (_eraseButton != null)
-            _eraseButton.onClick.RemoveAllListeners();
-
-        // GameEndPanel 버튼
-        if (_newGameButton != null)
-            _newGameButton.onClick.RemoveAllListeners();
-        if (_mainMenuButton != null)
-            _mainMenuButton.onClick.RemoveAllListeners();
+    /// <summary>
+    /// 버튼이 존재하면 모든 리스너 제거
+    /// </summary>
+    /// <param name="button">해제할 버튼</param>
+    private void UnregisterButtonIfExists(Button button)
+    {
+        if (button != null)
+        {
+            button.onClick.RemoveAllListeners();
+        }
     }
 
     /// <summary>
@@ -347,11 +370,7 @@ public class SudokuUIPanel : UIPanel
     {
         Debug.Log($"[INFO] SudokuUIPanel::OnDifficultyButtonClicked - Difficulty: {difficulty}");
 
-        if (_game == null)
-        {
-            Debug.LogError("[ERROR] SudokuUIPanel::OnDifficultyButtonClicked - Game instance is null");
-            return;
-        }
+        if (!ValidateGameInstance("OnDifficultyButtonClicked")) return;
 
         // DataProvider에서 난이도 정보 가져오기 (선택적)
         var provider = DataManager.Instance.GetProvider<SudokuDataProvider>("Sudoku");
@@ -396,11 +415,7 @@ public class SudokuUIPanel : UIPanel
     {
         Debug.Log("[INFO] SudokuUIPanel::OnHintButtonClicked - Hint requested");
 
-        if (_game == null)
-        {
-            Debug.LogError("[ERROR] SudokuUIPanel::OnHintButtonClicked - Game instance is null");
-            return;
-        }
+        if (!ValidateGameInstance("OnHintButtonClicked")) return;
 
         // 힌트 잔여 개수 확인
         if (_gameData == null || _gameData.RemainingHints <= 0)
@@ -415,8 +430,8 @@ public class SudokuUIPanel : UIPanel
         // 힌트 이벤트 발생
         OnHintRequested?.Invoke();
 
-        // UI 업데이트
-        UpdateGameInfo();
+        // UI 업데이트 (GridUI + GameInfo)
+        UpdateGridUIAndGameInfo();
     }
 
     /// <summary>
@@ -427,25 +442,20 @@ public class SudokuUIPanel : UIPanel
     {
         Debug.Log("[INFO] SudokuUIPanel::OnUndoButtonClicked - Undo requested");
 
-        if (_game == null)
+        if (!ValidateGameInstance("OnUndoButtonClicked")) return;
+
+        // Undo 실행
+        if (_game.UndoLastMove())
         {
-            Debug.LogError("[ERROR] SudokuUIPanel::OnUndoButtonClicked - Game instance is null");
-            return;
+            Debug.Log("[INFO] SudokuUIPanel::OnUndoButtonClicked - Undo successful");
+
+            // UI 업데이트 (GridUI + GameInfo)
+            UpdateGridUIAndGameInfo();
         }
-
-        // Undo 기능 구현 안내:
-        // 1. SudokuGame에 Stack<(int row, int col, int oldValue, int newValue)> 추가
-        // 2. InputNumber()에서 변경 전 값을 스택에 저장
-        // 3. UndoLastMove() 메서드로 스택에서 꺼내어 복원
-        // 4. 에러 체크 및 UI 업데이트
-
-        // 현재는 버튼 비활성화 권장
-        if (_undoButton != null)
+        else
         {
-            _undoButton.interactable = false;
+            Debug.LogWarning("[WARNING] SudokuUIPanel::OnUndoButtonClicked - Undo failed (no moves to undo)");
         }
-
-        Debug.LogWarning("[WARNING] SudokuUIPanel::OnUndoButtonClicked - Undo feature not implemented (Phase 6+)");
     }
 
     /// <summary>
@@ -456,16 +466,14 @@ public class SudokuUIPanel : UIPanel
     {
         Debug.Log("[INFO] SudokuUIPanel::OnEraseButtonClicked - Erase requested");
 
-        if (_game == null)
-        {
-            Debug.LogError("[ERROR] SudokuUIPanel::OnEraseButtonClicked - Game instance is null");
-            return;
-        }
+        if (!ValidateGameInstance("OnEraseButtonClicked")) return;
 
         // 선택된 셀에 0 입력 (지우기)
         _game.InputNumber(0);
-    }
 
+        // UI 업데이트 (GridUI만)
+        UpdateGridUI();
+    }
 
     /// <summary>
     /// 새 게임 버튼 클릭 핸들러 (게임 종료 후)
@@ -499,14 +507,8 @@ public class SudokuUIPanel : UIPanel
     {
         Debug.Log($"[INFO] SudokuUIPanel::OnNumPadNumberInput - Number {number} input from NumPad");
 
-        // GridUI 업데이트 (게임에서 이미 InputNumber 호출됨)
-        if (_gridUI != null && _game != null)
-        {
-            _gridUI.UpdateBoard();
-        }
-
-        // 게임 정보 업데이트
-        UpdateGameInfo();
+        // UI 업데이트 (GridUI + GameInfo)
+        UpdateGridUIAndGameInfo();
     }
 
     /// <summary>
@@ -516,13 +518,46 @@ public class SudokuUIPanel : UIPanel
     {
         Debug.Log("[INFO] SudokuUIPanel::OnNumPadClearInput - Clear input from NumPad");
 
-        // GridUI 업데이트 (게임에서 이미 InputNumber(0) 호출됨)
+        // UI 업데이트 (GridUI + GameInfo)
+        UpdateGridUIAndGameInfo();
+    }
+
+    #endregion
+
+    #region 헬퍼 메서드
+
+    /// <summary>
+    /// 게임 인스턴스 유효성 검증
+    /// </summary>
+    /// <param name="methodName">호출한 메서드 이름 (로깅용)</param>
+    /// <returns>게임 인스턴스가 유효하면 true</returns>
+    private bool ValidateGameInstance(string methodName)
+    {
+        if (_game == null)
+        {
+            Debug.LogError($"[ERROR] SudokuUIPanel::{methodName} - Game instance is null");
+            return false;
+        }
+        return true;
+    }
+
+    /// <summary>
+    /// GridUI 업데이트 (보드 동기화)
+    /// </summary>
+    private void UpdateGridUI()
+    {
         if (_gridUI != null && _game != null)
         {
             _gridUI.UpdateBoard();
         }
+    }
 
-        // 게임 정보 업데이트
+    /// <summary>
+    /// GridUI와 GameInfo 모두 업데이트
+    /// </summary>
+    private void UpdateGridUIAndGameInfo()
+    {
+        UpdateGridUI();
         UpdateGameInfo();
     }
 
