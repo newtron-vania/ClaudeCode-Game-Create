@@ -77,6 +77,17 @@ public class MiniGameManager : Singleton<MiniGameManager>
             UnloadCurrentGame();
         }
 
+        // 게임 데이터 로드 (DataManager 연동)
+        if (DataManager.Instance.HasProvider(gameID))
+        {
+            Debug.Log($"[INFO] MiniGameManager::LoadGame - Loading data for game: {gameID}");
+            DataManager.Instance.LoadGameData(gameID);
+        }
+        else
+        {
+            Debug.LogWarning($"[WARNING] MiniGameManager::LoadGame - No data provider registered for game: {gameID}");
+        }
+
         // GameRegistry에서 게임 인스턴스 생성
         IMiniGame newGame = GameRegistry.Instance.CreateGame(gameID);
         if (newGame == null)
@@ -147,6 +158,13 @@ public class MiniGameManager : Singleton<MiniGameManager>
         {
             Debug.LogError($"[ERROR] MiniGameManager::UnloadCurrentGame - Exception during Cleanup: {ex.Message}");
             Debug.LogException(ex);
+        }
+
+        // 게임 데이터 언로드 (DataManager 연동)
+        if (DataManager.Instance.IsGameDataLoaded(CurrentGameID))
+        {
+            Debug.Log($"[INFO] MiniGameManager::UnloadCurrentGame - Unloading data for game: {CurrentGameID}");
+            DataManager.Instance.UnloadGameData(CurrentGameID);
         }
 
         _currentGame = null;
@@ -307,6 +325,15 @@ public class MiniGameManager : Singleton<MiniGameManager>
     {
         IGameData data = GetCurrentGameData();
         return data as T;
+    }
+
+    /// <summary>
+    /// 현재 실행 중인 게임 인스턴스 가져오기
+    /// </summary>
+    /// <returns>현재 게임 인스턴스 (게임이 없으면 null)</returns>
+    public IMiniGame GetCurrentGame()
+    {
+        return _currentGame;
     }
 
     /// <summary>

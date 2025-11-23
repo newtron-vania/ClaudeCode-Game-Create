@@ -1,0 +1,49 @@
+{
+  "monsters": [
+    {
+      "id": 1,
+      "name": "Zombie",
+      "maxHp": 30,
+      "damage": 5,
+      "defense": 0,
+      "moveSpeed": 2.0,
+      "expMultiplier": 1.0
+    },
+    {
+      "id": 2,
+      "name": "Zombie Elite",
+      "maxHp": 55,
+      "damage": 10,
+      "defense": 2,
+      "moveSpeed": 2.5,
+      "expMultiplier": 2.0
+    },
+    {
+      "id": 3,
+      "name": "Skeleton",
+      "maxHp": 25,
+      "damage": 8,
+      "defense": 0,
+      "moveSpeed": 4.0,
+      "expMultiplier": 1.2
+    },
+    {
+      "id": 4,
+      "name": "Skeleton Elite",
+      "maxHp": 38,
+      "damage": 12,
+      "defense": 1,
+      "moveSpeed": 4.5,
+      "expMultiplier": 2.5
+    },
+    {
+      "id": 5,
+      "name": "Tombstone",
+      "maxHp": 80,
+      "damage": 15,
+      "defense": 5,
+      "moveSpeed": 1.0,
+      "expMultiplier": 3.5
+    }
+  ]
+}

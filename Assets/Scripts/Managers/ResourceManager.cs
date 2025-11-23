@@ -6,7 +6,7 @@ using UnityEngine.ResourceManagement.AsyncOperations;
 using Object = UnityEngine.Object;
 
 /// <summary>
-/// Addressables 기반 리소스 관리 매니저
+/// Addressables 및 Resources 기반 리소스 관리 매니저
 /// 리소스 로드, 캐싱, 해제 담당 (GameObject 인스턴스는 PoolManager 연동)
 /// </summary>
 public class ResourceManager : Singleton<ResourceManager>
@@ -16,6 +16,9 @@ public class ResourceManager : Singleton<ResourceManager>
 
     // 비동기 작업 핸들 관리 (메모리 해제를 위해 보관)
     private Dictionary<string, AsyncOperationHandle> _asyncHandles = new Dictionary<string, AsyncOperationHandle>();
+
+    // Resources 폴더에서 로드된 리소스 추적 (Addressables와 구분하기 위해)
+    private HashSet<string> _resourcesFolderKeys = new HashSet<string>();
 
     // 프리로드 진행 상황
     private bool _isPreloading = false;
@@ -534,6 +537,299 @@ public class ResourceManager : Singleton<ResourceManager>
                 }
             });
         }
+    }
+
+    #endregion
+
+    #region Resources 폴더 로드 (Unity 기본 시스템)
+
+    /// <summary>
+    /// Resources 폴더에서 리소스 동기 로드 (제네릭)
+    /// </summary>
+    /// <typeparam name="T">리소스 타입</typeparam>
+    /// <param name="path">Resources 폴더 내 경로 (예: "Prefabs/Enemy")</param>
+    /// <returns>로드된 리소스</returns>
+    public T LoadFromResources<T>(string path) where T : Object
+    {
+        if (string.IsNullOrEmpty(path))
+        {
+            Debug.LogError("[ERROR] ResourceManager::LoadFromResources - Path is null or empty");
+            return null;
+        }
+
+        string cacheKey = $"Resources:{path}";
+
+        // 캐시에 있으면 반환
+        if (_cachedResources.TryGetValue(cacheKey, out Object cachedResource))
+        {
+            Debug.Log($"[INFO] ResourceManager::LoadFromResources - Returning cached resource: {path}");
+            return cachedResource as T;
+        }
+
+        // Resources.Load로 로드
+        T resource = Resources.Load<T>(path);
+
+        if (resource == null)
+        {
+            Debug.LogError($"[ERROR] ResourceManager::LoadFromResources - Failed to load resource from Resources folder: {path}");
+            return null;
+        }
+
+        // 캐시에 저장
+        _cachedResources[cacheKey] = resource;
+        _resourcesFolderKeys.Add(cacheKey);
+
+        Debug.Log($"[INFO] ResourceManager::LoadFromResources - Loaded and cached resource from Resources folder: {path}");
+        return resource;
+    }
+
+    /// <summary>
+    /// Resources 폴더에서 GameObject 로드 (제네릭)
+    /// </summary>
+    /// <param name="path">Resources 폴더 내 경로</param>
+    /// <returns>로드된 GameObject</returns>
+    public GameObject LoadGameObjectFromResources(string path)
+    {
+        return LoadFromResources<GameObject>(path);
+    }
+
+    /// <summary>
+    /// Resources 폴더에서 GameObject 인스턴스 생성 (제네릭)
+    /// PoolManager 연동: 풀이 없으면 생성하고, 풀에서 오브젝트 가져옴
+    /// </summary>
+    /// <typeparam name="T">컴포넌트 타입</typeparam>
+    /// <param name="path">Resources 폴더 내 경로</param>
+    /// <param name="parent">부모 Transform</param>
+    /// <returns>생성된 GameObject의 컴포넌트</returns>
+    public T InstantiateFromResources<T>(string path, Transform parent = null) where T : Component
+    {
+        // PoolManager가 있으면 풀링 시스템 사용
+        if (PoolManager.Instance != null)
+        {
+            // 풀이 존재하는지 확인
+            if (PoolManager.Instance.HasPool(path))
+            {
+                // 이미 풀이 있으면 바로 Spawn
+                GameObject instance = PoolManager.Instance.Spawn(path, parent);
+
+                if (instance != null)
+                {
+                    T component = instance.GetComponent<T>();
+                    if (component != null)
+                    {
+                        Debug.Log($"[INFO] ResourceManager::InstantiateFromResources - Spawned from existing pool: {path}");
+                        return component;
+                    }
+                    else
+                    {
+                        Debug.LogError($"[ERROR] ResourceManager::InstantiateFromResources - Component {typeof(T).Name} not found on pooled object");
+                        PoolManager.Instance.Despawn(path, instance);
+                        return null;
+                    }
+                }
+            }
+            else
+            {
+                // 풀이 없으면 프리팹 로드 후 풀 생성
+                GameObject prefab = LoadFromResources<GameObject>(path);
+
+                if (prefab != null)
+                {
+                    // 풀 생성 (초기 10개, 최대 100개)
+                    PoolManager.Instance.CreatePool(path, prefab, 10, 100, true);
+
+                    // Spawn
+                    GameObject instance = PoolManager.Instance.Spawn(path, parent);
+
+                    if (instance != null)
+                    {
+                        T component = instance.GetComponent<T>();
+                        if (component != null)
+                        {
+                            Debug.Log($"[INFO] ResourceManager::InstantiateFromResources - Created pool and spawned: {path}");
+                            return component;
+                        }
+                        else
+                        {
+                            Debug.LogError($"[ERROR] ResourceManager::InstantiateFromResources - Component {typeof(T).Name} not found on pooled object");
+                            PoolManager.Instance.Despawn(path, instance);
+                            return null;
+                        }
+                    }
+                }
+                else
+                {
+                    Debug.LogError($"[ERROR] ResourceManager::InstantiateFromResources - Failed to load prefab: {path}");
+                    return null;
+                }
+            }
+        }
+
+        // PoolManager가 없으면 직접 생성 (폴백)
+        GameObject fallbackPrefab = LoadFromResources<GameObject>(path);
+
+        if (fallbackPrefab == null)
+        {
+            Debug.LogError($"[ERROR] ResourceManager::InstantiateFromResources - Failed to load prefab: {path}");
+            return null;
+        }
+
+        GameObject fallbackInstance = Object.Instantiate(fallbackPrefab, parent);
+
+        if (fallbackInstance == null)
+        {
+            Debug.LogError($"[ERROR] ResourceManager::InstantiateFromResources - Failed to instantiate: {path}");
+            return null;
+        }
+
+        T fallbackComponent = fallbackInstance.GetComponent<T>();
+
+        if (fallbackComponent == null)
+        {
+            Debug.LogError($"[ERROR] ResourceManager::InstantiateFromResources - Component {typeof(T).Name} not found on instantiated object");
+            return null;
+        }
+
+        Debug.Log($"[INFO] ResourceManager::InstantiateFromResources - Instantiated from Resources (no pool): {path}");
+        return fallbackComponent;
+    }
+
+    /// <summary>
+    /// Resources 폴더에서 GameObject 인스턴스 생성 (GameObject 반환)
+    /// PoolManager 연동: 풀이 없으면 생성하고, 풀에서 오브젝트 가져옴
+    /// </summary>
+    /// <param name="path">Resources 폴더 내 경로</param>
+    /// <param name="parent">부모 Transform</param>
+    /// <returns>생성된 GameObject</returns>
+    public GameObject InstantiateGameObjectFromResources(string path, Transform parent = null)
+    {
+        // PoolManager가 있으면 풀링 시스템 사용
+        if (PoolManager.Instance != null)
+        {
+            // 풀이 존재하는지 확인
+            if (PoolManager.Instance.HasPool(path))
+            {
+                // 이미 풀이 있으면 바로 Spawn
+                GameObject instance = PoolManager.Instance.Spawn(path, parent);
+                Debug.Log($"[INFO] ResourceManager::InstantiateGameObjectFromResources - Spawned from existing pool: {path}");
+                return instance;
+            }
+            else
+            {
+                // 풀이 없으면 프리팹 로드 후 풀 생성
+                GameObject prefab = LoadFromResources<GameObject>(path);
+
+                if (prefab != null)
+                {
+                    // 풀 생성 (초기 10개, 최대 100개)
+                    PoolManager.Instance.CreatePool(path, prefab, 10, 100, true);
+
+                    // Spawn
+                    GameObject instance = PoolManager.Instance.Spawn(path, parent);
+                    Debug.Log($"[INFO] ResourceManager::InstantiateGameObjectFromResources - Created pool and spawned: {path}");
+                    return instance;
+                }
+                else
+                {
+                    Debug.LogError($"[ERROR] ResourceManager::InstantiateGameObjectFromResources - Failed to load prefab: {path}");
+                    return null;
+                }
+            }
+        }
+
+        // PoolManager가 없으면 직접 생성 (폴백)
+        GameObject fallbackPrefab = LoadFromResources<GameObject>(path);
+
+        if (fallbackPrefab == null)
+        {
+            Debug.LogError($"[ERROR] ResourceManager::InstantiateGameObjectFromResources - Failed to load prefab: {path}");
+            return null;
+        }
+
+        GameObject fallbackInstance = Object.Instantiate(fallbackPrefab, parent);
+
+        if (fallbackInstance == null)
+        {
+            Debug.LogError($"[ERROR] ResourceManager::InstantiateGameObjectFromResources - Failed to instantiate: {path}");
+            return null;
+        }
+
+        Debug.Log($"[INFO] ResourceManager::InstantiateGameObjectFromResources - Instantiated from Resources (no pool): {path}");
+        return fallbackInstance;
+    }
+
+    /// <summary>
+    /// Resources 폴더에서 GameObject 프리팹 로드 후 인스턴스 생성 (GameObject 오버로드)
+    /// </summary>
+    /// <param name="prefab">미리 로드된 GameObject 프리팹</param>
+    /// <param name="parent">부모 Transform</param>
+    /// <returns>생성된 GameObject</returns>
+    public GameObject InstantiateFromResources(GameObject prefab, Transform parent = null)
+    {
+        if (prefab == null)
+        {
+            Debug.LogError("[ERROR] ResourceManager::InstantiateFromResources - Prefab is null");
+            return null;
+        }
+
+        GameObject instance = Object.Instantiate(prefab, parent);
+
+        if (instance == null)
+        {
+            Debug.LogError("[ERROR] ResourceManager::InstantiateFromResources - Failed to instantiate from prefab");
+            return null;
+        }
+
+        Debug.Log($"[INFO] ResourceManager::InstantiateFromResources - Instantiated from prefab: {prefab.name}");
+        return instance;
+    }
+
+    /// <summary>
+    /// Resources 폴더에서 로드한 리소스 해제
+    /// </summary>
+    /// <param name="path">Resources 폴더 내 경로</param>
+    public void ReleaseFromResources(string path)
+    {
+        if (string.IsNullOrEmpty(path))
+        {
+            Debug.LogWarning("[WARNING] ResourceManager::ReleaseFromResources - Path is null or empty");
+            return;
+        }
+
+        string cacheKey = $"Resources:{path}";
+
+        // 캐시에서 제거
+        if (_cachedResources.ContainsKey(cacheKey))
+        {
+            _cachedResources.Remove(cacheKey);
+            _resourcesFolderKeys.Remove(cacheKey);
+
+            // Resources.UnloadUnusedAssets는 명시적으로 호출하지 않음 (Unity가 자동 관리)
+            Debug.Log($"[INFO] ResourceManager::ReleaseFromResources - Released resource: {path}");
+        }
+    }
+
+    /// <summary>
+    /// Resources 폴더에서 로드한 모든 리소스 해제
+    /// </summary>
+    public void ReleaseAllFromResources()
+    {
+        Debug.Log("[INFO] ResourceManager::ReleaseAllFromResources - Releasing all Resources folder assets");
+
+        // Resources 폴더 키 복사 (반복 중 수정 방지)
+        List<string> keysToRemove = new List<string>(_resourcesFolderKeys);
+
+        foreach (var key in keysToRemove)
+        {
+            _cachedResources.Remove(key);
+        }
+
+        _resourcesFolderKeys.Clear();
+
+        // Unity에게 미사용 리소스 언로드 요청
+        Resources.UnloadUnusedAssets();
+
+        Debug.Log("[INFO] ResourceManager::ReleaseAllFromResources - All Resources folder assets released");
     }
 
     #endregion

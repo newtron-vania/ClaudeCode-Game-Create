@@ -162,4 +162,26 @@ public class GameRegistry : Singleton<GameRegistry>
 
         return $"Registered games ({_gameFactories.Count}): {string.Join(", ", _gameFactories.Keys)}";
     }
+<<<<<<< HEAD
+
+    /// <summary>
+    /// 싱글톤 초기화 시 모든 게임 자동 등록
+    /// </summary>
+    protected override void Awake()
+    {
+        base.Awake();
+
+        // UndeadSurvivor 게임 등록
+        RegisterGame("UndeadSurvivor", () => new UndeadSurvivor.UndeadSurvivorGame());
+
+        // Tetris 게임 등록
+        RegisterGame("Tetris", () => new TetrisGame());
+
+        // Sudoku 게임 등록
+        RegisterGame("Sudoku", () => new SudokuGame());
+
+        Debug.Log($"[INFO] GameRegistry::Awake - {_gameFactories.Count} games auto-registered");
+    }
+=======
+>>>>>>> main
 }

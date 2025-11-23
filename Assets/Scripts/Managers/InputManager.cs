@@ -42,31 +42,35 @@ public class InputManager : Singleton<InputManager>
 
     /// <summary>
     /// 키보드 입력 처리
-    /// 모든 키 입력을 감지하여 KeyDown/KeyUp 이벤트 발생
+    /// 모든 키 입력을 감지하여 KeyDown/KeyPressing/KeyUp 이벤트 발생
     /// </summary>
     private void HandleKeyboardInput()
     {
-        // anyKey는 성능 최적화를 위한 조기 종료
-        if (!Input.anyKey)
-        {
-            return;
-        }
-
         // 모든 KeyCode를 순회하며 입력 감지
         foreach (KeyCode keyCode in Enum.GetValues(typeof(KeyCode)))
         {
-            if (Input.GetKeyDown(keyCode))
-            {
-                InputEventData eventData = new InputEventData(InputType.KeyDown, keyCode);
-                OnInputEvent?.Invoke(eventData);
-                Debug.Log($"[INFO] InputManager::HandleKeyboardInput - {eventData}");
-            }
-
+            // KeyUp은 anyKey와 무관하게 체크해야 함 (키를 뗄 때 anyKey가 false일 수 있음)
             if (Input.GetKeyUp(keyCode))
             {
                 InputEventData eventData = new InputEventData(InputType.KeyUp, keyCode);
                 OnInputEvent?.Invoke(eventData);
-                Debug.Log($"[INFO] InputManager::HandleKeyboardInput - {eventData}");
+                Debug.Log($"[INFO] InputManager::HandleKeyboardInput - KeyUp: {keyCode}");
+                continue;
+            }
+
+            if (Input.GetKeyDown(keyCode))
+            {
+                InputEventData eventData = new InputEventData(InputType.KeyDown, keyCode);
+                OnInputEvent?.Invoke(eventData);
+                Debug.Log($"[INFO] InputManager::HandleKeyboardInput - KeyDown: {keyCode}");
+                continue;
+            }
+
+            if (Input.GetKey(keyCode))
+            {
+                InputEventData eventData = new InputEventData(InputType.KeyPressing, keyCode);
+                OnInputEvent?.Invoke(eventData);
+                Debug.Log($"[INFO] InputManager::HandleKeyboardInput - KeyPressing: {keyCode}");
             }
         }
     }

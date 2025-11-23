@@ -1,0 +1,316 @@
+{
+  "weapons": [
+    {
+      "id": 0,
+      "name": "Fireball",
+      "type": "Ranged",
+      "levelStats": [
+        {
+          "damage": 20,
+          "cooldown": 5.0,
+          "countPerCreate": 1,
+          "area": 1.5,
+          "speed": 8.0,
+          "penetrate": 1,
+          "duration": 0
+        },
+        {
+          "damage": 24,
+          "cooldown": 4.5,
+          "countPerCreate": 1,
+          "area": 1.63,
+          "speed": 9.0,
+          "penetrate": 1,
+          "duration": 0
+        },
+        {
+          "damage": 29,
+          "cooldown": 4.0,
+          "countPerCreate": 1,
+          "area": 1.75,
+          "speed": 10.0,
+          "penetrate": 1,
+          "duration": 0
+        },
+        {
+          "damage": 35,
+          "cooldown": 4.0,
+          "countPerCreate": 1,
+          "area": 1.88,
+          "speed": 11.0,
+          "penetrate": 1,
+          "duration": 0
+        },
+        {
+          "damage": 42,
+          "cooldown": 4.0,
+          "countPerCreate": 2,
+          "area": 1.88,
+          "speed": 12.0,
+          "penetrate": 1,
+          "duration": 0
+        }
+      ]
+    },
+    {
+      "id": 1,
+      "name": "Scythe",
+      "type": "Melee",
+      "levelStats": [
+        {
+          "damage": 18,
+          "cooldown": 0,
+          "countPerCreate": 1,
+          "area": 1.0,
+          "speed": 100,
+          "penetrate": 99,
+          "duration": 0
+        },
+        {
+          "damage": 22,
+          "cooldown": 0,
+          "countPerCreate": 2,
+          "area": 1.0,
+          "speed": 110,
+          "penetrate": 99,
+          "duration": 0
+        },
+        {
+          "damage": 26,
+          "cooldown": 0,
+          "countPerCreate": 2,
+          "area": 1.0,
+          "speed": 120,
+          "penetrate": 99,
+          "duration": 0
+        },
+        {
+          "damage": 31,
+          "cooldown": 0,
+          "countPerCreate": 3,
+          "area": 1.0,
+          "speed": 130,
+          "penetrate": 99,
+          "duration": 0
+        },
+        {
+          "damage": 37,
+          "cooldown": 0,
+          "countPerCreate": 3,
+          "area": 1.0,
+          "speed": 140,
+          "penetrate": 99,
+          "duration": 0
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "Shotgun",
+      "type": "Ranged",
+      "levelStats": [
+        {
+          "damage": 12,
+          "cooldown": 1.5,
+          "countPerCreate": 3,
+          "area": 30,
+          "speed": 15.0,
+          "penetrate": 2,
+          "duration": 0
+        },
+        {
+          "damage": 14,
+          "cooldown": 1.3,
+          "countPerCreate": 4,
+          "area": 50,
+          "speed": 16.0,
+          "penetrate": 2,
+          "duration": 0
+        },
+        {
+          "damage": 17,
+          "cooldown": 1.1,
+          "countPerCreate": 5,
+          "area": 70,
+          "speed": 17.0,
+          "penetrate": 3,
+          "duration": 0
+        },
+        {
+          "damage": 20,
+          "cooldown": 1.0,
+          "countPerCreate": 6,
+          "area": 90,
+          "speed": 18.0,
+          "penetrate": 3,
+          "duration": 0
+        },
+        {
+          "damage": 24,
+          "cooldown": 1.0,
+          "countPerCreate": 7,
+          "area": 100,
+          "speed": 20.0,
+          "penetrate": 4,
+          "duration": 0
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "name": "Flame Boots",
+      "type": "Area",
+      "levelStats": [
+        {
+          "damage": 15,
+          "cooldown": 0,
+          "countPerCreate": 1,
+          "area": 1.0,
+          "speed": 0.5,
+          "penetrate": 99,
+          "duration": 2.0
+        },
+        {
+          "damage": 18,
+          "cooldown": 0,
+          "countPerCreate": 1,
+          "area": 1.13,
+          "speed": 0.45,
+          "penetrate": 99,
+          "duration": 2.5
+        },
+        {
+          "damage": 22,
+          "cooldown": 0,
+          "countPerCreate": 1,
+          "area": 1.25,
+          "speed": 0.4,
+          "penetrate": 99,
+          "duration": 3.0
+        },
+        {
+          "damage": 26,
+          "cooldown": 0,
+          "countPerCreate": 1,
+          "area": 1.38,
+          "speed": 0.35,
+          "penetrate": 99,
+          "duration": 3.5
+        },
+        {
+          "damage": 31,
+          "cooldown": 0,
+          "countPerCreate": 1,
+          "area": 1.5,
+          "speed": 0.3,
+          "penetrate": 99,
+          "duration": 4.0
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "name": "Poison Field",
+      "type": "Area",
+      "levelStats": [
+        {
+          "damage": 10,
+          "cooldown": 0,
+          "countPerCreate": 1,
+          "area": 2.0,
+          "speed": 1.0,
+          "penetrate": 99,
+          "duration": 0
+        },
+        {
+          "damage": 12,
+          "cooldown": 0,
+          "countPerCreate": 1,
+          "area": 2.38,
+          "speed": 0.95,
+          "penetrate": 99,
+          "duration": 0
+        },
+        {
+          "damage": 14,
+          "cooldown": 0,
+          "countPerCreate": 1,
+          "area": 2.75,
+          "speed": 0.9,
+          "penetrate": 99,
+          "duration": 0
+        },
+        {
+          "damage": 17,
+          "cooldown": 0,
+          "countPerCreate": 1,
+          "area": 3.13,
+          "speed": 0.85,
+          "penetrate": 99,
+          "duration": 0
+        },
+        {
+          "damage": 20,
+          "cooldown": 0,
+          "countPerCreate": 1,
+          "area": 3.5,
+          "speed": 0.8,
+          "penetrate": 99,
+          "duration": 0
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "name": "Bomb",
+      "type": "Area",
+      "levelStats": [
+        {
+          "damage": 200,
+          "cooldown": 120,
+          "countPerCreate": 1,
+          "area": 0,
+          "speed": 0,
+          "penetrate": 0,
+          "duration": 0
+        },
+        {
+          "damage": 240,
+          "cooldown": 110,
+          "countPerCreate": 1,
+          "area": 0,
+          "speed": 0,
+          "penetrate": 0,
+          "duration": 0
+        },
+        {
+          "damage": 288,
+          "cooldown": 100,
+          "countPerCreate": 1,
+          "area": 0,
+          "speed": 0,
+          "penetrate": 0,
+          "duration": 0
+        },
+        {
+          "damage": 346,
+          "cooldown": 90,
+          "countPerCreate": 1,
+          "area": 0,
+          "speed": 0,
+          "penetrate": 0,
+          "duration": 0
+        },
+        {
+          "damage": 415,
+          "cooldown": 80,
+          "countPerCreate": 1,
+          "area": 0,
+          "speed": 0,
+          "penetrate": 0,
+          "duration": 0
+        }
+      ]
+    }
+  ]
+}

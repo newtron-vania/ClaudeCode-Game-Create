@@ -1,0 +1,305 @@
+# Pre-Commit Check Skill
+# Validates code quality and convention compliance before commit
+
+name: pre-commit-check
+description: 커밋 전 코드 규칙 준수를 확인합니다
+version: 1.0.0
+
+# Activation triggers
+triggers:
+  keywords:
+    - "커밋 체크"
+    - "pre-commit check"
+    - "pre-commit"
+    - "코드 검사"
+    - "commit check"
+    - "커밋 전 검사"
+
+# Skill workflow
+workflow:
+  - step: 1
+    name: "변경된 파일 확인"
+    action: git_command
+    command: "git diff --cached --name-only --diff-filter=ACM"
+    filter: "*.cs"
+    store_as: changed_files
+    display: |
+      검사할 파일 목록:
+      {changed_files}
+
+  - step: 2
+    name: "네이밍 컨벤션 검사"
+    action: check_patterns
+    files: changed_files
+    checks:
+      - name: "클래스명 PascalCase"
+        pattern: '^\s*public\s+class\s+([A-Z][a-zA-Z0-9]*)'
+        severity: error
+        message: "클래스명은 PascalCase를 사용해야 합니다"
+
+      - name: "인터페이스 I 접두사"
+        pattern: '^\s*public\s+interface\s+(I[A-Z][a-zA-Z0-9]*)'
+        severity: error
+        message: "인터페이스는 I로 시작해야 합니다"
+
+      - name: "Private 변수 _camelCase"
+        pattern: '^\s*private\s+\w+\s+(_[a-z][a-zA-Z0-9]*)'
+        severity: error
+        message: "Private 변수는 _camelCase를 사용해야 합니다"
+
+      - name: "Public 변수 PascalCase"
+        pattern: '^\s*public\s+\w+\s+([A-Z][a-zA-Z0-9]*)\s*[;=]'
+        severity: warning
+        message: "Public 변수는 PascalCase를 사용해야 합니다 (속성 사용 권장)"
+
+      - name: "메서드 PascalCase"
+        pattern: '^\s*public\s+\w+\s+([A-Z][a-zA-Z0-9]*)\s*\('
+        severity: error
+        message: "메서드는 PascalCase를 사용해야 합니다"
+
+      - name: "상수 UPPER_CASE"
+        pattern: '^\s*const\s+\w+\s+([A-Z][A-Z0-9_]*)'
+        severity: warning
+        message: "상수는 UPPER_CASE를 사용하는 것이 권장됩니다"
+
+  - step: 3
+    name: "금지 패턴 검사"
+    action: check_forbidden
+    files: changed_files
+    forbidden:
+      - pattern: '//\s*TODO'
+        severity: error
+        message: "TODO 주석이 발견되었습니다. 구현을 완료하거나 이슈를 생성하세요."
+
+      - pattern: 'throw\s+new\s+NotImplementedException'
+        severity: error
+        message: "NotImplementedException이 발견되었습니다. 메서드를 완전히 구현하세요."
+
+      - pattern: '\b(Mock|Fake|Stub|Placeholder)\w*'
+        severity: error
+        message: "Mock/Fake/Stub/Placeholder 구현이 발견되었습니다. 실제 구현을 완료하세요."
+
+      - pattern: 'Console\.WriteLine'
+        severity: warning
+        message: "Console.WriteLine 사용이 발견되었습니다. Debug.Log를 사용하세요."
+
+      - pattern: 'Debug\.Log\([^"]*"[^[]*"'
+        severity: warning
+        message: "Debug.Log가 형식을 따르지 않습니다. [INFO/WARNING/ERROR] ClassName::MethodName 형식을 사용하세요."
+
+  - step: 4
+    name: "Manager 사용 패턴 검사"
+    action: check_patterns
+    files: changed_files
+    anti_patterns:
+      - pattern: 'Resources\.Load'
+        severity: warning
+        message: "Resources.Load 직접 사용이 발견되었습니다. ResourceManager.Instance.LoadAsync를 사용하세요."
+        suggestion: |
+          // ❌ 직접 사용 금지
+          var prefab = Resources.Load<GameObject>("Prefabs/Enemy");
+
+          // ✅ ResourceManager 사용
+          ResourceManager.Instance.LoadAsync<GameObject>("Prefabs/Enemy", (prefab) => {
+              // Use prefab
+          });
+
+      - pattern: 'SceneManager\.LoadScene'
+        severity: warning
+        message: "SceneManager.LoadScene 직접 사용이 발견되었습니다. CustomSceneManager.Instance.LoadScene을 사용하세요."
+        suggestion: |
+          // ❌ 직접 사용 금지
+          SceneManager.LoadScene("NextScene");
+
+          // ✅ CustomSceneManager 사용
+          CustomSceneManager.Instance.LoadScene("NextScene");
+
+      - pattern: 'Instantiate\s*\('
+        severity: info
+        message: "Instantiate 직접 사용이 발견되었습니다. PoolManager 사용을 고려하세요."
+        suggestion: |
+          // ⚠️ 빈번한 생성/삭제가 있다면
+          var obj = Instantiate(prefab);
+
+          // ✅ PoolManager 사용 권장
+          ResourceManager.Instance.InstantiateAsync("Prefabs/Enemy", transform, (instance) => {
+              // PoolManager와 자동 통합됨
+          });
+
+  - step: 5
+    name: "파일 구조 검사"
+    action: check_structure
+    files: changed_files
+    checks:
+      - name: "파일명과 클래스명 일치"
+        rule: filename_matches_classname
+        severity: error
+        message: "파일명과 클래스명이 일치하지 않습니다"
+
+      - name: "한 파일에 여러 public 클래스"
+        rule: multiple_public_classes
+        severity: warning
+        message: "한 파일에 여러 public 클래스가 있습니다. 파일을 분리하는 것이 권장됩니다."
+
+      - name: "Coroutine 네이밍"
+        pattern: 'IEnumerator\s+(\w+)(?!Coroutine)'
+        severity: warning
+        message: "Coroutine 메서드는 'MethodCoroutine' 형식의 이름을 사용하세요."
+
+  - step: 6
+    name: "Unity 특정 검사"
+    action: check_unity
+    files: changed_files
+    checks:
+      - name: "SerializeField private 변수"
+        pattern: '\[SerializeField\]\s*private'
+        severity: info
+        message: "✅ SerializeField를 올바르게 사용하고 있습니다"
+
+      - name: "Public 필드 (속성 권장)"
+        pattern: '^\s*public\s+(?!class|interface|enum|struct|void|int|float|bool|string)\w+\s+\w+\s*;'
+        severity: warning
+        message: "Public 필드 대신 속성(Property) 사용을 권장합니다."
+
+      - name: "Unity 생명주기 메서드 접근 제한자"
+        pattern: '^\s*public\s+(Awake|Start|Update|FixedUpdate|LateUpdate|OnDestroy)\s*\('
+        severity: warning
+        message: "Unity 생명주기 메서드는 private으로 선언하는 것이 권장됩니다."
+
+  - step: 7
+    name: "결과 리포트 생성"
+    action: generate_report
+    format: markdown
+    template: |
+      # 커밋 전 코드 검사 결과
+
+      ## 📊 검사 요약
+      - 검사한 파일: {total_files}개
+      - ❌ 오류: {error_count}개
+      - ⚠️  경고: {warning_count}개
+      - ℹ️  정보: {info_count}개
+
+      ---
+
+      ## 파일별 상세 결과
+
+      {per_file_results}
+
+      ---
+
+      ## ✅ 통과한 검사
+      {passed_checks}
+
+      ## ⚠️  경고 항목
+      {warnings_list}
+
+      ## ❌ 오류 항목
+      {errors_list}
+
+      ---
+
+      ## 💡 권장사항
+      {suggestions}
+
+      ---
+
+      ## 📝 커밋 가능 여부
+      {commit_status}
+
+  - step: 8
+    name: "커밋 가능 여부 판단"
+    action: evaluate
+    rules:
+      - condition: "error_count == 0"
+        status: "✅ 커밋 가능"
+        message: "모든 필수 규칙을 통과했습니다. 커밋을 진행하세요."
+
+      - condition: "error_count > 0"
+        status: "❌ 커밋 불가"
+        message: "{error_count}개의 오류를 수정한 후 다시 검사하세요."
+        block_commit: true
+
+      - condition: "warning_count > 0 && error_count == 0"
+        status: "⚠️  경고 있음"
+        message: "{warning_count}개의 경고가 있습니다. 검토 후 커밋을 결정하세요."
+        prompt_user: "경고를 무시하고 커밋하시겠습니까? (y/n)"
+
+  - step: 9
+    name: "개선 제안"
+    action: suggest_improvements
+    based_on: report_results
+    categories:
+      - naming_conventions
+      - manager_usage
+      - code_structure
+      - unity_best_practices
+
+# Output format
+output:
+  format: markdown
+  color_coded: true
+  include_line_numbers: true
+  show_code_snippets: true
+  group_by_severity: true
+
+# Configuration
+config:
+  severity_levels:
+    error: "필수 수정 (커밋 불가)"
+    warning: "권장 수정 (검토 필요)"
+    info: "참고 사항"
+
+  auto_fix:
+    enabled: false
+    safe_fixes_only: true
+    patterns:
+      - "trailing_whitespace"
+      - "missing_newline_at_eof"
+
+  exclude_patterns:
+    - "*.meta"
+    - "*/Tests/*"
+    - "*/Editor/*"
+    - "*/ThirdParty/*"
+
+  file_size_limit: 5000  # lines
+
+# Integration
+integration:
+  git_hooks:
+    pre_commit: true
+
+  required_docs:
+    - ".claude/UNITY_CONVENTIONS.md"
+    - ".claude/COMMIT_MESSAGE_RULES.md"
+
+# Quick reference
+quick_fixes:
+  naming:
+    - "클래스: PascalCase (예: PlayerController)"
+    - "인터페이스: IPascalCase (예: IDamageable)"
+    - "Private 변수: _camelCase (예: _health)"
+    - "Public 변수: PascalCase → 속성 사용 권장"
+    - "메서드: PascalCase (예: MovePlayer)"
+    - "상수: UPPER_CASE (예: MAX_HEALTH)"
+
+  managers:
+    - "리소스 로딩: ResourceManager.Instance.LoadAsync"
+    - "씬 전환: CustomSceneManager.Instance.LoadScene"
+    - "오브젝트 풀링: ResourceManager.Instance.InstantiateAsync (자동 풀링)"
+    - "오디오: SoundManager.Instance.PlayBGM/PlaySFX"
+    - "UI: UIManager.Instance.ShowPanel"
+    - "게임 데이터: DataManager.Instance.GetProvider"
+
+  logging:
+    format: 'Debug.Log("[INFO] ClassName::MethodName - Message");'
+    levels:
+      - "[INFO] - 일반 정보"
+      - "[WARNING] - 경고"
+      - "[ERROR] - 오류"
+
+# Performance considerations
+performance:
+  parallel_check: true
+  cache_results: true
+  max_file_size: 10000  # Skip files larger than 10k lines

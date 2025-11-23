@@ -4,45 +4,111 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**ClaudeCode-Game-Create** is a Unity 2D game project using Universal Render Pipeline (URP), designed as a multi-minigame platform with a complete manager infrastructure.
+**ClaudeCode-Game-Create** is a Unity 2D multi-minigame platform with pluggable game architecture using Universal Render Pipeline (URP).
 
 - **Unity Version**: 6000.0.58f2 (Unity 6)
 - **Render Pipeline**: Universal Render Pipeline (URP) 17.0.4
 - **2D Framework**: Unity Feature 2D 2.0.1
 - **Input System**: Unity Input System 1.14.2
 - **Resource System**: Unity Addressables 1.22.3
-- **Current Minigame**: Tetris (in development)
+- **Architecture**: IMiniGame interface + GameRegistry pattern + DataManager system
+- **Implemented Games**: Tetris (완성), Undead Survivor (보류), Sudoku (개발 중)
+- **Game Select Scene**: MainMenuScene (game selection menu)
 
 ## Project Structure
 
 ```
 Assets/
-├── Scripts/              # Game scripts (C#)
-│   ├── Core/            # Core systems (Singleton, GameManager, IGameData)
-│   ├── Managers/        # Manager systems (Resource, Pool, Sound, UI, Scene)
-│   ├── GameData/        # Game-specific data classes
-│   ├── UI/              # UI components (UIPanel, FadePanel)
-│   └── Tests/           # Test scripts
-├── Scenes/               # Unity scene files
-│   ├── SampleScene.unity
-│   └── TetrisScene.unity
-├── Docs/                 # Documentation
-│   ├── MANAGERS_GUIDE.md ⚠️ **READ THIS FIRST EVERY SESSION**
+├── Scripts/
+│   ├── Core/                # Platform architecture
+│   │   ├── IMiniGame.cs          # All games implement this interface
+│   │   ├── IGameData.cs          # Game-specific data interface
+│   │   ├── IGameDataProvider.cs  # Game data provider interface
+│   │   ├── GameRegistry.cs       # Game factory registration
+│   │   ├── GamePlayList.cs       # Playable games list management
+│   │   ├── Singleton.cs          # Generic singleton base class
+│   │   └── BaseScene.cs          # Scene base class
+│   ├── Managers/           # Infrastructure managers
+│   │   ├── MiniGameManager.cs     # Game lifecycle & switching
+│   │   ├── DataManager.cs         # Multi-game data management (NEW)
+│   │   ├── ResourceManager.cs     # Addressables loading
+│   │   ├── PoolManager.cs         # GameObject pooling
+│   │   ├── SoundManager.cs        # BGM/SFX audio
+│   │   ├── UIManager.cs           # UI panel management
+│   │   ├── CustomSceneManager.cs  # Scene transitions
+│   │   └── InputManager.cs        # Input event distribution
+│   ├── GameData/           # Per-game data implementations
+│   │   └── TetrisGameData.cs
+│   ├── UndeadSurvivor/     # Undead Survivor game (in progress)
+│   │   ├── Data/                        # Game data structures
+│   │   │   ├── UndeadSurvivorDataProvider.cs
+│   │   │   ├── CharacterData.cs
+│   │   │   ├── WeaponData.cs
+│   │   │   ├── MonsterData.cs
+│   │   │   └── ItemData.cs
+│   │   ├── ScriptableObjects/           # Data lists
+│   │   │   ├── CharacterDataList.cs
+│   │   │   ├── WeaponDataList.cs
+│   │   │   ├── MonsterDataList.cs
+│   │   │   └── ItemDataList.cs
+│   │   └── CharacterStat.cs
+│   ├── UI/                 # UI components
+│   │   ├── UIPanel.cs      # Base class for all UI panels
+│   │   ├── FadePanel.cs    # Screen fade effects
+│   │   └── TetrisUIPanel.cs
+│   ├── Scenes/             # Scene controllers
+│   │   ├── MainMenuScene.cs
+│   │   └── TetrisScene.cs
+│   └── Tests/              # Test scripts
+├── Scenes/
+│   ├── MainMenuScene.unity       # Game selection menu (entry point)
+│   ├── Tetris.unity              # Tetris game scene
+│   └── Undead Survivor.unity     # Undead Survivor scene (in progress)
+├── Resources/              # Game-specific resource organization (NEW STRUCTURE)
+│   ├── Prefabs/
+│   │   ├── UI/
+│   │   │   └── UndeadSurvivor/  # Game-specific UI prefabs
+│   │   ├── Weapon/
+│   │   │   └── UndeadSurvivor/
+│   │   ├── Content/
+│   │   │   └── UndeadSurvivor/
+│   │   ├── Monster/
+│   │   │   └── UndeadSurvivor/
+│   │   └── Player/
+│   │       └── UndeadSurvivor/
+│   ├── Sprites/
+│   │   └── UndeadSurvivor/
+│   ├── Audio/
+│   │   ├── BGM/
+│   │   │   └── UndeadSurvivor/
+│   │   └── SFX/
+│   │       └── UndeadSurvivor/
+│   ├── Materials/
+│   │   └── UndeadSurvivor/
+│   ├── Tiles/
+│   │   └── UndeadSurvivor/
+│   └── Data/               # ScriptableObject data
+│       └── UndeadSurvivor/
+│           └── ScriptableObjects/
+├── Docs/                   # Documentation
+│   ├── MANAGERS_GUIDE.md           ⚠️ **READ THIS FIRST EVERY SESSION**
+│   ├── UndeadSurvivor_Reference.md # Undead Survivor implementation guide
+│   ├── GameSelectUI_Setup_Guide.md
 │   ├── Github-Flow.md
 │   ├── SETUP_GUIDE.md
 │   └── [유니티] 개발 표준 v2.md
-├── Settings/             # URP and rendering settings
+├── Settings/               # URP and rendering settings
 │   ├── Renderer2D.asset
-│   ├── UniversalRP.asset
-│   └── Scenes/
-├── InputSystem_Actions.inputactions  # Input System configuration
-└── DefaultVolumeProfile.asset
+│   └── UniversalRP.asset
+└── InputSystem_Actions.inputactions
 
 .claude/
+├── skills/                   # Automated workflows
+│   ├── manager-guide.yml         # Manager API quick reference
+│   └── pre-commit-check.yml      # Code quality validation
 ├── UNITY_CONVENTIONS.md      # Unity coding conventions
 ├── COMMIT_MESSAGE_RULES.md   # Git commit message rules
-├── BRANCH_NAMING_RULES.md    # Branch naming conventions
-└── BRANCH_WORKFLOW.md        # Branch task tracking guide
+└── BRANCH_NAMING_RULES.md    # Branch naming conventions
 ```
 
 ## Development Commands
@@ -70,34 +136,264 @@ Unity builds are managed through the Unity Editor. No CLI build commands are con
 
 ## Code Architecture
 
-### Current State
-This project has implemented a complete **Manager System** for core game infrastructure:
+### ⚠️ CRITICAL: Manager System Documentation
 
-**Implemented Managers** (See `Assets/Docs/MANAGERS_GUIDE.md` for detailed usage):
-- `Singleton<T>`: Generic singleton base class
-- `GameManager<T>`: Generic game manager with data management
-- `ResourceManager`: Addressables resource loading with PoolManager integration
-- `PoolManager`: GameObject pooling for performance optimization
-- `SoundManager`: Audio management (BGM/SFX with volume control)
-- `UIManager`: UI panel and popup management with fade effects
-- `CustomSceneManager`: Scene loading with transitions and loading screens
+**MUST READ AT START OF EVERY SESSION**: Before any code changes, read `Assets/Docs/MANAGERS_GUIDE.md`
 
-**⚠️ IMPORTANT: Read Manager Guide First**
-At the start of each work session, you MUST read:
+This guide contains:
+- Complete API reference for all 8 managers
+- Usage patterns and best practices
+- Integration examples
+- Memory management guidelines
+- Performance optimization tips
+
+**Why this is critical**:
+- Prevents reimplementing existing functionality
+- Ensures proper manager usage patterns
+- Avoids common integration mistakes
+- Maintains code consistency across the project
+
+### DataManager System (Centralized Game Data Management)
+
+**Purpose**: Manages game-specific data providers for all minigames
+
+**Architecture**:
+- `DataManager`: Central manager for all game data providers (Singleton)
+- `IGameDataProvider`: Interface that all game data providers must implement
+- Per-game data providers: `UndeadSurvivorDataProvider`, `TetrisDataProvider`, etc.
+
+**Key Features**:
+- **Lazy Loading**: Game data loaded only when game starts, unloaded when game ends
+- **Provider Registration**: Each game registers its data provider with unique GameID
+- **Memory Management**: Automatic data cleanup on game unload and app quit
+- **Type-Safe Access**: Generic GetProvider<T> for type-safe data provider access
+
+**Data Provider Interface**:
+```csharp
+public interface IGameDataProvider
+{
+    string GameID { get; }           // Unique game identifier
+    bool IsLoaded { get; }           // Data load status
+    void Initialize();               // Setup data structures
+    void LoadData();                 // Load from ScriptableObject/JSON/etc
+    void UnloadData();               // Release memory
+    T GetData<T>(string key);        // Query data by key
+    bool HasData(string key);        // Check data existence
+}
 ```
-Assets/Docs/MANAGERS_GUIDE.md
+
+**Usage Pattern**:
+```csharp
+// 1. Register provider (in game initialization or GameRegistry)
+var provider = new UndeadSurvivorDataProvider();
+DataManager.Instance.RegisterProvider(provider);
+
+// 2. Load game data when game starts
+DataManager.Instance.LoadGameData("UndeadSurvivor");
+
+// 3. Access provider in game code
+var provider = DataManager.Instance.GetProvider<UndeadSurvivorDataProvider>("UndeadSurvivor");
+MonsterData monsterData = provider.GetMonsterData(monsterId);
+
+// 4. Unload when game ends
+DataManager.Instance.UnloadGameData("UndeadSurvivor");
 ```
-This file contains complete API documentation and usage patterns. Always use these managers instead of implementing similar functionality manually.
+
+**Benefits**:
+- Prevents data memory leaks across game switches
+- Supports multiple games with different data structures
+- Clean separation between game data and game logic
+- Easy to add new games without modifying DataManager
+
+### Game Selection UI System
+
+**Entry Point**: MainMenuScene (MainMenuScene.unity)
+
+The game selection system dynamically generates UI buttons based on available games:
+
+**Components**:
+- `MainMenuScene`: Scene controller that loads GameSelectUIPanel
+- `GameSelectUIPanel`: Dynamically creates game buttons from GamePlayList
+- `GameSelectButton`: Individual game button with icon loading
+- `GamePlayList`: Maintains list of available games (Inspector-configurable)
+
+**How it works**:
+```
+1. MainMenuScene loads GameSelectUIPanel via UIManager
+2. GameSelectUIPanel reads playable games from GamePlayList
+3. For each game, creates GameSelectButton from "SubItem/GameSelectButton"
+4. GameSelectButton loads icon sprite from "Sprite/{GameID}_icon"
+5. On click, transitions to game scene via CustomSceneManager
+```
+
+**Adding a new game to selection menu**:
+1. Implement `IGameDataProvider` for game data
+2. Register data provider in `DataManager`
+3. Register game in `GameRegistry`
+4. Add `GameInfo` to `GamePlayList` in Inspector with gameID matching scene name
+5. Place icon sprite at Addressables path: `Sprite/{GameID}_icon`
+6. Game will automatically appear in selection menu
+
+### Sudoku Game Architecture (Activity Action Pattern)
+
+Sudoku 게임은 특수한 **Activity Action 패턴**을 사용하여 게임 로직과 UI를 분리합니다:
+
+**Architecture Pattern**:
+```
+SudokuGame (Model/Controller)
+    ↓ Activity Actions (간접 연결)
+SudokuScene (UI Coordinator)
+    ↓ Direct UI Updates
+SudokuUIPanel (View)
+```
+
+**Activity Action Pattern 구현**:
+```csharp
+// SudokuGame.cs - 상태별 Activity Actions 정의
+public Action StartMenuActivityAction;    // StartMenu 진입 시 실행
+public Action GeneratingActivityAction;   // Generating 진입 시 실행
+public Action PlayingActivityAction;      // Playing 진입 시 실행
+public Action GameEndActivityAction;      // GameEnd 진입 시 실행
+
+// 상태 전환 시 해당 Action 실행
+private void ChangeState(GameState newState)
+{
+    _currentState = newState;
+    switch (newState)
+    {
+        case GameState.StartMenu:
+            StartMenuActivityAction?.Invoke();  // UI 업데이트 트리거
+            break;
+        // ...
+    }
+}
+```
+
+**UI 연결 (SudokuScene)**:
+```csharp
+// SudokuScene.cs - Activity Actions에 UI 업데이트 로직 등록
+private void SubscribeUIEvents()
+{
+    var game = MiniGameManager.Instance.GetCurrentGame() as SudokuGame;
+
+    // 게임 → UI 간접 연결
+    game.StartMenuActivityAction = () => _uiPanel.ShowStartMenuPanel();
+    game.GeneratingActivityAction = () => _uiPanel.ShowLoadingPanel();
+    game.PlayingActivityAction = () => _uiPanel.ShowPlayingPanel();
+    game.GameEndActivityAction = () => _uiPanel.ShowGameEndPanel();
+
+    // UI → 게임 이벤트 구독
+    _uiPanel.OnDifficultySelected += (difficulty) => { /* ... */ };
+    _uiPanel.OnHintRequested += () => { /* ... */ };
+}
+```
+
+**Benefits**:
+- 게임 로직이 UI 구체 클래스를 직접 참조하지 않음
+- UI 변경이 게임 로직에 영향을 주지 않음
+- 테스트 시 UI 없이 게임 로직만 테스트 가능
+- 상태 전환과 UI 업데이트가 자동으로 동기화
+
+**Real-time Validation System**:
+```csharp
+// 실시간 검증: 규칙 위반을 즉시 표시 (정답 비교 없음)
+bool[,] errors = SudokuValidator.FindErrors(_board.Board);
+_board.UpdateErrors(errors);
+
+// 완성 체크: 모든 칸 채워지고 규칙 만족하면 완료
+if (_board.IsAllCellsFilled() && _board.IsSolved())
+{
+    OnPuzzleCompleted();
+}
+```
+
+**Key Components**:
+- `SudokuGame`: 게임 로직, 상태 관리, Activity Actions 정의
+- `SudokuScene`: UI 코디네이터, Activity Actions 등록, 이벤트 중개
+- `SudokuUIPanel`: 4-상태 패널 (StartMenu/Generating/Playing/GameEnd)
+- `SudokuBoard`: 게임 보드 상태 관리 (정답, 힌트, 에러)
+- `SudokuValidator`: 실시간 규칙 검증 (행/열/박스 중복 체크)
+- `SudokuGenerator`: 비동기 퍼즐 생성 (백그라운드 스레드)
+
+**Addressables Path Conventions** (Game-Specific Organization):
+```csharp
+// NEW: Game-specific resource structure (Type → Game)
+"Prefabs/UI/{GameID}/"              // Game UI prefabs
+"Prefabs/Weapon/{GameID}/"          // Game weapon prefabs
+"Prefabs/Content/{GameID}/"         // Game content objects
+"Prefabs/Monster/{GameID}/"         // Game monster prefabs
+"Prefabs/Player/{GameID}/"          // Game player prefabs
+
+"Sprites/{GameID}/"                 // Game sprites
+"Sprite/{GameID}_icon"              // Game selection icon
+
+"Audio/BGM/{GameID}/"               // Game background music
+"Audio/SFX/{GameID}/"               // Game sound effects
+
+"Data/{GameID}/ScriptableObjects/"  // ScriptableObject data files
+
+// Common UI components (shared across games)
+"UI/{PanelName}"                    // Main UI panels
+"SubItem/{ComponentName}"           // UI sub-components
+```
+
+**Important**: Resources folder structure changed from type-based to game-based organization to prevent resource conflicts between games.
+
+### Multi-Minigame Platform Architecture
+
+This project uses a **pluggable game architecture** that allows adding new games without modifying core platform code:
+
+**Core Pattern (OCP - Open/Closed Principle)**:
+```
+1. GameRegistry: Factory pattern for game registration
+2. MiniGameManager: Manages game lifecycle (load/unload/switch)
+3. IMiniGame Interface: All games implement this contract
+4. IGameData Interface: Game-specific data structure
+```
+
+**How Games Work Together**:
+```
+GameSelectScene (MainMenu)
+    ↓ User selects game via UI button
+CustomSceneManager.LoadScene("Tetris")
+    ↓ Scene loads
+TetrisScene initializes TetrisGame
+    ↓ Runs in Tetris.unity scene
+User returns → Back to GameSelectScene
+```
+
+**Adding a New Game** (Complete Flow):
+1. Create game data structures inheriting from appropriate base classes
+2. Create `MyGameDataProvider : IGameDataProvider` implementation
+3. Create `MyGameData : IGameData` class for runtime game state
+4. Create `MyGame : IMiniGame` implementation
+5. Register data provider: `DataManager.Instance.RegisterProvider(new MyGameDataProvider())`
+6. Register game: `GameRegistry.Instance.RegisterGame("MyGame", () => new MyGame())`
+7. Add to `GamePlayList` in Inspector with matching GameID
+8. Organize resources in `Resources/{Type}/MyGame/` folders
+9. Place game icon at `Resources/Sprites/MyGame_icon`
+
+### Infrastructure Managers
+
+**Implemented Managers** (See `Assets/Docs/MANAGERS_GUIDE.md` for complete API):
+1. `MiniGameManager`: Game lifecycle, switching, common player data
+2. `DataManager`: Multi-game data provider management with lazy loading
+3. `ResourceManager`: Addressables resource loading with PoolManager integration
+4. `PoolManager`: GameObject pooling for performance optimization
+5. `SoundManager`: Audio management (BGM/SFX with volume control)
+6. `UIManager`: UI panel and popup management with fade effects
+7. `CustomSceneManager`: Scene loading with transitions and loading screens
+8. `InputManager`: Event-based input distribution to active game
 
 ### Architecture Principles
-Based on Unity development standards, the project follows:
 
-1. **MonoBehaviour Pattern**: Game logic components inherit from `MonoBehaviour`
-2. **Manager Pattern**: Singleton managers for global systems (already implemented)
-3. **Component-Based Design**: Separate components for different gameplay systems
-4. **ScriptableObject Data**: Configuration and game data stored as ScriptableObjects
-5. **Object Pooling**: Use PoolManager for frequent GameObject instantiation
-6. **Resource Loading**: Use ResourceManager (Addressables) for all asset loading
+1. **IMiniGame Contract**: All games implement Initialize/StartGame/Update/Cleanup/GetData
+2. **Manager Pattern**: Singleton managers for global infrastructure
+3. **Factory Pattern**: GameRegistry creates game instances on demand
+4. **Event-Driven Input**: InputManager broadcasts events, games subscribe
+5. **Addressables**: All runtime resource loading uses ResourceManager
+6. **Object Pooling**: PoolManager for frequent GameObject instantiation
+7. **Scene Separation**: GameSelect scene + per-game scenes
 
 ## Coding Conventions
 
@@ -314,8 +610,9 @@ ResourceManager.Instance.ReleaseInstance(instance);
 ```
 
 ### Manager Usage Pattern
+
+**Basic Manager Usage**:
 ```csharp
-// Use existing managers instead of creating custom implementations
 public class MyGameController : MonoBehaviour
 {
     private void Start()
@@ -326,81 +623,199 @@ public class MyGameController : MonoBehaviour
             SoundManager.Instance.PlayBGM("Audio/BGM/Theme");
         });
 
-        // Get game data
-        var gameData = GameManager<TetrisGameData>.Instance.CurrentGameData;
+        // Get current game data
+        var gameData = MiniGameManager.Instance.GetCurrentGameData<TetrisGameData>();
     }
 }
 ```
 
-## Branch Workflow Management
+**Implementing a New Minigame**:
+```csharp
+// 1. Create data provider for game-specific data
+public class MyGameDataProvider : IGameDataProvider
+{
+    public string GameID => "MyGame";
+    public bool IsLoaded { get; private set; }
 
-### Automatic Branch Task Tracking
-Claude Code automatically manages branch-specific task documents:
+    private Dictionary<int, MyGameEntityData> _entityDict;
 
-**Location**: `.claude/branches/{branch-name}.md`
+    public void Initialize()
+    {
+        _entityDict = new Dictionary<int, MyGameEntityData>();
+        IsLoaded = false;
+    }
 
-**Triggers**:
-- Creating new branch: `git checkout -b feature/name`
-- Switching branches: `git checkout branch-name`
-- Making commits: Auto-updates commit history
-- User requests: "현재 브랜치 작업 상황 보여줘"
+    public void LoadData()
+    {
+        // Load from ScriptableObject/JSON/Resources
+        MyGameDataList dataList = Resources.Load<MyGameDataList>("Data/MyGame/ScriptableObjects/MyGameDataList");
+        foreach (var data in dataList.Entities)
+        {
+            _entityDict.Add(data.Id, data);
+        }
+        IsLoaded = true;
+    }
 
-**Auto Actions**:
-1. Detect current branch name
-2. Check if `.claude/branches/{branch-name}.md` exists
-3. If not exists: Create from template with current date/time
-4. If exists: Load and display last work status
-5. Update work log with timestamps
-6. Track commit messages automatically
+    public void UnloadData()
+    {
+        _entityDict.Clear();
+        IsLoaded = false;
+    }
 
-**File Naming**: `feature/enemy-ai` → `feature-enemy-ai.md`
+    public T GetData<T>(string key) where T : class
+    {
+        // Implement generic data access if needed
+        return null;
+    }
 
-### Work Document Structure
-```markdown
-# 브랜치: feature/example
-## 브랜치 정보
-- 생성일, 타입, 목적, 관련 이슈
-## 작업 목표
-- [ ] Checklist items
-## 작업 내역
-- Timestamped work logs
-## 커밋 기록
-- Automatic commit message tracking
-## 완료 조건
-- [ ] Completion criteria
+    public bool HasData(string key) => false;
+
+    // Game-specific data access methods
+    public MyGameEntityData GetEntityData(int entityId)
+    {
+        return _entityDict.TryGetValue(entityId, out var data) ? data : null;
+    }
+}
+
+// 2. Create game runtime data
+public class MyGameData : IGameData
+{
+    public int Score;
+    public void Initialize() { Score = 0; }
+    public void Reset() { Initialize(); }
+    public bool Validate() { return Score >= 0; }
+    public void SaveState() { /* PlayerPrefs or file save */ }
+    public void LoadState() { /* PlayerPrefs or file load */ }
+}
+
+// 3. Implement IMiniGame
+public class MyGame : IMiniGame
+{
+    private MyGameData _data;
+    private CommonPlayerData _commonData;
+    private MyGameDataProvider _dataProvider;
+
+    public void Initialize(CommonPlayerData commonData)
+    {
+        _commonData = commonData;
+        _data = new MyGameData();
+        _data.Initialize();
+
+        // Load game data via DataManager
+        DataManager.Instance.LoadGameData("MyGame");
+        _dataProvider = DataManager.Instance.GetProvider<MyGameDataProvider>("MyGame");
+    }
+
+    public void StartGame()
+    {
+        // Subscribe to input
+        InputManager.Instance.OnInputEvent += HandleInput;
+    }
+
+    public void Update(float deltaTime)
+    {
+        // Game loop logic using _dataProvider
+        var entityData = _dataProvider.GetEntityData(1);
+    }
+
+    public void Cleanup()
+    {
+        // MUST unsubscribe
+        InputManager.Instance.OnInputEvent -= HandleInput;
+
+        // Unload game data
+        DataManager.Instance.UnloadGameData("MyGame");
+    }
+
+    public IGameData GetData() => _data;
+
+    private void HandleInput(InputEventData inputData)
+    {
+        // Handle input events
+    }
+}
+
+// 4. Register data provider and game (typically in GameRegistry or scene Awake)
+var dataProvider = new MyGameDataProvider();
+DataManager.Instance.RegisterProvider(dataProvider);
+GameRegistry.Instance.RegisterGame("MyGame", () => new MyGame());
+
+// 5. Add to GamePlayList in Inspector
+// GameID: "MyGame", IsPlayable: true
+
+// 6. Load the game via scene transition
+CustomSceneManager.Instance.LoadScene("MyGame");
 ```
 
-**Usage**:
-- "브랜치 작업 시작" - Initialize branch document
-- "작업 기록: [내용]" - Add work log entry
-- "작업 완료" - Mark tasks as done
-- "브랜치 작업 상황" - Show current status
+## Claude Code Skills
 
-See `.claude/BRANCH_WORKFLOW.md` for detailed workflow guide.
+프로젝트에 특화된 자동화 워크플로우가 `.claude/skills/` 폴더에 정의되어 있습니다:
+
+### Available Skills
+1. **manager-guide**: Manager API 빠른 참조 및 사용 예제
+   - 트리거: "매니저 사용법", "manager guide"
+   - 모든 Manager의 완전한 API 문서 제공
+
+2. **pre-commit-check**: 커밋 전 코드 품질 자동 검사
+   - 트리거: "커밋 체크", "pre-commit check"
+   - 네이밍 컨벤션, 금지 패턴, Manager 사용 검증
+
+**사용 방법**:
+```bash
+# Claude Code에게 요청
+"매니저 사용법 보여줘"
+"커밋 전에 코드 체크해줘"
+```
 
 ## Documentation References
 
 ### Assets/Docs/ (Unity Project Documentation)
 - **Manager System Guide**: `Assets/Docs/MANAGERS_GUIDE.md` ⚠️ **READ THIS FIRST EVERY SESSION**
+- **Undead Survivor Reference**: `Assets/Docs/UndeadSurvivor_Reference.md` - Original game implementation reference
+- **Game Select UI Setup**: `Assets/Docs/GameSelectUI_Setup_Guide.md` - Dynamic button generation guide
+- **Sudoku Scene Setup**: `Assets/Docs/Sudoku_Scene_Setup_Guide.md` - Sudoku Unity scene integration guide
 - **Git Workflow**: `Assets/Docs/Github-Flow.md`
 - **Unity Standards**: `Assets/Docs/[유니티] 개발 표준 v2.md` (Korean)
 - **Setup Guide**: `Assets/Docs/SETUP_GUIDE.md`
 
 ### .claude/ (Claude Code Configuration)
-- **Detailed Conventions**: `.claude/UNITY_CONVENTIONS.md`
+- **Skills**: `.claude/skills/` - Automated workflows (manager-guide, pre-commit-check)
+- **Conventions**: `.claude/UNITY_CONVENTIONS.md`
 - **Commit Rules**: `.claude/COMMIT_MESSAGE_RULES.md`
 - **Branch Naming**: `.claude/BRANCH_NAMING_RULES.md`
-- **Branch Task Management**: `.claude/BRANCH_WORKFLOW.md`
 
 ## Important Notes
 
-1. **Manager System First** - ALWAYS use existing managers (ResourceManager, PoolManager, SoundManager, UIManager, CustomSceneManager) instead of implementing similar functionality
-2. **Read MANAGERS_GUIDE.md** - At the start of EVERY work session, read `Assets/Docs/MANAGERS_GUIDE.md`
-3. **This is a Korean-language project** - Documentation and comments may be in Korean
-4. **Strict convention compliance** - Follow naming and style rules exactly as specified
-5. **Complete implementations only** - No TODOs, no placeholders, no mock data
-6. **Unity 6 features** - Take advantage of latest Unity 6 capabilities when appropriate
-7. **2D game focus** - This is specifically a 2D game using URP's 2D renderer
+1. **⚠️ READ MANAGERS_GUIDE.md FIRST** - At the start of EVERY work session, read `Assets/Docs/MANAGERS_GUIDE.md` before making ANY code changes
+2. **Manager System First** - ALWAYS use existing managers (ResourceManager, PoolManager, SoundManager, UIManager, CustomSceneManager, MiniGameManager, DataManager) instead of implementing similar functionality
+3. **DataManager for Game Data** - Use DataManager + IGameDataProvider pattern for all game-specific data (ScriptableObjects, JSON, etc.)
+4. **Game-Based Resource Organization** - Resources are organized by game: `Resources/{Type}/{GameID}/` (NOT by type only)
+5. **This is a Korean-language project** - Documentation and comments may be in Korean
+6. **Strict convention compliance** - Follow naming and style rules exactly as specified
+7. **Complete implementations only** - No TODOs, no placeholders, no mock data
+8. **Unity 6 features** - Take advantage of latest Unity 6 capabilities when appropriate
+9. **2D game focus** - This is specifically a 2D game using URP's 2D renderer
+10. **Addressables paths** - Follow the game-based path conventions documented in Game Selection UI System section
+
+## Current Work Context
+
+**Active Branch**: `feature/sudoku`
+
+**Current Focus**: Sudoku 게임 미구현 메서드 구체화 및 Unity 씬 통합
+- **Phase 4 완료**: 핵심 게임 로직 구현
+  - ✅ SudokuGame (IMiniGame 구현, Activity Action 패턴)
+  - ✅ SudokuGenerator (비동기 퍼즐 생성)
+  - ✅ SudokuValidator (실시간 오류 검증)
+  - ✅ SudokuBoard (게임 보드 상태 관리)
+  - ✅ SudokuDataProvider (난이도별 힌트 설정)
+  - ✅ SudokuScene (씬 컨트롤러, UI 이벤트 연결)
+  - ✅ SudokuUIPanel (4-상태 UI 패널)
+  - ✅ SudokuGridUI, SudokuCellButton, NumPadUI, TimerUI
+- **Phase 5 진행 중**: 미구현 메서드 구체화
+  - 🔧 SudokuScene 이벤트 핸들러 구체화
+  - 🔧 SudokuUIPanel Undo/Pause 기능 구현
+  - 🔧 SudokuGameData SaveState/LoadState 구현
+- **Phase 6 예정**: Unity 씬 설정 및 통합 테스트
 
 ## Language Policy
 
@@ -410,3 +825,29 @@ See `.claude/BRANCH_WORKFLOW.md` for detailed workflow guide.
 - Code comments should be in Korean when explaining complex logic
 - Commit messages can use English for type prefix, but description should be in Korean
 - Exception: Technical terms, class names, variable names follow English conventions
+
+## Quick Start Checklist for New Sessions
+
+새로운 작업 세션을 시작할 때마다 다음 순서로 진행하세요:
+
+1. ✅ **`Assets/Docs/MANAGERS_GUIDE.md` 읽기** (필수)
+2. ✅ **현재 브랜치 확인**: `git status && git branch`
+3. ✅ **현재 작업 맥락 파악**: CLAUDE.md의 "Current Work Context" 섹션 확인
+4. ✅ **Manager 시스템 우선 사용**: 기능 구현 전 기존 Manager 활용 검토
+5. ✅ **코딩 컨벤션 준수**: 네이밍 규칙, 파일 구조, 완전 구현 원칙
+
+## Debugging & Troubleshooting
+
+### Unity Console Errors
+```csharp
+// 로그 포맷
+Debug.Log("[INFO] ClassName::MethodName - Message");
+Debug.LogWarning("[WARNING] ClassName::MethodName - Warning");
+Debug.LogError("[ERROR] ClassName::MethodName - Error");
+```
+
+### Common Issues
+1. **Manager null reference**: Singleton이 초기화되었는지 확인
+2. **Addressables load fail**: 주소가 정확한지, Addressables 그룹에 등록되었는지 확인
+3. **Pool not found**: CreatePool 호출 또는 InstantiateAsync로 자동 생성 확인
+4. **InputManager 이벤트 누락**: StartGame에서 구독, Cleanup에서 구독 해제 확인
