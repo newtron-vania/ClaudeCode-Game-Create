@@ -264,7 +264,7 @@ namespace UndeadSurvivor
             }
 
             // GameScene으로 씬 전환
-            CustomSceneManager.Instance.LoadScene("Undead Survivor");
+            CustomSceneManager.Instance.LoadScene("UndeadSurvivor");
 
             Debug.Log("[CharacterSelectUIPanel] OnStartButtonClicked - Loading GameScene");
         }
@@ -291,7 +291,7 @@ namespace UndeadSurvivor
             }
 
             // UndeadSurvivor 메인 씬으로 이동
-            CustomSceneManager.Instance.LoadScene("Undead Survivor");
+            CustomSceneManager.Instance.LoadScene("UndeadSurvivor");
 
             Debug.Log("[CharacterSelectUIPanel] OnCancelButtonClicked - Returning to main scene");
         }

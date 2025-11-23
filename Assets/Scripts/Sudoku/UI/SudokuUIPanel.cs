@@ -405,6 +405,7 @@ public class SudokuUIPanel : UIPanel
 
         // 씬 전환 (SudokuScene에서 처리)
         // CustomSceneManager를 통해 MainMenuScene으로 이동
+        CustomSceneManager.Instance.LoadScene(SceneID.MainMenu);
     }
 
     /// <summary>
