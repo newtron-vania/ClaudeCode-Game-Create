@@ -16,12 +16,31 @@ MonoBehaviour:
   m_GUID: 55b20522f248540139abbbfb22732dc1
   m_SerializeEntries:
   - m_GUID: 018366fd6dc8e485b992546c0c293811
+<<<<<<< HEAD
     m_Address: Sprites/Tile
+=======
+    m_Address: Sprite/Tile
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 0c23110cfa1ee4ac69f5eb574af0ee6d
+    m_Address: TestSphere
+>>>>>>> main
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+<<<<<<< HEAD
   - m_GUID: 0c8f3b873f50347a0acbe0f7963c1cd0
     m_Address: Sprites/Tetris_icon
+=======
+  - m_GUID: 5287ea88a6401440db61e14db584fc68
+    m_Address: UI/TetrisUIPanel
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 7eedd954cdb1a4cf49d233301302f468
+    m_Address: TestCapsule
+>>>>>>> main
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0

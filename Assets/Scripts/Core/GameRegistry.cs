@@ -162,6 +162,7 @@ public class GameRegistry : Singleton<GameRegistry>
 
         return $"Registered games ({_gameFactories.Count}): {string.Join(", ", _gameFactories.Keys)}";
     }
+<<<<<<< HEAD
 
     /// <summary>
     /// 싱글톤 초기화 시 모든 게임 자동 등록
@@ -181,4 +182,6 @@ public class GameRegistry : Singleton<GameRegistry>
 
         Debug.Log($"[INFO] GameRegistry::Awake - {_gameFactories.Count} games auto-registered");
     }
+=======
+>>>>>>> main
 }
