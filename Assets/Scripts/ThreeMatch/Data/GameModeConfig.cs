@@ -34,7 +34,13 @@ namespace ThreeMatch.Data
         [Tooltip("시간 제한 있음")]
         public bool HasTimeLimit;
 
+        [Tooltip("시간 제한 (초)")]
+        public float TimeLimit = 60f;
+
         [Tooltip("이동 횟수 제한 있음")]
         public bool HasMovesLimit;
+
+        [Tooltip("이동 횟수 제한")]
+        public int MovesLimit = 20;
     }
 }

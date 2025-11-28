@@ -12,7 +12,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Input System**: Unity Input System 1.14.2
 - **Resource System**: Unity Addressables 1.22.3
 - **Architecture**: IMiniGame interface + GameRegistry pattern + DataManager system
-- **Implemented Games**: Tetris (완성), Undead Survivor (보류), Sudoku (개발 중)
+- **Implemented Games**: Tetris (완성), Sudoku (완성), 3-Match (개발 중), Undead Survivor (보류)
 - **Game Select Scene**: MainMenuScene (game selection menu)
 
 ## Project Structure
@@ -39,7 +39,17 @@ Assets/
 │   │   └── InputManager.cs        # Input event distribution
 │   ├── GameData/           # Per-game data implementations
 │   │   └── TetrisGameData.cs
-│   ├── UndeadSurvivor/     # Undead Survivor game (in progress)
+│   ├── ThreeMatch/         # 3-Match game (in development)
+│   │   ├── Data/                        # Game data structures
+│   │   │   ├── ThreeMatchDataProvider.cs
+│   │   │   ├── PieceTypeData.cs
+│   │   │   ├── PieceTypeDataList.cs
+│   │   │   ├── DifficultyConfig.cs
+│   │   │   ├── DifficultyConfigList.cs
+│   │   │   ├── GameModeConfig.cs
+│   │   │   └── GameModeConfigList.cs
+│   │   └── ThreeMatchGameData.cs
+│   ├── UndeadSurvivor/     # Undead Survivor game (on hold)
 │   │   ├── Data/                        # Game data structures
 │   │   │   ├── UndeadSurvivorDataProvider.cs
 │   │   │   ├── CharacterData.cs
@@ -227,12 +237,101 @@ The game selection system dynamically generates UI buttons based on available ga
 ```
 
 **Adding a new game to selection menu**:
-1. Implement `IGameDataProvider` for game data
-2. Register data provider in `DataManager`
-3. Register game in `GameRegistry`
-4. Add `GameInfo` to `GamePlayList` in Inspector with gameID matching scene name
-5. Place icon sprite at Addressables path: `Sprite/{GameID}_icon`
-6. Game will automatically appear in selection menu
+1. Implement `IGameDataProvider` for game data (예: ThreeMatchDataProvider)
+2. Implement `IGameData` for runtime state (예: ThreeMatchGameData)
+3. Implement `IMiniGame` for game logic (예: ThreeMatchGame)
+4. Register data provider in `DataManager`
+5. Register game in `GameRegistry`
+6. Add `GameInfo` to `GamePlayList` in Inspector with gameID matching scene name
+7. Place icon sprite at Addressables path: `Sprite/{GameID}_icon`
+8. Create Unity scene with matching name (예: ThreeMatch.unity)
+9. Game will automatically appear in selection menu
+
+### 3-Match Game Architecture (Data-Driven Design)
+
+3-Match 게임은 **ScriptableObject 기반 데이터 주도 설계**를 사용합니다:
+
+**Architecture Pattern**:
+```
+ThreeMatchDataProvider (IGameDataProvider)
+    ↓ ScriptableObject Loading
+PieceTypeDataList + DifficultyConfigList + GameModeConfigList
+    ↓ Runtime State Management
+ThreeMatchGameData (IGameData)
+    ↓ Game Logic
+ThreeMatchGame (IMiniGame)
+```
+
+**Data Provider 구조**:
+```csharp
+// ThreeMatchDataProvider.cs - 게임 데이터 제공
+public class ThreeMatchDataProvider : IGameDataProvider
+{
+    public string GameID => "ThreeMatch";
+
+    // 데이터 딕셔너리
+    private Dictionary<int, PieceTypeData> _pieceTypes;
+    private Dictionary<DifficultyLevel, DifficultyConfig> _difficultyConfigs;
+    private Dictionary<GameMode, GameModeConfig> _gameModeConfigs;
+
+    // 게임별 데이터 접근 메서드
+    public PieceTypeData GetPieceTypeData(int pieceId);
+    public DifficultyConfig GetDifficultyConfig(DifficultyLevel level);
+    public GameModeConfig GetGameModeConfig(GameMode mode);
+}
+```
+
+**Runtime Game Data**:
+```csharp
+// ThreeMatchGameData.cs - 런타임 게임 상태
+public class ThreeMatchGameData : IGameData
+{
+    // 점수 시스템
+    public int Score { get; set; }
+    public int TargetScore { get; set; }
+
+    // 콤보 시스템
+    public int CurrentCombo { get; set; }
+    public int MaxCombo { get; set; }
+
+    // 게임 모드별 제한
+    public int RemainingMoves { get; set; }      // MovesLimited 모드
+    public float ElapsedTime { get; set; }       // Classic 모드
+    public float TimeLimit { get; set; }
+
+    // 게임 설정
+    public DifficultyLevel CurrentDifficulty { get; set; }
+    public GameMode CurrentMode { get; set; }
+
+    // 게임 로직 헬퍼 메서드
+    public void AddScore(int baseScore);         // 콤보 배율 적용 점수 추가
+    public void IncrementCombo();                // 콤보 증가 + 최대 콤보 갱신
+    public bool IsGoalAchieved();                // 목표 달성 체크
+    public bool IsTimeUp();                      // 시간 제한 체크
+    public bool IsMovesExhausted();              // 이동 횟수 체크
+}
+```
+
+**Key Features**:
+- **ScriptableObject 기반**: 퍼즐 타입, 난이도, 게임 모드를 ScriptableObject로 관리
+- **난이도 시스템**: Easy/Normal/Hard 난이도별 보드 크기, 퍼즐 종류 수, 목표 점수 설정
+- **게임 모드**: Classic (시간 제한), MovesLimited (이동 횟수 제한), Endless (무한)
+- **콤보 시스템**: 연속 매치 시 콤보 증가 + 점수 배율 적용
+- **하이스코어**: PlayerPrefs를 통한 최고 점수 및 최대 콤보 기록
+
+**Data Files Structure**:
+```
+Resources/Data/ThreeMatch/ScriptableObjects/
+├── PieceTypeDataList.asset        # 퍼즐 조각 타입 정의 (색상, 점수)
+├── DifficultyConfigList.asset     # 난이도별 설정 (보드 크기, 목표 점수)
+└── GameModeConfigList.asset       # 게임 모드별 규칙 (시간/이동 제한)
+```
+
+**Benefits**:
+- 디자이너가 Unity Inspector에서 게임 밸런스 조정 가능
+- 코드 변경 없이 퍼즐 타입, 난이도, 게임 모드 추가 가능
+- 런타임 게임 상태와 정적 설정 데이터의 명확한 분리
+- 다양한 게임 모드 지원을 위한 확장 가능한 구조
 
 ### Sudoku Game Architecture (Activity Action Pattern)
 
@@ -384,6 +483,9 @@ User returns → Back to GameSelectScene
 6. `UIManager`: UI panel and popup management with fade effects
 7. `CustomSceneManager`: Scene loading with transitions and loading screens
 8. `InputManager`: Event-based input distribution to active game
+
+**Deprecated/Unused**:
+- `GameManager<T>`: Generic game manager (전체 주석 처리됨, MiniGameManager로 대체됨)
 
 ### Architecture Principles
 
@@ -778,6 +880,8 @@ CustomSceneManager.Instance.LoadScene("MyGame");
 - **Unity Standards**: `Assets/Docs/[유니티] 개발 표준 v2.md` (Korean)
 - **Setup Guide**: `Assets/Docs/SETUP_GUIDE.md`
 
+**Note**: 3-Match 게임은 현재 개발 진행 중으로, 아직 전용 씬 설정 가이드가 없습니다.
+
 ### .claude/ (Claude Code Configuration)
 - **Skills**: `.claude/skills/` - Automated workflows (manager-guide, pre-commit-check)
 - **Conventions**: `.claude/UNITY_CONVENTIONS.md`
@@ -799,23 +903,28 @@ CustomSceneManager.Instance.LoadScene("MyGame");
 
 ## Current Work Context
 
-**Active Branch**: `feature/sudoku`
+**Active Branch**: `feature/3-match`
 
-**Current Focus**: Sudoku 게임 미구현 메서드 구체화 및 Unity 씬 통합
-- **Phase 4 완료**: 핵심 게임 로직 구현
-  - ✅ SudokuGame (IMiniGame 구현, Activity Action 패턴)
-  - ✅ SudokuGenerator (비동기 퍼즐 생성)
-  - ✅ SudokuValidator (실시간 오류 검증)
-  - ✅ SudokuBoard (게임 보드 상태 관리)
-  - ✅ SudokuDataProvider (난이도별 힌트 설정)
-  - ✅ SudokuScene (씬 컨트롤러, UI 이벤트 연결)
-  - ✅ SudokuUIPanel (4-상태 UI 패널)
-  - ✅ SudokuGridUI, SudokuCellButton, NumPadUI, TimerUI
-- **Phase 5 진행 중**: 미구현 메서드 구체화
-  - 🔧 SudokuScene 이벤트 핸들러 구체화
-  - 🔧 SudokuUIPanel Undo/Pause 기능 구현
-  - 🔧 SudokuGameData SaveState/LoadState 구현
-- **Phase 6 예정**: Unity 씬 설정 및 통합 테스트
+**Current Focus**: 3-Match 게임 개발 - Phase 1 완료
+- **Phase 1 완료**: 데이터 구조 및 Manager 통합
+  - ✅ ThreeMatchDataProvider (IGameDataProvider 구현)
+  - ✅ ThreeMatchGameData (IGameData 구현, 콤보/점수/게임 모드 로직)
+  - ✅ ScriptableObject 데이터 구조 (PieceType, Difficulty, GameMode)
+  - ✅ DataManager 통합 및 lazy loading 패턴 적용
+- **Phase 2 예정**: 핵심 게임 로직 구현
+  - 🔧 ThreeMatchGame (IMiniGame 구현)
+  - 🔧 Board 시스템 (7x7 그리드 관리)
+  - 🔧 Match 감지 알고리즘 (가로/세로/대각선 3개 이상 매칭)
+  - 🔧 퍼즐 이동 및 교환 로직
+  - 🔧 중력 시스템 (빈 칸 채우기)
+- **Phase 3 예정**: UI 및 씬 통합
+  - 🔧 ThreeMatchScene (씬 컨트롤러)
+  - 🔧 ThreeMatchUIPanel (게임 UI)
+  - 🔧 Unity 씬 설정 및 통합 테스트
+
+**Recent Work**:
+- Sudoku 게임 완성 (feature/sudoku → main 병합 완료)
+- 3-Match 데이터 구조 설계 및 구현 (현재 진행 중)
 
 ## Language Policy
 

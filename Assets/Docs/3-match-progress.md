@@ -3,8 +3,25 @@
 **프로젝트**: ClaudeCode-Game-Create
 **게임 ID**: ThreeMatch
 **작성일**: 2025-11-24
-**최종 업데이트**: 2025-11-24
+**최종 업데이트**: 2025-11-27
 **현재 상태**: Phase 1 완료 ✅
+
+---
+
+## 📐 아키텍처 설계
+
+**⚠️ 중요**: Phase 2 작업 전에 반드시 아키텍처 문서를 읽어야 합니다.
+
+📖 **[3-Match 게임 아키텍처 설계 문서](./3-match-architecture.md)**
+
+이 문서는 다음 내용을 포함합니다:
+- **데이터-View 분리 패턴**: Sudoku 게임에서 검증된 아키텍처 적용
+- **이벤트 시스템**: 단방향 데이터 흐름 (Data → Event → View)
+- **핵심 컴포넌트 설계**: ThreeMatchBoard, MatchDetector, ThreeMatchBoardView 등
+- **게임 플로우**: 교체 → 매치 → 파괴 → 낙하 → 연쇄 매치 전체 흐름
+- **클래스 다이어그램**: 각 컴포넌트 간 관계 및 책임
+
+**Phase 2 이후 모든 작업은 이 아키텍처를 따라야 합니다.**
 
 ---
 
@@ -14,7 +31,9 @@
 - **장르**: 3-Match Puzzle
 - **플랫폼**: PC (Unity 6)
 - **렌더 파이프라인**: URP 2D
-- **아키텍처**: IMiniGame 인터페이스 기반 플러그인 패턴
+- **아키텍처**:
+  - **전체**: IMiniGame 인터페이스 기반 플러그인 패턴
+  - **내부**: 데이터-View 분리 + 이벤트 기반 (Sudoku 패턴 적용)
 - **목표**: 교착 상태 없는 매치-3 퍼즐 게임
 
 ### 핵심 기능
@@ -102,26 +121,58 @@ ScriptableObject 기반 게임 데이터 구조 및 DataManager 통합
 
 ---
 
-## 🎮 Phase 2: 핵심 게임 로직
+## 🎮 Phase 2: 핵심 게임 로직 (데이터-View 분리)
 
 ### 목표
-보드 관리, 매치 감지, 입력 처리 등 핵심 게임 메커니즘 구현
+데이터 레이어와 View 레이어를 완전히 분리하여 구현
+
+⚠️ **필수 확인**: [3-Match 아키텍처 문서](./3-match-architecture.md) 참조
+
+### 아키텍처 원칙
+- **ThreeMatchBoard**: 순수 C# 클래스 (MonoBehaviour 상속 안 함)
+- **이벤트 시스템**: 데이터 변경 시 이벤트 발생 → View가 후처리
+- **테스트 가능성**: UI 없이 게임 로직 단위 테스트 가능
 
 ### 작업 항목
 
-#### 2.1 BoardManager 구현
-- [ ] `Assets/Scripts/ThreeMatch/Board/BoardManager.cs` 생성
+#### 2.1 ThreeMatchBoard 구현 (데이터 모델) ⚠️ 이름 변경
+- [ ] `Assets/Scripts/ThreeMatch/Board/ThreeMatchBoard.cs` 생성
+- [ ] **순수 C# 클래스** (MonoBehaviour 상속 안 함)
 - [ ] 보드 초기화 (`GenerateInitialBoard()`)
 - [ ] 초기 생성 시 매치 방지 (`GetNoMatchRandomPiece()`)
 - [ ] Deadlock 감지 (`IsDeadlocked()`)
 - [ ] 보드 재생성 (`ShuffleBoard()`)
 - [ ] 퍼즐 교체 (`SwapPieces()`)
+- [ ] **이벤트 시스템 구현**:
+  - `OnPieceChanged(int x, int y, int pieceId)`
+  - `OnPiecesSwapped(int x1, int y1, int x2, int y2)`
+  - `OnMatchesFound(List<Match> matches)`
+  - `OnPiecesDestroyed(List<Vector2Int> positions)`
+  - `OnPiecesFalling(List<PieceMove> moves)`
+  - `OnBoardShuffled()`
+  - `OnDeadlockDetected(bool isDeadlocked)`
 
 **핵심 로직**:
 ```csharp
-- int[,] _board: 보드 상태 (0: 빈칸, 1~N: 퍼즐 ID)
-- IsDeadlocked(): 모든 위치에서 가상 스왑 시도 → 매치 가능 여부 확인
-- ShuffleBoard(): Deadlock 해소될 때까지 재생성 (최대 10회)
+// 순수 데이터 모델 (Unity 타입 사용 안 함)
+public class ThreeMatchBoard
+{
+    private int[,] _board;  // 보드 상태
+
+    // 이벤트 (View가 구독)
+    public event Action<int, int, int> OnPieceChanged;
+
+    public void SwapPieces(int x1, int y1, int x2, int y2)
+    {
+        // 데이터만 변경
+        int temp = _board[x1, y1];
+        _board[x1, y1] = _board[x2, y2];
+        _board[x2, y2] = temp;
+
+        // 이벤트 발생 (View가 후처리)
+        OnPiecesSwapped?.Invoke(x1, y1, x2, y2);
+    }
+}
 ```
 
 **예상 소요**: 3-4시간
@@ -154,29 +205,82 @@ ScriptableObject 기반 게임 데이터 구조 및 DataManager 통합
 
 **예상 소요**: 2시간
 
-#### 2.4 PuzzlePiece 구현
+#### 2.4 PuzzlePiece 구현 (View 컴포넌트)
 - [ ] `Assets/Scripts/ThreeMatch/Board/PuzzlePiece.cs` 생성
+- [ ] **MonoBehaviour 상속** (UI 컴포넌트)
 - [ ] `IPoolable` 인터페이스 구현
-- [ ] 좌표 설정 (`SetCoord()`)
+- [ ] 좌표 설정 (`SetGridPosition()`)
 - [ ] 퍼즐 타입 및 스프라이트 설정 (`SetPieceType()`)
-- [ ] 이동 애니메이션 (`MoveToPosition()`, `MoveRoutine()`)
+- [ ] 이동 애니메이션 (`MoveToPosition()` 코루틴)
+- [ ] 매치 이펙트 (`PlayMatchEffect()`)
 
 **예상 소요**: 2시간
 
-#### 2.5 ComboSystem 구현
+#### 2.5 ThreeMatchBoardView 구현 (View 레이어) ⚠️ 새로 추가
+- [ ] `Assets/Scripts/ThreeMatch/Board/ThreeMatchBoardView.cs` 생성
+- [ ] **MonoBehaviour 상속** (UI 관리)
+- [ ] PuzzlePiece 인스턴스화 및 배치
+- [ ] ThreeMatchBoard 이벤트 구독
+- [ ] 이벤트 핸들러 구현:
+  - `HandlePieceChanged()` → UI 업데이트
+  - `HandlePiecesSwapped()` → 교체 애니메이션
+  - `HandleMatchesFound()` → 매치 이펙트
+  - `HandlePiecesDestroyed()` → 파괴 애니메이션
+  - `HandlePiecesFalling()` → 낙하 애니메이션
+  - `HandleBoardShuffled()` → Shuffle 애니메이션
+- [ ] 애니메이션 코루틴 (SwapAnimation, DestroyAnimation, FallAnimation)
+- [ ] 애니메이션 중 입력 차단 (`IsAnimating` 플래그)
+
+**핵심 로직**:
+```csharp
+// View 레이어 (MonoBehaviour)
+public class ThreeMatchBoardView : MonoBehaviour
+{
+    private PuzzlePiece[,] _pieceViews;
+    private ThreeMatchBoard _boardData;
+
+    public void Initialize(ThreeMatchBoard board)
+    {
+        _boardData = board;
+
+        // 이벤트 구독 (후처리 방식)
+        _boardData.OnPieceChanged += HandlePieceChanged;
+        _boardData.OnPiecesSwapped += HandlePiecesSwapped;
+        // ... 기타 이벤트
+    }
+
+    private void HandlePiecesSwapped(int x1, int y1, int x2, int y2)
+    {
+        // UI 애니메이션만 처리
+        StartCoroutine(SwapAnimation(x1, y1, x2, y2));
+    }
+}
+```
+
+**예상 소요**: 3-4시간
+
+#### 2.6 ComboSystem 구현 (독립 시스템)
 - [ ] `Assets/Scripts/ThreeMatch/Systems/ComboSystem.cs` 생성
+- [ ] **순수 C# 클래스** (MonoBehaviour 상속 안 함)
 - [ ] 콤보 카운터 증가/리셋
-- [ ] 콤보 배율 계산
-- [ ] 콤보 UI 업데이트 이벤트
+- [ ] 콤보 배율 계산 (1x, 2x, 3x, 4x, 5x)
+- [ ] 콤보 타임아웃 (2초 내 다음 매치 없으면 리셋)
+- [ ] 콤보 이벤트:
+  - `OnComboChanged(int currentCombo, int multiplier)`
+  - `OnComboReset()`
 
 **예상 소요**: 1시간
 
 ### Phase 2 완료 조건
+- ✅ **데이터-View 분리**: ThreeMatchBoard는 순수 C# 클래스
+- ✅ **이벤트 시스템**: 모든 데이터 변경이 이벤트로 통지됨
+- ✅ **테스트 가능**: UI 없이 게임 로직 단위 테스트 가능
 - ✅ 보드 생성 시 초기 매치 없음
 - ✅ Deadlock 감지 및 Shuffle 정상 작동
 - ✅ 매치 감지 정확도 100% (단위 테스트)
 - ✅ 점수 계산 정확도 검증
-- ✅ 퍼즐 이동 애니메이션 부드러움
+- ✅ 퍼즐 이동 애니메이션 부드러움 (View 레이어)
+- ✅ 이벤트 구독/해제 정상 작동
 
 ---
 
@@ -467,10 +571,19 @@ Audio/SFX/ThreeMatch/Match3
 
 ## 📝 참고 문서
 
+- **🏗️ 아키텍처 설계**: `Assets/Docs/3-match-architecture.md` ⚠️ **Phase 2 시작 전 필수 읽기**
+  - 데이터-View 분리 패턴
+  - 이벤트 시스템 설계
+  - 핵심 컴포넌트 설계
+  - 게임 플로우 다이어그램
+  - Sudoku 참고 구현
 - **Manager 시스템**: `Assets/Docs/MANAGERS_GUIDE.md` ⚠️ **필수 읽기**
-- **아키텍처 가이드**: `CLAUDE.md` - Multi-Minigame Platform Architecture
-- **Sudoku 참고**: `Assets/Scripts/Sudoku/` - Activity Action 패턴 참고
-- **Undead Survivor 참고**: `Assets/Docs/UndeadSurvivor_Reference.md` - DataProvider 패턴 참고
+- **전체 아키텍처**: `CLAUDE.md` - Multi-Minigame Platform Architecture
+- **Sudoku 참고**: `Assets/Scripts/Sudoku/` - 데이터-View 분리 패턴 검증됨
+  - `SudokuBoard.cs` - 순수 데이터 모델 예시
+  - `SudokuGridUI.cs` - View 레이어 예시
+  - `SudokuGame.cs` - IMiniGame 통합 예시
+- **Undead Survivor 참고**: `Assets/Docs/UndeadSurvivor_Reference.md` - DataProvider 패턴
 - **PRD 원본**: `Assets/Docs/3-match-prd.md`
 
 ---
