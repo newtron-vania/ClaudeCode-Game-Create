@@ -179,6 +179,9 @@ public class GameRegistry : Singleton<GameRegistry>
         // Sudoku 게임 등록
         RegisterGame("Sudoku", () => new SudokuGame());
 
+        // ThreeMatch 게임 등록
+        RegisterGame("ThreeMatch", () => new ThreeMatch.ThreeMatchGame());
+
         Debug.Log($"[INFO] GameRegistry::Awake - {_gameFactories.Count} games auto-registered");
     }
 }
