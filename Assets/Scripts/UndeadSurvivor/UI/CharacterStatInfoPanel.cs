@@ -50,7 +50,6 @@ namespace UndeadSurvivor
             // 스탯 정보 업데이트
             UpdateBaseStats(characterData);
             UpdateCombatStats(characterData);
-            UpdateStartWeapon(characterData);
 
             Debug.Log($"[CharacterStatInfoPanel] UpdateCharacterInfo - Updated info for {characterData.Name}");
         }
@@ -117,42 +116,7 @@ namespace UndeadSurvivor
             if (_amountText != null)
                 _amountText.text = $"개수: +{data.Amount:F0}";
         }
-
-        /// <summary>
-        /// 시작 무기 정보 업데이트
-        /// </summary>
-        private void UpdateStartWeapon(CharacterData data)
-        {
-            if (_startWeaponText != null)
-            {
-                if (data.StartWeaponId > 0)
-                {
-                    // WeaponData 로드하여 무기 이름 표시
-                    var dataProvider = DataManager.Instance.GetProvider<UndeadSurvivorDataProvider>("UndeadSurvivor");
-                    if (dataProvider != null)
-                    {
-                        var weaponData = dataProvider.GetWeaponData(data.StartWeaponId);
-                        if (weaponData != null)
-                        {
-                            _startWeaponText.text = $"시작 무기: {weaponData.Name}";
-                        }
-                        else
-                        {
-                            _startWeaponText.text = $"시작 무기: ID {data.StartWeaponId}";
-                        }
-                    }
-                    else
-                    {
-                        _startWeaponText.text = $"시작 무기: ID {data.StartWeaponId}";
-                    }
-                }
-                else
-                {
-                    _startWeaponText.text = "시작 무기: 없음";
-                }
-            }
-        }
-
+        
         /// <summary>
         /// 퍼센트 값 포맷 (음수/양수 부호 표시)
         /// </summary>

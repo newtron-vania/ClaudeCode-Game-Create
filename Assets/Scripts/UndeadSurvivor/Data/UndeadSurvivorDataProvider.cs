@@ -14,7 +14,6 @@ namespace UndeadSurvivor
 
         // 데이터 딕셔너리
         private Dictionary<int, MonsterData> _monsterDict;
-        private Dictionary<int, WeaponData> _weaponDict;
         private Dictionary<int, ItemData> _itemDict;
         private Dictionary<int, CharacterData> _characterDict;
 
@@ -24,7 +23,6 @@ namespace UndeadSurvivor
         public void Initialize()
         {
             _monsterDict = new Dictionary<int, MonsterData>();
-            _weaponDict = new Dictionary<int, WeaponData>();
             _itemDict = new Dictionary<int, ItemData>();
             _characterDict = new Dictionary<int, CharacterData>();
 
@@ -46,7 +44,6 @@ namespace UndeadSurvivor
             Debug.Log("[INFO] UndeadSurvivor::DataProvider::LoadData - Loading data");
 
             LoadMonsterData();
-            LoadWeaponData();
             LoadItemData();
             LoadCharacterData();
 
@@ -68,7 +65,6 @@ namespace UndeadSurvivor
             Debug.Log("[INFO] UndeadSurvivor::DataProvider::UnloadData - Unloading data");
 
             _monsterDict.Clear();
-            _weaponDict.Clear();
             _itemDict.Clear();
             _characterDict.Clear();
 
@@ -133,46 +129,6 @@ namespace UndeadSurvivor
             }
 
             Debug.Log($"[INFO] UndeadSurvivor::DataProvider::LoadMonsterData - Loaded {_monsterDict.Count} monsters from JSON");
-        }
-
-        /// <summary>
-        /// 무기 데이터 로드
-        /// JSON 파일로부터 동적으로 로드하여 WeaponDataList 생성
-        /// </summary>
-        private void LoadWeaponData()
-        {
-            // JSON 파일 로드
-            TextAsset jsonFile = Resources.Load<TextAsset>("Data/UndeadSurvivor/WeaponData");
-
-            if (jsonFile == null)
-            {
-                Debug.LogError("[ERROR] UndeadSurvivor::DataProvider::LoadWeaponData - WeaponData.json not found");
-                return;
-            }
-
-            // WeaponDataList 생성 및 JSON 파싱
-            WeaponDataList dataList = ScriptableObject.CreateInstance<WeaponDataList>();
-            dataList.LoadFromJson(jsonFile.text);
-
-            if (dataList.Weapons == null || dataList.Weapons.Count == 0)
-            {
-                Debug.LogError("[ERROR] UndeadSurvivor::DataProvider::LoadWeaponData - No weapons loaded from JSON");
-                return;
-            }
-
-            // 딕셔너리에 추가
-            foreach (var data in dataList.Weapons)
-            {
-                if (_weaponDict.ContainsKey(data.Id))
-                {
-                    Debug.LogWarning($"[WARNING] UndeadSurvivor::DataProvider::LoadWeaponData - Duplicate weapon ID: {data.Id}");
-                    continue;
-                }
-
-                _weaponDict.Add(data.Id, data);
-            }
-
-            Debug.Log($"[INFO] UndeadSurvivor::DataProvider::LoadWeaponData - Loaded {_weaponDict.Count} weapons from JSON");
         }
 
         /// <summary>
@@ -313,41 +269,6 @@ namespace UndeadSurvivor
         }
 
         /// <summary>
-        /// 무기 데이터 조회
-        /// </summary>
-        public WeaponData GetWeaponData(int weaponId)
-        {
-            if (!IsLoaded)
-            {
-                Debug.LogError("[ERROR] UndeadSurvivor::DataProvider::GetWeaponData - Data not loaded");
-                return null;
-            }
-
-            if (_weaponDict.TryGetValue(weaponId, out WeaponData data))
-            {
-                return data;
-            }
-
-            Debug.LogError($"[ERROR] UndeadSurvivor::DataProvider::GetWeaponData - Weapon ID {weaponId} not found");
-            return null;
-        }
-
-        /// <summary>
-        /// 무기의 특정 레벨 스탯 조회
-        /// </summary>
-        public WeaponLevelStat GetWeaponLevelStat(int weaponId, int level)
-        {
-            WeaponData weaponData = GetWeaponData(weaponId);
-            if (weaponData == null || level < 0 || level >= weaponData.LevelStats.Length)
-            {
-                Debug.LogError($"[ERROR] UndeadSurvivor::DataProvider::GetWeaponLevelStat - Invalid weapon ID {weaponId} or level {level}");
-                return null;
-            }
-
-            return weaponData.LevelStats[level];
-        }
-
-        /// <summary>
         /// 아이템 데이터 조회
         /// </summary>
         public ItemData GetItemData(int itemId)
@@ -393,14 +314,6 @@ namespace UndeadSurvivor
         public List<int> GetAllMonsterIds()
         {
             return new List<int>(_monsterDict.Keys);
-        }
-
-        /// <summary>
-        /// 모든 무기 ID 목록 반환
-        /// </summary>
-        public List<int> GetAllWeaponIds()
-        {
-            return new List<int>(_weaponDict.Keys);
         }
 
         /// <summary>
