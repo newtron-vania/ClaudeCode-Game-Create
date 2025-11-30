@@ -6,20 +6,18 @@ namespace UndeadSurvivor
 {
     /// <summary>
     /// Undead Survivor 플레이어 통합 컴포넌트
-    /// PlayerController, PlayerHealth, PlayerExperience, PlayerWeaponManager를 통합 관리하고
+    /// PlayerController, PlayerHealth, PlayerExperience를 통합 관리하고
     /// CharacterData 기반 초기화 및 이벤트 통합을 담당합니다.
     /// </summary>
     [RequireComponent(typeof(PlayerController))]
     [RequireComponent(typeof(PlayerHealth))]
     [RequireComponent(typeof(PlayerExperience))]
-    [RequireComponent(typeof(PlayerWeaponManager))]
     public class Player : MonoBehaviour
     {
         [Header("Player Components")]
         private PlayerController _controller;
         private PlayerHealth _health;
         private PlayerExperience _experience;
-        private PlayerWeaponManager _weaponManager;
 
         [Header("Character Data")]
         private CharacterData _characterData;
@@ -72,15 +70,6 @@ namespace UndeadSurvivor
         /// <summary>캐릭터 스탯</summary>
         public CharacterStat CharacterStat => _characterStat;
 
-        /// <summary>현재 장착 무기 개수</summary>
-        public int CurrentWeaponCount => _weaponManager != null ? _weaponManager.CurrentWeaponCount : 0;
-
-        /// <summary>최대 무기 슬롯 개수</summary>
-        public int MaxWeaponSlots => _weaponManager != null ? _weaponManager.MaxWeaponSlots : 6;
-
-        /// <summary>무기 슬롯 포화 여부</summary>
-        public bool IsWeaponSlotsFull => _weaponManager != null && _weaponManager.IsWeaponSlotsFull;
-
         #endregion
 
         #region Unity Lifecycle
@@ -91,9 +80,8 @@ namespace UndeadSurvivor
             _controller = GetComponent<PlayerController>();
             _health = GetComponent<PlayerHealth>();
             _experience = GetComponent<PlayerExperience>();
-            _weaponManager = GetComponent<PlayerWeaponManager>();
 
-            if (_controller == null || _health == null || _experience == null || _weaponManager == null)
+            if (_controller == null || _health == null || _experience == null)
             {
                 Debug.LogError("[ERROR] UndeadSurvivor::Player::Awake - Required components missing!");
                 return;
@@ -116,12 +104,6 @@ namespace UndeadSurvivor
                 _experience.OnLevelUp += HandleLevelUp;
                 _experience.OnExpChanged += HandleExpChanged;
             }
-
-            if (_weaponManager != null)
-            {
-                _weaponManager.OnWeaponAdded += HandleWeaponAdded;
-                _weaponManager.OnWeaponLevelUp += HandleWeaponLevelUp;
-            }
         }
 
         private void OnDisable()
@@ -137,12 +119,6 @@ namespace UndeadSurvivor
             {
                 _experience.OnLevelUp -= HandleLevelUp;
                 _experience.OnExpChanged -= HandleExpChanged;
-            }
-
-            if (_weaponManager != null)
-            {
-                _weaponManager.OnWeaponAdded -= HandleWeaponAdded;
-                _weaponManager.OnWeaponLevelUp -= HandleWeaponLevelUp;
             }
         }
 
@@ -171,15 +147,6 @@ namespace UndeadSurvivor
 
             // 각 컴포넌트에 초기 스탯 적용
             ApplyStatsToComponents();
-
-            // 시작 무기 추가 (CharacterData에 StartWeaponId가 있다면)
-            // TODO: WeaponData 로드 후 추가
-            // if (characterData.StartWeaponId > 0)
-            // {
-            //     var weaponData = DataManager.Instance.GetProvider<UndeadSurvivorDataProvider>("UndeadSurvivor")
-            //         .GetWeaponData(characterData.StartWeaponId);
-            //     _weaponManager.AddWeapon(weaponData);
-            // }
 
             _isInitialized = true;
             Debug.Log($"[INFO] UndeadSurvivor::Player::Initialize - Player initialized with character: {characterData.Name}");
@@ -320,24 +287,6 @@ namespace UndeadSurvivor
             OnPlayerExpChanged?.Invoke(currentExp, expForNextLevel, currentLevel);
         }
 
-        /// <summary>
-        /// 무기 추가 이벤트 핸들러
-        /// </summary>
-        private void HandleWeaponAdded(int weaponId, string weaponName, int currentLevel)
-        {
-            Debug.Log($"[INFO] UndeadSurvivor::Player::HandleWeaponAdded - Weapon added: {weaponName} (Level {currentLevel})");
-            // TODO: UI 알림
-        }
-
-        /// <summary>
-        /// 무기 레벨업 이벤트 핸들러
-        /// </summary>
-        private void HandleWeaponLevelUp(int weaponId, int newLevel)
-        {
-            Debug.Log($"[INFO] UndeadSurvivor::Player::HandleWeaponLevelUp - Weapon {weaponId} leveled up to {newLevel}");
-            // TODO: UI 알림
-        }
-
         #endregion
 
         #region Public Methods
@@ -380,84 +329,6 @@ namespace UndeadSurvivor
             }
 
             _experience.GainExp(expAmount);
-        }
-
-        /// <summary>
-        /// 무기 추가
-        /// </summary>
-        public bool AddWeapon(WeaponData weaponData)
-        {
-            if (_weaponManager == null)
-            {
-                return false;
-            }
-
-            return _weaponManager.AddWeapon(weaponData);
-        }
-
-        /// <summary>
-        /// 무기 레벨업
-        /// </summary>
-        public bool LevelUpWeapon(int weaponId)
-        {
-            if (_weaponManager == null)
-            {
-                return false;
-            }
-
-            return _weaponManager.LevelUpWeapon(weaponId);
-        }
-
-        /// <summary>
-        /// 무기 보유 여부 확인
-        /// </summary>
-        public bool HasWeapon(int weaponId)
-        {
-            if (_weaponManager == null)
-            {
-                return false;
-            }
-
-            return _weaponManager.HasWeapon(weaponId);
-        }
-
-        /// <summary>
-        /// 장착된 모든 무기 ID 목록 반환
-        /// </summary>
-        public List<int> GetEquippedWeaponIds()
-        {
-            if (_weaponManager == null)
-            {
-                return new List<int>();
-            }
-
-            return _weaponManager.GetEquippedWeaponIds();
-        }
-
-        /// <summary>
-        /// 무기 현재 레벨 조회
-        /// </summary>
-        public int GetWeaponLevel(int weaponId)
-        {
-            if (_weaponManager == null)
-            {
-                return -1;
-            }
-
-            return _weaponManager.GetWeaponLevel(weaponId);
-        }
-
-        /// <summary>
-        /// 무기 최대 레벨 여부
-        /// </summary>
-        public bool IsWeaponMaxLevel(int weaponId)
-        {
-            if (_weaponManager == null)
-            {
-                return false;
-            }
-
-            return _weaponManager.IsWeaponMaxLevel(weaponId);
         }
 
         /// <summary>

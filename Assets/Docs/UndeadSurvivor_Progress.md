@@ -1,11 +1,11 @@
 # Undead Survivor 개발 진행 상황 보고서
 
-**최종 업데이트**: 2024-11-10
+**최종 업데이트**: 2024-12-01
 **브랜치**: feature/undead-survivor-ui-levelup
 **Phase 1 상태**: ✅ **100% 완료**
 **Phase 2 상태**: ✅ **100% 완료**
-**Phase 3 상태**: ✅ **100% 완료**
-**Phase 4 상태**: ✅ **100% 완료**
+**Phase 3 상태**: ❌ **0% 완료** (Weapon 시스템 제거됨 - 재구축 예정)
+**Phase 4 상태**: ⚠️ **70% 완료** (Weapon 관련 기능 보류)
 **Phase 5 상태**: 🚧 **30% 완료** (CharacterSelectUI 완료)
 
 ---
@@ -352,62 +352,36 @@ public void SetHitboxOffset(Vector2 offset)
 
 ---
 
-## ✅ Phase 3: 무기 시스템 (100% 완료)
+## ❌ Phase 3: 무기 시스템 (제거됨 - 재구축 예정)
 
-### 완료된 항목
+### 제거된 항목 (2024-12-01)
 
-#### 1. **Weapon 베이스 클래스** ✅
-**파일**: `Assets/Scripts/UndeadSurvivor/Weapon.cs`
+**제거 사유**: Weapon 시스템을 완전히 새로운 아키텍처로 재구축하기 위해 기존 코드 제거
 
-**완료된 기능**:
-- ✅ 자동 공격 시스템 (쿨다운 기반)
-- ✅ 레벨업 시스템 (레벨 0-4, 표시 1-5)
-- ✅ 적 탐지 (FindNearestEnemy, FindEnemiesInRadius)
-- ✅ 최종 데미지 계산 (플레이어 스탯 적용)
-- ✅ 활성화/비활성화 관리
+**제거된 파일**:
+- ❌ `Weapon.cs` (베이스 클래스)
+- ❌ `Scythe.cs` (근접 무기)
+- ❌ `Fireball.cs` (원거리 무기)
+- ❌ `Projectile.cs` (투사체 시스템)
+- ❌ `PlayerWeaponManager.cs` (무기 관리 시스템)
+- ❌ `TestWeaponSystem.cs` (테스트 스크립트)
 
-#### 2. **Fireball 무기 (원거리 투사체)** ✅
-**파일**: `Assets/Scripts/UndeadSurvivor/Fireball.cs`
+**보류된 파일** (WeaponData 구조는 유지):
+- ⏳ `WeaponData.cs` (무기 데이터 구조)
+- ⏳ `WeaponDataList.cs` (ScriptableObject 리스트)
+- ⏳ `LevelUpOption.cs` (Weapon 적용 메서드 주석 처리)
+- ⏳ `LevelUpManager.cs` (Weapon 생성 로직 보류)
 
-**완료된 기능**:
-- ✅ 가장 가까운 적 향해 발사
-- ✅ 부채꼴 패턴 (여러 개 발사 시)
-- ✅ 레벨업 시 개수, 데미지, 관통력 증가
+**Player.cs 변경사항**:
+- ❌ PlayerWeaponManager 컴포넌트 제거
+- ❌ Weapon 관련 Properties 제거 (CurrentWeaponCount, MaxWeaponSlots, IsWeaponSlotsFull)
+- ❌ Weapon 관련 Public Methods 제거 (AddWeapon, LevelUpWeapon, HasWeapon 등)
+- ❌ Weapon 이벤트 핸들러 제거
 
-#### 3. **Scythe 무기 (근접 회전)** ✅
-**파일**: `Assets/Scripts/UndeadSurvivor/Scythe.cs`
-
-**완료된 기능**:
-- ✅ 플레이어 주변 회전 공격
-- ✅ 지속 피해 (0.5초 간격)
-- ✅ 레벨업 시 개수, 데미지, 크기 증가
-- ✅ 공전/자전 애니메이션
-
-#### 4. **Projectile 투사체 시스템** ✅
-**파일**: `Assets/Scripts/UndeadSurvivor/Projectile.cs`
-
-**완료된 기능**:
-- ✅ IPoolable 인터페이스 구현
-- ✅ 관통력 시스템 (Penetrate)
-- ✅ 생존 시간 관리 (LifeTime)
-- ✅ 충돌 이펙트 지원
-
-#### 5. **무기 시스템 테스트** ✅
-**파일**: `Assets/Scripts/UndeadSurvivor/TestWeaponSystem.cs`
-
-**완료된 기능**:
-- ✅ WeaponData 로드 테스트
-- ✅ 무기 추가/레벨업 테스트
-- ✅ 무기 슬롯 포화 테스트
-
-#### 6. **무기 시스템 가이드 문서** ✅
-**파일**: `Assets/Docs/UndeadSurvivor_Weapon_System_Guide.md`
-
-### 📊 Phase 3 통계
-- **구현 클래스**: 4개 (Weapon, Fireball, Scythe, Projectile)
-- **총 코드 라인**: ~700 lines
-- **무기 종류**: 2종 (Fireball, Scythe)
-- **문서**: 1개 (UndeadSurvivor_Weapon_System_Guide.md)
+### 📊 Phase 3 현황
+- **진행 상태**: ❌ 0% (재구축 대기 중)
+- **제거된 코드**: ~1,400 lines
+- **보류된 데이터**: WeaponData JSON, ScriptableObject
 
 ---
 
@@ -765,10 +739,10 @@ ProjectSettings/
 **현재 진행률**:
 - Phase 1 (플레이어) - ✅ **100% 완료**
 - Phase 2 (적 & 전투) - ✅ **100% 완료**
-- Phase 3 (무기) - ✅ **100% 완료**
-- Phase 4 (레벨업) - ✅ **100% 완료**
+- Phase 3 (무기) - ❌ **0% 완료** (재구축 예정)
+- Phase 4 (레벨업) - ⚠️ **70% 완료** (Weapon 기능 보류)
 - Phase 5 (UI) - 🚧 **30% 완료** (CharacterSelectUI 완료)
-- 전체 MVP - **45% 완료**
+- 전체 MVP - **35% 완료**
 
 ---
 
@@ -786,9 +760,25 @@ ProjectSettings/
 
 ---
 
-## 🎯 최근 커밋 (2024-11-10)
+## 🎯 최근 커밋
 
-**Commit**: (작성 중) - `feat: Implement CharacterSelectUI system for UndeadSurvivor`
+### 2024-12-01: Weapon 시스템 제거
+
+**Commit**: `refactor: Remove legacy Weapon system for redesign`
+
+**주요 변경사항**:
+- ❌ Weapon.cs, Fireball.cs, Scythe.cs, Projectile.cs 삭제
+- ❌ PlayerWeaponManager.cs 삭제
+- ❌ TestWeaponSystem.cs 삭제
+- ✅ Player.cs에서 Weapon 의존성 제거
+- ✅ LevelUpOption.cs의 Weapon Apply 메서드 주석 처리
+- ✅ UndeadSurvivor_Progress.md 업데이트
+
+**파일 통계**: 8 files deleted, 3 files modified, -1400 lines
+
+### 2024-11-10: CharacterSelectUI 구현
+
+**Commit**: `feat: Implement CharacterSelectUI system for UndeadSurvivor`
 
 **주요 변경사항**:
 - ✅ CharacterSelectSubItem.cs (130 lines) - 캐릭터 선택 버튼
@@ -797,6 +787,5 @@ ProjectSettings/
 - ✅ UndeadSurvivorDataProvider.GetAllCharacters() 추가
 - ✅ UndeadSurvivor 폴더 구조 정리 (게임/시스템별)
 - ✅ UndeadSurvivor_CharacterSelectUI_Guide.md (640+ lines)
-- ✅ UndeadSurvivor_Progress.md 갱신
 
 **파일 통계**: 5 files changed, +1270 lines, -20 lines

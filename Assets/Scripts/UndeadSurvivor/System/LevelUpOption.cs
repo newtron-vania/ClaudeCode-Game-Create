@@ -195,11 +195,13 @@ namespace UndeadSurvivor
             switch (Type)
             {
                 case LevelUpOptionType.NewWeapon:
-                    ApplyNewWeapon(player);
+                    // TODO: Weapon 시스템 재구축 후 구현
+                    Debug.LogWarning("[WARNING] LevelUpOption::Apply - NewWeapon not implemented yet");
                     break;
 
                 case LevelUpOptionType.WeaponUpgrade:
-                    ApplyWeaponUpgrade(player);
+                    // TODO: Weapon 시스템 재구축 후 구현
+                    Debug.LogWarning("[WARNING] LevelUpOption::Apply - WeaponUpgrade not implemented yet");
                     break;
 
                 case LevelUpOptionType.StatUpgrade:
@@ -208,53 +210,55 @@ namespace UndeadSurvivor
             }
         }
 
-        /// <summary>
-        /// 신규 무기 획득 적용
-        /// </summary>
-        private void ApplyNewWeapon(Player player)
-        {
-            // DataManager로부터 WeaponData 가져오기
-            UndeadSurvivorDataProvider dataProvider = DataManager.Instance.GetProvider<UndeadSurvivorDataProvider>("UndeadSurvivor");
+        // TODO: Weapon 시스템 재구축 후 활성화
+        // /// <summary>
+        // /// 신규 무기 획득 적용
+        // /// </summary>
+        // private void ApplyNewWeapon(Player player)
+        // {
+        //     // DataManager로부터 WeaponData 가져오기
+        //     UndeadSurvivorDataProvider dataProvider = DataManager.Instance.GetProvider<UndeadSurvivorDataProvider>("UndeadSurvivor");
+        //
+        //     if (dataProvider == null)
+        //     {
+        //         Debug.LogError("[ERROR] LevelUpOption::ApplyNewWeapon - DataProvider not found");
+        //         return;
+        //     }
+        //
+        //     WeaponData weaponData = dataProvider.GetWeaponData(WeaponId);
+        //     if (weaponData == null)
+        //     {
+        //         Debug.LogError($"[ERROR] LevelUpOption::ApplyNewWeapon - WeaponData ID {WeaponId} not found");
+        //         return;
+        //     }
+        //
+        //     bool added = player.AddWeapon(weaponData);
+        //     if (added)
+        //     {
+        //         Debug.Log($"[INFO] LevelUpOption::ApplyNewWeapon - Added weapon: {weaponData.Name}");
+        //     }
+        //     else
+        //     {
+        //         Debug.LogWarning($"[WARNING] LevelUpOption::ApplyNewWeapon - Failed to add weapon: {weaponData.Name}");
+        //     }
+        // }
 
-            if (dataProvider == null)
-            {
-                Debug.LogError("[ERROR] LevelUpOption::ApplyNewWeapon - DataProvider not found");
-                return;
-            }
-
-            WeaponData weaponData = dataProvider.GetWeaponData(WeaponId);
-            if (weaponData == null)
-            {
-                Debug.LogError($"[ERROR] LevelUpOption::ApplyNewWeapon - WeaponData ID {WeaponId} not found");
-                return;
-            }
-
-            bool added = player.AddWeapon(weaponData);
-            if (added)
-            {
-                Debug.Log($"[INFO] LevelUpOption::ApplyNewWeapon - Added weapon: {weaponData.Name}");
-            }
-            else
-            {
-                Debug.LogWarning($"[WARNING] LevelUpOption::ApplyNewWeapon - Failed to add weapon: {weaponData.Name}");
-            }
-        }
-
-        /// <summary>
-        /// 보유 무기 강화 적용
-        /// </summary>
-        private void ApplyWeaponUpgrade(Player player)
-        {
-            bool leveledUp = player.LevelUpWeapon(WeaponId);
-            if (leveledUp)
-            {
-                Debug.Log($"[INFO] LevelUpOption::ApplyWeaponUpgrade - Weapon ID {WeaponId} leveled up");
-            }
-            else
-            {
-                Debug.LogWarning($"[WARNING] LevelUpOption::ApplyWeaponUpgrade - Failed to level up weapon ID {WeaponId}");
-            }
-        }
+        // TODO: Weapon 시스템 재구축 후 활성화
+        // /// <summary>
+        // /// 보유 무기 강화 적용
+        // /// </summary>
+        // private void ApplyWeaponUpgrade(Player player)
+        // {
+        //     bool leveledUp = player.LevelUpWeapon(WeaponId);
+        //     if (leveledUp)
+        //     {
+        //         Debug.Log($"[INFO] LevelUpOption::ApplyWeaponUpgrade - Weapon ID {WeaponId} leveled up");
+        //     }
+        //     else
+        //     {
+        //         Debug.LogWarning($"[WARNING] LevelUpOption::ApplyWeaponUpgrade - Failed to level up weapon ID {WeaponId}");
+        //     }
+        // }
 
         /// <summary>
         /// 캐릭터 스탯 강화 적용
